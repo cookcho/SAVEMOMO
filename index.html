@@ -139,7 +139,7 @@
   </div>
   <footer>
     <div><button id="btnRetry">↺ 다시</button><button id="btnStory">📖 이야기</button><button id="btnInstall" class="hidden">📲 설치</button></div>
-    <div><span id="best"></span><span id="ver">v2026.11.04d</span></div>
+    <div><span id="best"></span><span id="ver">v2026.11.04e</span></div>
   </footer>
 </div>
 <div id="picker" class="hidden">
@@ -637,7 +637,7 @@ function setup(){
   if (activePointer !== null){ try { cv.releasePointerCapture(activePointer); } catch (_){} activePointer = null; }
   bugs = []; drops = []; rocks = []; crawlers = []; flashT = 0; lineBody = null; toRemove = new Set();
   cloudAcc = L.clouds.map(() => 0);
-  finger = null; fingerBlocked = false; flow = null;
+  finger = null; fingerBlocked = false; flow = null; pops = []; jetPush = [];
 
   document.getElementById('lvl').textContent = curLabel();
   document.getElementById('prevLv').style.visibility = mode === 'level' ? 'visible' : 'hidden';
@@ -1574,9 +1574,9 @@ function drawWater(d){
   ctx.beginPath(); ctx.ellipse(d.position.x, d.position.y, d.circleRadius * 0.85, d.circleRadius * 1.2, 0, 0, 7); ctx.fill();
 }
 function drawPops(){
-  pops = pops.filter(p => simT - p.t < 300);
+  pops = pops.filter(p => simT - p.t < 300 && simT >= p.t);
   for (const p of pops){
-    const k = (simT - p.t) / 300;
+    const k = clamp((simT - p.t) / 300, 0, 1);
     ctx.strokeStyle = `rgba(165,216,255,${1 - k})`; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(p.x, p.y, 8 + k * 22, 0, 7); ctx.stroke();
   }
@@ -1792,16 +1792,20 @@ function resize(){
 window.addEventListener('resize', resize);
 if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(document.getElementById('stage'));
 let last = performance.now(), accum = 0;
+// 다음 프레임 예약을 먼저 해서, 계산·그리기에서 오류가 나도 화면이 멈추지 않게 함
+let loopErrors = 0;
 function loop(t){
-  const dt = Math.min(100, t - last); last = t;
-  if (phase === 'sim'){
-    accum += dt;
-    let n = 0;
-    while (accum >= STEP && n < 5 && phase === 'sim'){ step(); accum -= STEP; n++; }
-    if (n >= 5) accum = 0;
-  } else accum = 0;
-  render();
   requestAnimationFrame(loop);
+  const dt = Math.min(100, t - last); last = t;
+  try {
+    if (phase === 'sim'){
+      accum += dt;
+      let n = 0;
+      while (accum >= STEP && n < 5 && phase === 'sim'){ step(); accum -= STEP; n++; }
+      if (n >= 5) accum = 0;
+    } else accum = 0;
+  } catch (e){ console.error(e); if (++loopErrors > 20){ loopErrors = 0; finish(false, '오류가 나서 다시 시작해요'); } }
+  try { render(); } catch (e){ console.error(e); try { ctx.setLineDash([]); ctx.restore(); } catch (_){} }
 }
 // ---------- 이야기 (처음 실행 시 한 번) ----------
 const STORY = [
