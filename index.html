@@ -141,11 +141,29 @@ const ARCH_UNLOCK = [['plat', 1], ['ground', 2], ['cliff', 8], ['stairs', 9], ['
 const ARCH_W = { plat: 1, ground: 0.95, cliff: 1, stairs: 1.0, shelf: 1, valley: 0.9, pillar: 1.12, cave: 0.65, bowl: 1.1, hang: 1.2, seesaw: 1.25 };
 const ARCH_DESC = { cliff: '모모가 절벽 끝이나 절벽 아래에 있어요', stairs: '한쪽은 벽, 한쪽은 트여 있어요', shelf: '벽에 붙은 선반이에요', valley: '양쪽 벽을 기둥 삼아 보세요', pillar: '좁은 기둥 꼭대기예요', cave: '입구가 한쪽뿐인 동굴! 입구 위 핀을 써 보세요', bowl: '기울어진 판자 사이에 쏙 들어가 있어요', hang: '사슬에 매달려 부딪히면 흔들려요', seesaw: '선의 무게로 기울어요. 균형을 잡아요' };
 const ARCH_NAME = { plat: '공중 받침대', ground: '언덕 들판', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기', cliff: '절벽', cave: '동굴', bowl: 'V자 그릇', seesaw: '시소', hang: '매달린 발판', stairs: '계단' };
-const THEMES = [
-  { sky: ['#cfe6ee', '#f4efdc'], ground: '#7a5533', grass: '#5aa84a', stone: '#8d8a80', ink: '#1e2a4a', text: '#1d2a22' },
-  { sky: ['#f2b38a', '#f7e3c4'], ground: '#6e4529', grass: '#7a9a3a', stone: '#8a7a70', ink: '#2a1e3a', text: '#3a1f12' },
-  { sky: ['#1c2540', '#3a4870'], ground: '#3e2f26', grass: '#3f6e45', stone: '#5b6378', ink: '#f1e9c9', text: '#f4f0e0' },
-  { sky: ['#cdeccf', '#eef6dc'], ground: '#5d4630', grass: '#3f8f4a', stone: '#7e8a7a', ink: '#14324a', text: '#1d2a22' },
+// 10레벨마다 모모가 도망치는 장소가 바뀜 (70레벨 이후 2회차로 반복)
+const CHAPTERS = [
+  { name: '거실', icon: '🏠', bg: 'living', sky: ['#f6e7cf', '#ecd6b4'], ground: '#a8774a', grass: '#8a5d34', stone: '#b39b7d', ink: '#1e2a4a', text: '#2b2118', story: '' },
+  { name: '마당', icon: '🌳', bg: 'yard', sky: ['#bfe3f5', '#eaf6e8'], ground: '#7a5533', grass: '#5aa84a', stone: '#8d8a80', ink: '#1e2a4a', text: '#1d2a22',
+    story: '거실은 이미 물바다! 모모는 창문을 넘어 <b>마당</b>으로 도망쳤어요.<br>그런데 집사가 정원 호스를 들고 따라오는데…' },
+  { name: '지붕', icon: '🏙️', bg: 'roof', sky: ['#f29a6b', '#f7d8b0'], ground: '#7d3b2f', grass: '#a24a3a', stone: '#8a7a70', ink: '#2a1e3a', text: '#3a1f12',
+    story: '담장을 타고 <b>지붕</b> 위로 피신!<br>노을 진 지붕 위로 드론 부대가 몰려와요.' },
+  { name: '공원', icon: '🌲', bg: 'park', sky: ['#cdeccf', '#eef6dc'], ground: '#5d4630', grass: '#3f8f4a', stone: '#7e8a7a', ink: '#14324a', text: '#1d2a22',
+    story: '지붕에서 뛰어내려 동네 <b>공원</b>으로.<br>분수대 물소리만 들어도 털이 곤두서요.' },
+  { name: '바닷가', icon: '🏖️', bg: 'beach', sky: ['#8fd3f4', '#e8f7fb'], ground: '#e3c48a', grass: '#f0d9a6', stone: '#a99b86', ink: '#1e2a4a', text: '#1d2a22',
+    story: '정신없이 달리다 보니 하필 <b>바닷가</b>!<br>사방이 물인데 집사도 끝까지 따라왔어요.' },
+  { name: '비 오는 골목', icon: '🌧️', bg: 'alley', sky: ['#1c2540', '#3a4870'], ground: '#3b3f46', grass: '#555b63', stone: '#5b6378', ink: '#f1e9c9', text: '#f4f0e0',
+    story: '비가 쏟아지는 밤 <b>골목길</b>.<br>숨을 곳을 찾는 모모 뒤로 드론 불빛이 번쩍여요.' },
+  { name: '목욕탕', icon: '🛁', bg: 'bath', sky: ['#d9f1f7', '#bfe4ee'], ground: '#9ccad6', grass: '#e9f6f9', stone: '#8fb3bd', ink: '#1e2a4a', text: '#1d2a22',
+    story: '결국 도착한 곳은… 집사의 본거지 <b>목욕탕</b>!<br>모모의 마지막 결전이에요.' },
+];
+const chapterOf = lv => Math.floor((lv - 1) / 10) % CHAPTERS.length;
+const roundOf = lv => Math.floor((lv - 1) / (10 * CHAPTERS.length));
+// 31레벨부터 등장하는 퍼즐 규칙
+const MODS = [
+  { k: 'nozone', lv: 31, name: '금지 구역', icon: '🚫', desc: '빗금 친 구역에는 선을 그을 수 없어요' },
+  { k: 'heavy', lv: 34, name: '무거운 잉크', icon: '🏋️', desc: '선이 두 배로 무거워요. 모모를 짓누르지 않게!' },
+  { k: 'ice', lv: 37, name: '미끄러운 잉크', icon: '🧊', desc: '선이 얼음처럼 미끄러워요. 걸칠 곳을 잘 골라요' },
 ];
 
 // ---------- utils ----------
@@ -268,14 +286,27 @@ function genLevel(lv, seed, themeIdx){
   // 위협 종류 수: 소개 레벨은 1종, 이후 레벨대에 따라 2~3종
   const kinds = [];
   if (intro && pool.includes(intro.k)) kinds.push(intro.k);
-  const nT = (intro || archIntro || lv < 8) ? 1 : lv < 15 ? 2 : (r() < 0.5 ? 2 : 3);
+  const nT = (intro || archIntro || lv < 8) ? 1 : lv < 15 ? 2 : lv < 31 ? (r() < 0.5 ? 2 : 3) : lv < 46 ? 3 : (r() < 0.5 ? 3 : 4);
   const pickPool = archIntro ? pool.filter(k => k !== 'wind') : pool;
   for (let g = 0; kinds.length < Math.min(nT, pool.length) && g < 60; g++){ const k = pick(pickPool); if (!kinds.includes(k)) kinds.push(k); }
   if (!kinds.some(k => k !== 'wind')) kinds.push(pool.includes('bee') ? 'bee' : pick(pool.filter(k => k !== 'wind')));
   L.kinds = kinds;
   // 난이도 예산: 레벨에 비례해 완만히 증가. 새 요소 소개 레벨은 20% 낮춤. 어려운 지형일수록 위협 예산 감소
+  // 퍼즐 규칙(31레벨~): 소개 레벨은 하나, 40레벨부터 무작위 0~1개, 50레벨부터 1~2개
+  const modIntro = MODS.find(m => m.lv === lv) || null;
+  let mods = [];
+  if (modIntro) mods = [modIntro.k];
+  else if (lv >= 40){
+    const nm = lv >= 50 ? (r() < 0.5 ? 2 : 1) : (r() < 0.6 ? 1 : 0);
+    const avail = MODS.map(m => m.k);
+    while (mods.length < nm){ const k = pick(avail); if (!mods.includes(k)) mods.push(k); }
+  }
+  L.mods = mods; L.modIntro = modIntro;
+  const capS = lv <= 30 ? 1 : Math.min(2.2, 1 + (lv - 30) / 35); // 30레벨 이후 위협 상한이 점점 커짐
+  L.capS = capS;
   let B = 10 + 3.0 * (lv - 1);
-  if ((intro || archIntro) && lv > 1) B *= 0.8;
+  if ((intro || archIntro || modIntro) && lv > 1) B *= 0.8;
+  B *= 1 - 0.08 * mods.length;
   B /= ARCH_W[arch];
   if (kinds.includes('wind')) B *= 0.8;
   const u = B / kinds.filter(k => k !== 'wind').length;
@@ -294,7 +325,7 @@ function genLevel(lv, seed, themeIdx){
   };
 
   if (kinds.includes('crawl')){
-    const n = clamp(Math.round(u / 2.5), 3, 8);
+    const n = clamp(Math.round(u / 2.5), 3, Math.round(8 * capS));
     // 불독은 땅 위로 모모까지 막힘없이 달려올 수 있는 쪽에서만 나옴
     const clearSide = sd => { const x0 = sd < 0 ? 10 : W - 10; for (let x = x0; Math.abs(x - px) > 30; x += (px - x0) > 0 ? 6 : -6){ if (S.some(o => o.kind !== 'ground' && o.kind !== 'hill' && inRect({ x, y: GY - 12 }, o, 4))) return false; } return true; };
     let sides = (r() < 0.5 ? [-1, 1] : [px < W / 2 ? 1 : -1]).filter(clearSide);
@@ -308,7 +339,7 @@ function genLevel(lv, seed, themeIdx){
       const w = R(90, 140);
       let cx = R(w / 2 + 10, W - w / 2 - 10);
       if (i === 0) cx = clamp(px + R(-w / 2 + 25, w / 2 - 25), w / 2 + 10, W - w / 2 - 10);
-      L.clouds.push({ x: cx, w, rate: clamp(900 / u, 45, 150) });
+      L.clouds.push({ x: cx, w, rate: clamp(900 / u, 45 / capS, 150) });
     }
   }
   if (kinds.includes('wind')){
@@ -318,7 +349,7 @@ function genLevel(lv, seed, themeIdx){
   if (L.winds.length) L.clouds.forEach(c => { c.w = Math.min(190, c.w + 40); c.x = clamp(c.x - L.winds[0].dir * 45, c.w / 2 + 10, W - c.w / 2 - 10); });
   const yMin = L.clouds.length ? 125 : 55, yMax = Math.min(sp.y - 30, 400);
   if (kinds.includes('bee')){
-    const total = clamp(Math.round(u / 2), 4, 16), nh = total > 9 ? 2 : 1;
+    const total = clamp(Math.round(u / 2), 4, Math.round(16 * capS)), nh = total > 18 ? 3 : total > 9 ? 2 : 1;
     for (let i = 0; i < nh; i++){
       const p = place(170, yMin, yMax) || { x: px < W / 2 ? W - 40 : 40, y: yMin + 30 };
       L.hives.push({ ...p, n: Math.round(total / nh), kind: 'bee' });
@@ -336,7 +367,7 @@ function genLevel(lv, seed, themeIdx){
   };
   if (kinds.includes('wasp')){
     // 예산이 크면 오리 두 마리가 서로 다른 각도에서 쏨(벽 하나로 다 막히지 않게)
-    const nd = u > 30 ? 2 : 1, ud = u / nd;
+    const nd = u > 70 ? 3 : u > 30 ? 2 : 1, ud = u / nd;
     for (let k = 0; k < nd; k++){
       let p = null;
       for (let t = 0; t < 40 && !p; t++){
@@ -347,13 +378,13 @@ function genLevel(lv, seed, themeIdx){
       }
       if (!p && k > 0) break;
       p = p || place(190, yMin, yMax) || { x: px < W / 2 ? W - 40 : 40, y: yMin + 60 };
-      L.hives.push({ ...p, n: 0, burst: clamp(Math.round(3 + ud / 3), 5, 10), gap: clamp(13000 / ud, 650, 1600), kind: 'wasp' });
+      L.hives.push({ ...p, n: 0, burst: clamp(Math.round(3 + ud / 3), 5, Math.round(10 * Math.min(capS, 1.5))), gap: clamp(13000 / ud, 650 / capS, 1600), kind: 'wasp' });
     }
   }
   if (kinds.includes('rock')){
-    const n = 1;
+    const n = u > 45 ? 2 : 1;
     for (let i = 0; i < n; i++){
-      const rr = R(10, 14), interval = clamp(10000 / u, 480, 1500);
+      const rr = R(10, 14), interval = clamp(10000 * n / u, 480 / capS, 1500);
       if (r() < 0.5 && !L.cave && !(intro && intro.k === 'rock')){
         L.chutes.push({ type: 'top', x: clamp(px + R(-30, 30), 24, W - 24), y: -12, vx: 0, vy: 1, r: rr, interval, first: R(350, 750) });
       } else {
@@ -405,8 +436,18 @@ function genLevel(lv, seed, themeIdx){
       S.push(o); break;
     }
   }
-  L.ink = Math.max(380, 740 - lv * 14);
-  L.speed = Math.min(3.2, 2.0 + lv * 0.04);
+  // 금지 구역: 모모 주변·핀은 피해서 배치
+  L.zones = [];
+  if (mods.includes('nozone')){
+    const nz = 1 + (r() < 0.5 ? 1 : 0) + (lv >= 50 ? 1 : 0);
+    for (let i = 0; i < nz; i++) for (let t = 0; t < 60; t++){
+      const z = { x: R(40, W - 40), y: R(110, GY - 40), w: R(60, 120), h: R(50, 110), a: 0 };
+      if (inRect(sp, z, 60) || inRect(L.pot, z, 50) || L.pins.some(pn => inRect(pn, z, 16)) || L.zones.some(o => dist(o, z) < 70)) continue;
+      L.zones.push(z); break;
+    }
+  }
+  L.ink = lv <= 26 ? Math.max(380, 740 - lv * 14) : Math.max(240, 380 - (lv - 26) * 4);
+  L.speed = lv <= 30 ? Math.min(3.2, 2.0 + lv * 0.04) : Math.min(4.2, 3.2 + (lv - 30) * 0.025);
   return L;
 }
 
@@ -419,13 +460,13 @@ let finger = null, fingerBlocked = false, blockToastShown = false, toastTimer = 
 
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 let scale = 1, dpr = 1;
-const TH = () => THEMES[L.theme];
+const TH = () => CHAPTERS[L.theme];
 
 function curKey(){ return mode === 'daily' ? 'ss_daily_' + todayKey() : 'ss_best_' + level; }
 function curLabel(){ return mode === 'daily' ? String(todayKey()).slice(4, 6) + '/' + String(todayKey()).slice(6) : 'Lv.' + level; }
 
 function setup(){
-  L = mode === 'daily' ? genLevel(10, todayKey(), todayKey() % 4) : genLevel(level, level * 7919 + 101, (level - 1) % 4);
+  L = mode === 'daily' ? genLevel(18, todayKey(), todayKey() % CHAPTERS.length) : genLevel(level, level * 7919 + 101, chapterOf(level));
   engine = Engine.create();
   engine.gravity.y = 1;
   engine.positionIterations = 12; engine.velocityIterations = 8;
@@ -471,7 +512,9 @@ function setup(){
   setTimerUI(-1);
   document.getElementById('modalWrap').classList.add('hidden');
   document.getElementById('shareBox').classList.add('hidden');
-  const chips = [`<span class="chip${L.archIntro ? ' new' : ''}">${ARCH_NAME[L.arch]}</span>`];
+  const ch = CHAPTERS[L.theme], rd = mode === 'level' ? roundOf(level) : 0;
+  const chips = [`<span class="chip">${ch.icon} ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</span>`, `<span class="chip${L.archIntro ? ' new' : ''}">${ARCH_NAME[L.arch]}</span>`];
+  L.mods.forEach(k => { const m = MODS.find(x => x.k === k); chips.push(`<span class="chip${L.modIntro && L.modIntro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   L.kinds.forEach(k => { const m = MECH.find(x => x.k === k); chips.push(`<span class="chip${L.intro && L.intro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   if (L.pins.length){ const m = MECH[1]; chips.push(`<span class="chip${L.intro && L.intro.k === 'pin' ? ' new' : ''}">${m.icon} 핀 ${L.pins.length}</span>`); }
   document.getElementById('chips').innerHTML = chips.join('');
@@ -483,11 +526,14 @@ function setup(){
     ? `<b>NEW ${L.intro.icon} ${L.intro.name}</b><br>${L.intro.desc}`
     : L.archIntro && mode === 'level'
     ? `<b>NEW 지형 · ${ARCH_NAME[L.archIntro]}</b><br>${ARCH_DESC[L.archIntro]}`
+    : L.modIntro && mode === 'level'
+    ? `<b>NEW 규칙 · ${L.modIntro.icon} ${L.modIntro.name}</b><br>${L.modIntro.desc}`
     : '한 번에 선을 그어 모모를 지키세요 · 8초';
   hint.classList.remove('hidden');
   const b = store.get(curKey(), null);
   document.getElementById('best').textContent = b ? `최고 ${b.score}점 · 잉크 ${b.pct}%` : '첫 도전';
   updateInk();
+  if (typeof maybeChapterCard === 'function' && store.get('momo_story_seen', false)) maybeChapterCard();
 }
 
 function updateInk(){
@@ -502,6 +548,7 @@ function toWorld(e){ const r = cv.getBoundingClientRect(); return { x: (e.client
 const EDGE = 6, PROBES = [[0, 0], [EDGE, 0], [-EDGE, 0], [0, EDGE], [0, -EDGE], [4.2, 4.2], [-4.2, 4.2], [4.2, -4.2], [-4.2, -4.2]];
 function blocked(p){
   if (p.x < 2 || p.x > W - 2 || p.y < 2 || p.y > H - 2) return true;
+  if (L.zones && L.zones.some(z => inRect(p, z, 0))) return true;
   const bs = [...statics, ...dynBodies, potBody];
   return PROBES.some(([ox, oy]) => Query.point(bs, { x: p.x + ox, y: p.y + oy }).length > 0);
 }
@@ -587,6 +634,7 @@ function showToast(msg){
   toastTimer = setTimeout(() => { if (phase !== 'draw' || drawing) h.classList.add('hidden'); }, 2200);
 }
 
+const inkDensity = () => L.mods.includes('heavy') ? 0.0055 : 0.0025;
 function endStroke(){
   drawing = false; fingerBlocked = false;
   if (inkUsed < 12){
@@ -603,8 +651,8 @@ function endStroke(){
   for (let i = 1; i < rs.length; i++){
     const a = rs[i - 1], b = rs[i], len = dist(a, b);
     if (len < 0.5) continue;
-    parts.push(Bodies.rectangle((a.x + b.x) / 2, (a.y + b.y) / 2, len + 2, 11, { angle: Math.atan2(b.y - a.y, b.x - a.x), density: 0.0025 }));
-    if (i < rs.length - 1) parts.push(Bodies.circle(b.x, b.y, 5.5, { density: 0.0025 }));
+    parts.push(Bodies.rectangle((a.x + b.x) / 2, (a.y + b.y) / 2, len + 2, 11, { angle: Math.atan2(b.y - a.y, b.x - a.x), density: inkDensity() }));
+    if (i < rs.length - 1) parts.push(Bodies.circle(b.x, b.y, 5.5, { density: inkDensity() }));
   }
   if (!parts.length){ pts = []; inkUsed = 0; updateInk(); return; }
   lineBody = parts.length === 1 ? parts[0] : Body.create({ parts });
@@ -618,7 +666,9 @@ function endStroke(){
     Body.setInertia(lineBody, I);
   }
   lineBody.label = 'line';
-  lineBody.friction = 0.6; lineBody.frictionStatic = 1; lineBody.frictionAir = 0.03;
+  const ice = L.mods.includes('ice');
+  lineBody.friction = ice ? 0.02 : 0.6; lineBody.frictionStatic = ice ? 0.05 : 1; lineBody.frictionAir = 0.03;
+  if (ice) lineBody.parts.forEach(pt => { pt.friction = 0.02; pt.frictionStatic = 0.05; });
   const p0 = { x: lineBody.position.x, y: lineBody.position.y };
   lineLocal = pts.map(p => ({ x: p.x - p0.x, y: p.y - p0.y }));
   Composite.add(engine.world, lineBody);
@@ -1110,7 +1160,16 @@ function drawStatic(b){
   if (k === 'ground'){
     const v = b.vertices, x0 = Math.min(...v.map(p => p.x)), x1 = Math.max(...v.map(p => p.x));
     ctx.fillStyle = th.ground; ctx.fillRect(x0, GY, x1 - x0, 40);
-    ctx.fillStyle = th.grass; ctx.fillRect(x0, GY, x1 - x0, 7);
+    ctx.save(); ctx.beginPath(); ctx.rect(x0, GY, x1 - x0, 40); ctx.clip();
+    const bg = th.bg;
+    if (bg === 'living'){ ctx.strokeStyle = 'rgba(60,35,15,.35)'; ctx.lineWidth = 1.5; for (let y = GY + 10; y < H; y += 10){ ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); for (let x = ((y / 10) % 2) * 30; x < W; x += 60){ ctx.beginPath(); ctx.moveTo(x, y - 10); ctx.lineTo(x, y); ctx.stroke(); } } }
+    else if (bg === 'roof'){ ctx.fillStyle = 'rgba(0,0,0,.18)'; for (let y = GY + 6; y < H; y += 10) for (let x = ((y / 10) % 2) * 8; x < W; x += 16){ ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI); ctx.fill(); } }
+    else if (bg === 'beach'){ ctx.fillStyle = 'rgba(150,110,50,.3)'; for (let i = 0; i < 60; i++) ctx.fillRect((i * 53) % W, GY + 6 + (i * 17) % 32, 2, 2); }
+    else if (bg === 'alley'){ ctx.fillStyle = 'rgba(120,150,200,.25)'; for (let i = 0; i < 4; i++){ ctx.beginPath(); ctx.ellipse((i * 97 + 40) % W, GY + 16, 24, 4, 0, 0, 7); ctx.fill(); } }
+    else if (bg === 'bath'){ ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; for (let x = 0; x < W; x += 20){ ctx.beginPath(); ctx.moveTo(x, GY); ctx.lineTo(x, H); ctx.stroke(); } for (let y = GY + 20; y < H; y += 20){ ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); } }
+    ctx.restore();
+    if (bg === 'yard' || bg === 'park'){ ctx.fillStyle = th.grass; ctx.fillRect(x0, GY, x1 - x0, 7); }
+    else { ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(x0, GY, x1 - x0, 3); }
     return;
   }
   if (k === 'hill'){
@@ -1324,13 +1383,107 @@ function setTimerUI(left){
   } else if (!el.classList.contains(cls || 'x') && cls) el.classList.add(cls);
   st.classList.toggle('danger', left <= 3 && left > 0);
 }
+let bgCanvas = null, bgKey = '';
+function buildBackdrop(){
+  const th = TH(), c = document.createElement('canvas'), k = 2;
+  c.width = W * k; c.height = H * k;
+  const g = c.getContext('2d'); g.scale(k, k);
+  const r = rng(L.seed + 99), R = (a, b) => a + r() * (b - a);
+  const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, th.sky[0]); sky.addColorStop(1, th.sky[1]);
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  const cloud = (x, y, s2, a) => { g.fillStyle = `rgba(255,255,255,${a})`; [[0, 0, 18], [16, -6, 14], [30, 2, 16], [14, 6, 14]].forEach(([dx, dy, rr]) => { g.beginPath(); g.arc(x + dx * s2, y + dy * s2, rr * s2, 0, 7); g.fill(); }); };
+  const bg = th.bg;
+  if (bg === 'living'){
+    g.strokeStyle = 'rgba(160,120,80,.10)'; g.lineWidth = 6;
+    for (let x = 12; x < W; x += 28){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 430); g.stroke(); }
+    g.fillStyle = '#e3c9a2'; g.fillRect(0, 430, W, GY - 430);
+    g.fillStyle = '#d4b68b'; g.fillRect(0, 428, W, 6);
+    g.strokeStyle = 'rgba(120,85,50,.18)'; g.lineWidth = 2;
+    for (let x = 20; x < W; x += 45){ g.strokeRect(x, 446, 32, GY - 462); }
+    const wx = R(30, W - 160);
+    g.fillStyle = '#fff'; g.fillRect(wx - 6, 86, 132, 152);
+    const gl = g.createLinearGradient(0, 92, 0, 232); gl.addColorStop(0, '#9fd3f0'); gl.addColorStop(1, '#dff1fa');
+    g.fillStyle = gl; g.fillRect(wx, 92, 120, 140);
+    g.fillStyle = '#fff'; g.fillRect(wx + 58, 92, 4, 140); g.fillRect(wx, 160, 120, 4);
+    g.fillStyle = '#c0504d'; g.fillRect(wx - 18, 78, 22, 170); g.fillRect(wx + 116, 78, 22, 170);
+    g.fillStyle = '#8b5a2b'; g.fillRect(wx - 26, 74, 172, 6);
+    const fx = wx > W / 2 ? R(20, 80) : R(W - 110, W - 60);
+    g.fillStyle = '#7b5a3c'; g.fillRect(fx, 120, 54, 42); g.fillStyle = '#f3e6c9'; g.fillRect(fx + 5, 125, 44, 32);
+    g.fillStyle = '#e8a04a'; g.beginPath(); g.arc(fx + 27, 141, 8, 0, 7); g.fill();
+  } else if (bg === 'yard'){
+    g.fillStyle = 'rgba(255,236,140,.9)'; g.beginPath(); g.arc(R(260, 320), 70, 26, 0, 7); g.fill();
+    for (let i = 0; i < 3; i++) cloud(R(10, W - 60), R(60, 200), R(0.7, 1.1), 0.85);
+    g.fillStyle = '#e9dcc5'; g.strokeStyle = 'rgba(120,90,60,.35)'; g.lineWidth = 1.5;
+    for (let x = 0; x < W; x += 24){ g.beginPath(); g.moveTo(x + 2, GY); g.lineTo(x + 2, 488); g.lineTo(x + 11, 478); g.lineTo(x + 20, 488); g.lineTo(x + 20, GY); g.closePath(); g.fill(); g.stroke(); }
+    g.fillRect(0, 505, W, 8); g.fillRect(0, 560, W, 8);
+    g.fillStyle = '#6fb55a'; for (let i = 0; i < 6; i++){ const x = R(0, W); g.beginPath(); g.arc(x, GY, R(16, 28), Math.PI, 0); g.fill(); }
+  } else if (bg === 'roof'){
+    g.fillStyle = 'rgba(255,220,150,.9)'; g.beginPath(); g.arc(R(60, 300), 360, 40, 0, 7); g.fill();
+    let x = 0;
+    while (x < W){
+      const bw = R(30, 60), bh = R(120, 280);
+      g.fillStyle = 'rgba(70,40,80,.55)'; g.fillRect(x, GY - bh, bw - 3, bh);
+      g.fillStyle = 'rgba(255,214,120,.55)';
+      for (let yy = GY - bh + 10; yy < GY - 10; yy += 16) for (let xx = x + 5; xx < x + bw - 10; xx += 11) if (r() < 0.35) g.fillRect(xx, yy, 5, 7);
+      x += bw;
+    }
+  } else if (bg === 'park'){
+    for (let i = 0; i < 2; i++) cloud(R(10, W - 60), R(50, 150), R(0.6, 0.9), 0.8);
+    for (let i = 0; i < 5; i++){
+      const x = R(0, W), hgt = R(110, 200), cr = R(30, 46);
+      g.fillStyle = 'rgba(110,80,50,.45)'; g.fillRect(x - 5, GY - hgt + cr, 10, hgt - cr);
+      g.fillStyle = 'rgba(70,140,80,.45)'; [[0, 0, 1], [-0.6, 0.35, 0.75], [0.6, 0.35, 0.75]].forEach(([dx, dy, s2]) => { g.beginPath(); g.arc(x + dx * cr, GY - hgt + cr + dy * cr, cr * s2, 0, 7); g.fill(); });
+    }
+    const bx = R(40, W - 100);
+    g.fillStyle = 'rgba(120,80,50,.5)'; g.fillRect(bx, GY - 30, 70, 6); g.fillRect(bx, GY - 44, 70, 5); g.fillRect(bx + 6, GY - 24, 5, 24); g.fillRect(bx + 59, GY - 24, 5, 24);
+  } else if (bg === 'beach'){
+    g.fillStyle = 'rgba(255,240,150,.95)'; g.beginPath(); g.arc(R(250, 320), 80, 30, 0, 7); g.fill();
+    for (let i = 0; i < 2; i++) cloud(R(10, W - 80), R(50, 170), R(0.7, 1), 0.9);
+    const sea = g.createLinearGradient(0, 440, 0, GY); sea.addColorStop(0, '#3ba7d6'); sea.addColorStop(1, '#7fd0ea');
+    g.fillStyle = sea; g.fillRect(0, 440, W, GY - 440);
+    g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 2;
+    for (let yy = 455; yy < GY; yy += 22){ g.beginPath(); for (let xx = 0; xx <= W; xx += 10) g.lineTo(xx, yy + Math.sin(xx / 18 + yy) * 3); g.stroke(); }
+  } else if (bg === 'alley'){
+    g.fillStyle = 'rgba(255,255,255,.6)'; for (let i = 0; i < 20; i++) g.fillRect(R(0, W), R(0, 220), 1.5, 1.5);
+    for (const side of [0, 1]){
+      let y = R(120, 220);
+      const bw = R(70, 100), x0 = side ? W - bw : 0;
+      g.fillStyle = '#141a2c'; g.fillRect(x0, y, bw, GY - y);
+      g.fillStyle = 'rgba(255,200,100,.7)';
+      for (let yy = y + 14; yy < GY - 20; yy += 26) for (let xx = x0 + 10; xx < x0 + bw - 14; xx += 22) if (r() < 0.45) g.fillRect(xx, yy, 10, 14);
+    }
+    const lx = R(110, 250);
+    g.fillStyle = '#2b3245'; g.fillRect(lx, 330, 5, GY - 330); g.fillRect(lx - 14, 330, 24, 5);
+    const gl = g.createRadialGradient(lx - 10, 340, 2, lx - 10, 340, 70); gl.addColorStop(0, 'rgba(255,220,140,.5)'); gl.addColorStop(1, 'rgba(255,220,140,0)');
+    g.fillStyle = gl; g.beginPath(); g.arc(lx - 10, 340, 70, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(180,200,255,.18)'; g.lineWidth = 1;
+    for (let i = 0; i < 60; i++){ const x = R(0, W), y = R(0, GY); g.beginPath(); g.moveTo(x, y); g.lineTo(x - 3, y + 12); g.stroke(); }
+  } else if (bg === 'bath'){
+    g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 2;
+    for (let x = 0; x <= W; x += 30){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, GY); g.stroke(); }
+    for (let y = 0; y <= GY; y += 30){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+    const tx = R(20, W - 170);
+    g.fillStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.moveTo(tx, GY - 70); g.lineTo(tx + 150, GY - 70); g.quadraticCurveTo(tx + 150, GY, tx + 110, GY); g.lineTo(tx + 40, GY); g.quadraticCurveTo(tx, GY, tx, GY - 70); g.fill();
+    g.fillStyle = 'rgba(120,200,230,.6)'; g.fillRect(tx + 6, GY - 66, 138, 10);
+    for (let i = 0; i < 4; i++) cloud(R(0, W - 60), R(60, 300), R(0.8, 1.3), 0.35);
+  }
+  return c;
+}
 function render(){
   const th = TH();
   ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
-  const sky = ctx.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, th.sky[0]); sky.addColorStop(1, th.sky[1]);
-  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
-  if (L.theme === 2){ ctx.fillStyle = 'rgba(255,255,255,.7)'; for (let i = 0; i < 24; i++){ ctx.fillRect((i * 97) % W, (i * 53) % 300, 1.5, 1.5); } }
+  if (bgKey !== L.seed + ':' + L.theme){ bgCanvas = buildBackdrop(); bgKey = L.seed + ':' + L.theme; }
+  ctx.drawImage(bgCanvas, 0, 0, W, H);
+  // 금지 구역
+  (L.zones || []).forEach(z => {
+    ctx.save(); ctx.beginPath(); ctx.rect(z.x - z.w / 2, z.y - z.h / 2, z.w, z.h); ctx.clip();
+    ctx.fillStyle = 'rgba(230,50,50,.10)'; ctx.fillRect(z.x - z.w / 2, z.y - z.h / 2, z.w, z.h);
+    ctx.strokeStyle = 'rgba(230,50,50,.35)'; ctx.lineWidth = 4;
+    for (let d = -z.h; d < z.w; d += 14){ ctx.beginPath(); ctx.moveTo(z.x - z.w / 2 + d, z.y + z.h / 2); ctx.lineTo(z.x - z.w / 2 + d + z.h, z.y - z.h / 2); ctx.stroke(); }
+    ctx.restore();
+    ctx.setLineDash([6, 5]); ctx.strokeStyle = 'rgba(230,50,50,.8)'; ctx.lineWidth = 2; ctx.strokeRect(z.x - z.w / 2, z.y - z.h / 2, z.w, z.h); ctx.setLineDash([]);
+    ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🚫', z.x, z.y + 5);
+  });
   L.winds.forEach(drawWind);
   L.clouds.forEach(drawCloud);
   if (L.cave){ const c = L.cave, x0 = c.left ? 0 : c.mouth, x1 = c.left ? c.mouth : W; ctx.fillStyle = 'rgba(30,20,10,.22)'; ctx.fillRect(x0, c.ceilY, x1 - x0, c.floorY - c.ceilY); }
@@ -1384,20 +1537,32 @@ const STORY = [
   { art: '<img src="assets/momo_surprised.png" class="big shake" alt="">', text: '물이라면 질색인 모모를<br>도와줄 수 있는 건 당신의 <b>펜 한 자루</b>뿐!' },
   { art: '<div class="pen">✏️</div><img src="assets/momo_sit.png" class="big" alt="">', text: '<b>선을 딱 한 번</b> 그어 벽을 만들고<br><b>8초</b> 동안 모모를 지켜 주세요.' },
 ];
-let storyIdx = 0;
+let storyIdx = 0, cards = STORY;
 function renderStory(){
-  const sc = STORY[storyIdx];
+  const sc = cards[storyIdx];
   document.getElementById('sArt').innerHTML = sc.art;
   document.getElementById('sText').innerHTML = sc.text;
-  document.getElementById('sDots').innerHTML = STORY.map((_, i) => `<i class="${i === storyIdx ? 'on' : ''}"></i>`).join('');
-  document.getElementById('sNext').textContent = storyIdx === STORY.length - 1 ? '시작하기 🐾' : '다음 ▶';
+  document.getElementById('sDots').innerHTML = cards.map((_, i) => `<i class="${i === storyIdx ? 'on' : ''}"></i>`).join('');
+  document.getElementById('sNext').textContent = storyIdx === cards.length - 1 ? '시작하기 🐾' : '다음 ▶';
+  document.getElementById('sSkip').style.display = cards.length > 1 ? '' : 'none';
 }
-function showStory(){ storyIdx = 0; renderStory(); document.getElementById('story').classList.remove('hidden'); }
+function showStory(){ cards = STORY; storyIdx = 0; renderStory(); document.getElementById('story').classList.remove('hidden'); }
 function closeStory(){
   document.getElementById('story').classList.add('hidden');
   if (!store.get('momo_story_seen', false)){ store.set('momo_story_seen', true); mode = 'level'; level = 1; setup(); }
 }
-document.getElementById('sNext').onclick = () => { if (storyIdx < STORY.length - 1){ storyIdx++; renderStory(); } else closeStory(); };
+document.getElementById('sNext').onclick = () => { if (storyIdx < cards.length - 1){ storyIdx++; renderStory(); } else closeStory(); };
+// 새 챕터(11, 21, 31…레벨)에 처음 들어가면 장소 이동 이야기
+function maybeChapterCard(){
+  if (mode !== 'level' || level === 1 || (level - 1) % 10 !== 0) return;
+  const key = 'momo_ch_' + level;
+  if (store.get(key, false)) return;
+  store.set(key, true);
+  const ch = CHAPTERS[chapterOf(level)], rd = roundOf(level);
+  cards = [{ art: `<div class="row"><span>${ch.icon}</span></div><img src="assets/momo_surprised.png" class="big shake" alt="" style="height:110px">`,
+    text: `<b>챕터 ${Math.floor((level - 1) / 10) + 1} · ${ch.name}</b><br>` + (rd ? `<b>${rd + 1}회차</b> · 집사가 더 강해져서 돌아왔어요!<br>` : '') + (ch.story || '모모의 도망은 다시 거실에서 시작돼요.') }];
+  storyIdx = 0; renderStory(); document.getElementById('story').classList.remove('hidden');
+}
 document.getElementById('sSkip').onclick = closeStory;
 document.getElementById('btnStory').onclick = showStory;
 
