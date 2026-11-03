@@ -139,7 +139,7 @@
   </div>
   <footer>
     <div><button id="btnRetry">↺ 다시</button><button id="btnStory">📖 이야기</button><button id="btnInstall" class="hidden">📲 설치</button></div>
-    <div><span id="best"></span><span id="ver">v2026.11.04b</span></div>
+    <div><span id="best"></span><span id="ver">v2026.11.04c</span></div>
   </footer>
 </div>
 <div id="picker" class="hidden">
@@ -174,10 +174,11 @@ const MECH = [
   { k: 'bigdog', lv: 33, name: '큰 개', icon: '🐕', desc: '덩치 큰 옆집 개! 느리지만 선을 통째로 밀어내요' },
   { k: 'tank',  lv: 27, name: '헤비 드론', icon: '🛡️', desc: '집사의 대형 드론! 막히면 선을 힘으로 밀어붙여요' },
 ];
-const ARCH_UNLOCK = [['plat', 1], ['ground', 2], ['cliff', 8], ['stairs', 9], ['shelf', 11], ['valley', 13], ['pillar', 15], ['cave', 17], ['bowl', 19], ['hang', 21], ['seesaw', 23]];
-const ARCH_W = { plat: 1, ground: 0.95, cliff: 1, stairs: 1.3, shelf: 1, valley: 0.9, pillar: 1.12, cave: 0.65, bowl: 1.1, hang: 1.2, seesaw: 1.25 };
-const ARCH_DESC = { cliff: '모모가 절벽 끝이나 절벽 아래에 있어요', stairs: '한쪽은 벽, 한쪽은 트여 있어요', shelf: '벽에 붙은 선반이에요', valley: '양쪽 벽을 기둥 삼아 보세요', pillar: '좁은 기둥 꼭대기예요', cave: '입구가 한쪽뿐인 동굴! 입구 위 핀을 써 보세요', bowl: '기울어진 판자 사이에 쏙 들어가 있어요', hang: '사슬에 매달려 부딪히면 흔들려요', seesaw: '선의 무게로 기울어요. 균형을 잡아요' };
-const ARCH_NAME = { plat: '공중 받침대', ground: '언덕 들판', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기', cliff: '절벽', cave: '동굴', bowl: 'V자 그릇', seesaw: '시소', hang: '매달린 발판', stairs: '계단' };
+const CARVED = ['pocket', 'well', 'alcove'];
+const ARCH_UNLOCK = [['plat', 1], ['ground', 2], ['pocket', 10], ['well', 14], ['alcove', 18], ['cliff', 8], ['stairs', 9], ['shelf', 11], ['valley', 13], ['pillar', 15], ['cave', 17], ['bowl', 19], ['hang', 21], ['seesaw', 23]];
+const ARCH_W = { pocket: 0.9, well: 0.9, alcove: 1.0, plat: 1, ground: 0.95, cliff: 1, stairs: 1.3, shelf: 1, valley: 0.9, pillar: 1.12, cave: 0.65, bowl: 1.1, hang: 1.2, seesaw: 1.25 };
+const ARCH_DESC = { pocket: '땅속 굴에 숨은 모모! 통로 입구를 막아 보세요', well: '깊은 우물 바닥이에요. 입구를 덮거나 중간을 막아요', alcove: '절벽 속 굴이에요. 옆 구덩이에서 드론이 올라와요', cliff: '모모가 절벽 끝이나 절벽 아래에 있어요', stairs: '한쪽은 벽, 한쪽은 트여 있어요', shelf: '벽에 붙은 선반이에요', valley: '양쪽 벽을 기둥 삼아 보세요', pillar: '좁은 기둥 꼭대기예요', cave: '입구가 한쪽뿐인 동굴! 입구 위 핀을 써 보세요', bowl: '기울어진 판자 사이에 쏙 들어가 있어요', hang: '사슬에 매달려 부딪히면 흔들려요', seesaw: '선의 무게로 기울어요. 균형을 잡아요' };
+const ARCH_NAME = { pocket: '땅굴', well: '우물', alcove: '절벽 굴', plat: '공중 받침대', ground: '언덕 들판', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기', cliff: '절벽', cave: '동굴', bowl: 'V자 그릇', seesaw: '시소', hang: '매달린 발판', stairs: '계단' };
 // 10레벨마다 모모가 도망치는 장소가 바뀜 (70레벨 이후 2회차로 반복)
 const CHAPTERS = [
   { name: '거실', icon: '🏠', bg: 'living', sky: ['#f6e7cf', '#ecd6b4'], ground: '#a8774a', grass: '#8a5d34', stone: '#b39b7d', ink: '#1e2a4a', text: '#2b2118', story: '' },
@@ -223,6 +224,60 @@ const store = {
 };
 function todayKey(){ const d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
 
+// ---------- 파낸 지형: 땅 덩어리를 깔고 굴·통로를 파냄 ----------
+// ops: [{op:'add'|'cut', t:'rect'|'ellipse', ...}] 순서대로 적용. 물리는 8px 타일로 근사, 그림은 실제 도형으로
+const TILE = 8;
+function inShape(x, y, o){
+  if (o.t === 'rect') return x >= o.x0 && x <= o.x1 && y >= o.y0 && y <= o.y1;
+  const dx = (x - o.cx) / o.rx, dy = (y - o.cy) / o.ry; return dx * dx + dy * dy <= 1;
+}
+function solidAt(ops, x, y){ let v = false; for (const o of ops){ if (inShape(x, y, o)) v = o.op === 'add'; } return v; }
+function carveToRects(ops){
+  const cols = Math.ceil(W / TILE), rows = Math.ceil(H / TILE), sol = new Uint8Array(cols * rows), used = new Uint8Array(cols * rows);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) sol[r * cols + c] = solidAt(ops, c * TILE + TILE / 2, r * TILE + TILE / 2) ? 1 : 0;
+  const out = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++){
+    if (!sol[r * cols + c] || used[r * cols + c]) continue;
+    let w = 1; while (c + w < cols && sol[r * cols + c + w] && !used[r * cols + c + w]) w++;
+    let h = 1;
+    outer: while (r + h < rows){ for (let k = 0; k < w; k++){ const i = (r + h) * cols + c + k; if (!sol[i] || used[i]) break outer; } h++; }
+    for (let a = 0; a < h; a++) for (let k = 0; k < w; k++) used[(r + a) * cols + c + k] = 1;
+    out.push({ x: (c + w / 2) * TILE, y: (r + h / 2) * TILE, w: w * TILE, h: h * TILE, a: 0, kind: 'tile' });
+  }
+  return out;
+}
+function buildCarve(arch, R, r){
+  const snap = v => Math.round(v / TILE) * TILE;
+  const ops = [], info = { arch };
+  if (arch === 'pocket'){
+    // 지표 아래 타원형 방 + 지표로 이어진 통로
+    const ys = snap(R(300, 390)), cx = R(110, 250), rx = R(78, 108), ry = R(52, 68), cy = ys + R(125, 170);
+    const floorY = snap(cy + ry * 0.55), sw = R(50, 78), sx = clamp(cx + R(-rx * 0.35, rx * 0.35), sw / 2 + 20, W - sw / 2 - 20);
+    ops.push({ op: 'add', t: 'rect', x0: -10, y0: ys, x1: W + 10, y1: H + 10 });
+    ops.push({ op: 'cut', t: 'ellipse', cx, cy, rx, ry });
+    ops.push({ op: 'cut', t: 'rect', x0: sx - sw / 2, y0: ys - 10, x1: sx + sw / 2, y1: cy });
+    ops.push({ op: 'add', t: 'rect', x0: -10, y0: floorY, x1: W + 10, y1: H + 10 });
+    Object.assign(info, { ys, shaftX: sx, shaftW: sw, floorY, px: clamp(cx + R(-20, 20), cx - rx * 0.5, cx + rx * 0.5) });
+  } else if (arch === 'well'){
+    // 깊고 좁은 수직 우물, 바닥은 조금 넓음
+    const ys = snap(R(250, 340)), sw = R(70, 92), sx = R(sw / 2 + 50, W - sw / 2 - 50), floorY = snap(ys + R(170, 240));
+    ops.push({ op: 'add', t: 'rect', x0: -10, y0: ys, x1: W + 10, y1: H + 10 });
+    ops.push({ op: 'cut', t: 'rect', x0: sx - sw / 2, y0: ys - 10, x1: sx + sw / 2, y1: floorY });
+    ops.push({ op: 'cut', t: 'rect', x0: sx - sw / 2 - R(15, 30), y0: floorY - 90, x1: sx + sw / 2 + R(15, 30), y1: floorY });
+    Object.assign(info, { ys, shaftX: sx, shaftW: sw, floorY, px: sx });
+  } else {
+    // alcove: 높은 절벽 속 옆굴 + 바로 옆 깊은 구덩이(드론 기지가 구덩이 안에 있음)
+    const left = r() < 0.5, ys = snap(R(220, 300)), ay = snap(R(420, 500)), aw = R(95, 125), pw = R(72, 95), pitBot = snap(ay + R(60, 120));
+    const ax0 = left ? 0 : W - aw, ax1 = left ? aw : W;
+    const px0 = left ? aw : W - aw - pw, px1 = left ? aw + pw : W - aw;
+    ops.push({ op: 'add', t: 'rect', x0: -10, y0: ys, x1: W + 10, y1: H + 10 });
+    ops.push({ op: 'cut', t: 'rect', x0: ax0 - 10, y0: ay - 92, x1: ax1, y1: ay });
+    ops.push({ op: 'cut', t: 'rect', x0: px0, y0: ys - 10, x1: px1, y1: pitBot });
+    Object.assign(info, { ys, floorY: ay, left, mouthX: left ? aw : W - aw, mouthTop: ay - 92, pit: { x: (px0 + px1) / 2, y: pitBot - 26 }, px: left ? R(45, aw - 35) : W - R(45, aw - 35) });
+  }
+  return { ops, info };
+}
+
 // ---------- 절차적 맵 생성기 ----------
 function genLevel(lv, seed, themeIdx){
   const r = rng(seed), R = (a, b) => a + r() * (b - a), pick = a => a[Math.floor(r() * a.length)];
@@ -234,7 +289,8 @@ function genLevel(lv, seed, themeIdx){
   // 1) 모모가 앉는 지형: 레벨에 따라 하나씩 해금(8레벨부터는 새 지형을 소개)
   const archIntro = ARCH_UNLOCK.find(([, l]) => l === lv && l > 1);
   const unlocked = ARCH_UNLOCK.filter(([, l]) => l <= lv).map(([a]) => a);
-  let arch = lv === 1 ? 'plat' : archIntro ? archIntro[0] : pick(unlocked);
+  const carvedOk = unlocked.filter(a => CARVED.includes(a)), otherOk = unlocked.filter(a => !CARVED.includes(a));
+  let arch = lv === 1 ? 'plat' : archIntro ? archIntro[0] : (carvedOk.length && r() < 0.35 ? pick(carvedOk) : pick(otherOk));
   if (intro && (intro.k === 'crawl' || intro.k === 'bigdog')) arch = 'ground';
   L.archIntro = archIntro ? arch : null;
   let px, top, hw;
@@ -294,6 +350,11 @@ function genLevel(lv, seed, themeIdx){
     // 사슬 두 줄에 매달린 발판: 부딪히면 흔들림
     px = R(90, 270); const pw = R(95, 130), py0 = R(390, 500); top = py0 - 7; hw = pw / 2;
     L.D.push({ type: 'hang', x: px, y: py0, w: pw, h: 14, ay: Math.max(26, py0 - R(150, 260)) });
+  } else if (CARVED.includes(arch)){
+    const cv2 = buildCarve(arch, R, r);
+    L.carve = cv2.ops; L.carveInfo = cv2.info;
+    carveToRects(cv2.ops).forEach(o => S.push(o));
+    px = cv2.info.px; top = cv2.info.floorY; hw = 30;
   } else { // stairs: 벽 쪽이 가장 높은 계단
     const left = r() < 0.5, n = 3 + Math.floor(R(0, 2)), sw = R(60, 74), sh = R(38, 56);
     for (let i = 0; i < n; i++){
@@ -315,17 +376,19 @@ function genLevel(lv, seed, themeIdx){
     do { gx = R(30, W - gw - 30); t++; } while (Math.abs(gx + gw / 2 - px) < hw + 60 && t < 40);
     ground = [{ x: 0, w: gx }, { x: gx + gw, w: W - gx - gw }];
   }
+  if (L.carve) ground = [];
   L.ground = ground;
   ground.forEach(g => S.unshift({ x: g.x + g.w / 2, y: H - 20, w: g.w, h: 40, a: 0, kind: 'ground' }));
 
   // 2) 위협 고르기: 새로 등장한 요소는 반드시 포함
-  const pool = ['bee', 'rain', 'rock', 'wind', 'wasp', 'crawl', 'tank', 'bigdog'].filter(k => has(k) && ((k !== 'crawl' && k !== 'bigdog') || L.groundCat) && !(k === 'rain' && arch === 'cave'));
+  const pool = ['bee', 'rain', 'rock', 'wind', 'wasp', 'crawl', 'tank', 'bigdog'].filter(k => has(k) && ((k !== 'crawl' && k !== 'bigdog') || L.groundCat) && !(k === 'rain' && arch === 'cave') && !(k === 'wasp' && L.carve));
   // 위협 종류 수: 소개 레벨은 1종, 이후 레벨대에 따라 2~3종
   const kinds = [];
   if (intro && pool.includes(intro.k)) kinds.push(intro.k);
   const nT = (intro || archIntro || lv < 8) ? 1 : lv < 15 ? 2 : lv < 31 ? (r() < 0.5 ? 2 : 3) : lv < 46 ? 3 : (r() < 0.5 ? 3 : 4);
   const pickPool = archIntro ? pool.filter(k => k !== 'wind') : pool;
   for (let g = 0; kinds.length < Math.min(nT, pool.length) && g < 60; g++){ const k = pick(pickPool); if (!kinds.includes(k)) kinds.push(k); }
+  if (arch === 'alcove' && !kinds.includes('bee') && !kinds.includes('tank')){ const i = kinds.findIndex(k => k !== intro?.k); if (i >= 0 && kinds.length >= nT) kinds[i] = 'bee'; else kinds.push('bee'); }
   // 모모가 땅에 있으면 개가 자주 나옴(소개 레벨 제외)
   if (!intro && !archIntro && L.groundCat && lv >= 8 && !kinds.some(k => k === 'crawl' || k === 'bigdog') && r() < 0.6){
     const dog = has('bigdog') && r() < 0.5 ? 'bigdog' : 'crawl';
@@ -400,7 +463,9 @@ function genLevel(lv, seed, themeIdx){
   if (kinds.includes('bee')){
     const total = clamp(Math.round(u / 2), 4, Math.round(16 * capS)), nh = total > 18 ? 3 : total > 9 ? 2 : 1;
     for (let i = 0; i < nh; i++){
-      const p = place(170, yMin, yMax) || { x: px < W / 2 ? W - 40 : 40, y: yMin + 30 };
+      const pit = arch === 'alcove' && i === 0 ? L.carveInfo.pit : null;
+      const p = pit || place(170, yMin, yMax) || { x: px < W / 2 ? W - 40 : 40, y: yMin + 30 };
+      if (pit) used.push(pit);
       L.hives.push({ ...p, n: Math.round(total / nh), kind: 'bee' });
     }
   }
@@ -454,6 +519,11 @@ function genLevel(lv, seed, themeIdx){
   }
 
   // 3) 고정 핀 (도우미 요소)
+  if (L.carve && has('pin')){
+    const ci = L.carveInfo;
+    const cp = ci.arch === 'alcove' ? { x: ci.mouthX + (ci.left ? 14 : -14), y: ci.mouthTop + 16 } : { x: ci.shaftX + (r() < 0.5 ? -1 : 1) * (ci.shaftW / 2 + 14), y: ci.ys - 16 };
+    if (free(cp, 10)){ used.push(cp); L.pins.push(cp); }
+  }
   if (L.cave && has('pin')){
     const cp = { x: L.cave.mouth + (L.cave.left ? 16 : -16), y: L.cave.ceilY + 18 };
     if (free(cp, 12)){ used.push(cp); L.pins.push(cp); }
@@ -472,7 +542,7 @@ function genLevel(lv, seed, themeIdx){
   }
 
   // 4) 장애물 판자 (걸치거나 받칠 수 있는 지형)
-  let no = Math.min(3, Math.floor(lv / 2)) - (arch === 'valley' || arch === 'pillar' ? 1 : 0);
+  let no = L.carve ? 1 : Math.min(3, Math.floor(lv / 2)) - (arch === 'valley' || arch === 'pillar' ? 1 : 0);
   for (let i = 0; i < no; i++){
     for (let t = 0; t < 60; t++){
       const kr = r(), x = R(40, W - 40), y = R(140, GY - 70);
@@ -1271,6 +1341,7 @@ function drawWood(b){
 }
 function drawStatic(b){
   const th = TH(), k = b.label;
+  if (k === 'tile') return; // 파낸 지형은 배경에 미리 그림
   if (k === 'ground'){
     const v = b.vertices, x0 = Math.min(...v.map(p => p.x)), x1 = Math.max(...v.map(p => p.x));
     ctx.fillStyle = th.ground; ctx.fillRect(x0, GY, x1 - x0, 40);
@@ -1601,7 +1672,49 @@ function buildBackdrop(){
     g.fillStyle = 'rgba(120,200,230,.6)'; g.fillRect(tx + 6, GY - 66, 138, 10);
     for (let i = 0; i < 4; i++) cloud(R(0, W - 60), R(60, 300), R(0.8, 1.3), 0.35);
   }
+  if (L.carve) drawCarve(g, th);
   return c;
+}
+function drawCarve(g, th){
+  const lay = document.createElement('canvas'); lay.width = W * 2; lay.height = H * 2;
+  const q = lay.getContext('2d'); q.scale(2, 2);
+  const shape = o => { q.beginPath(); if (o.t === 'rect') q.rect(o.x0, o.y0, o.x1 - o.x0, o.y1 - o.y0); else q.ellipse(o.cx, o.cy, o.rx, o.ry, 0, 0, 7); };
+  for (const o of L.carve){ q.globalCompositeOperation = o.op === 'add' ? 'source-over' : 'destination-out'; q.fillStyle = th.ground; shape(o); q.fill(); }
+  // 흙 무늬(벽돌)와 굴 안쪽 테두리는 흙 위에만
+  q.globalCompositeOperation = 'source-atop';
+  q.strokeStyle = 'rgba(0,0,0,.10)'; q.lineWidth = 1.2;
+  for (let y = 0; y < H; y += 14){ q.beginPath(); q.moveTo(0, y); q.lineTo(W, y); q.stroke(); for (let x = (y / 14) % 2 * 14; x < W; x += 28){ q.beginPath(); q.moveTo(x, y); q.lineTo(x, y + 14); q.stroke(); } }
+  q.strokeStyle = 'rgba(60,30,15,.55)'; q.lineWidth = 6;
+  for (const o of L.carve) if (o.op === 'cut'){ shape(o); q.stroke(); }
+  // 파낸 뒤 다시 채운 바닥(평평한 굴 바닥)은 테두리 없이 다시 칠함
+  q.globalCompositeOperation = 'source-over';
+  let afterCut = false;
+  for (const o of L.carve){
+    if (o.op === 'cut'){ afterCut = true; continue; }
+    if (!afterCut) continue;
+    q.save(); shape(o); q.clip(); q.fillStyle = th.ground; q.fillRect(0, 0, W, H);
+    q.strokeStyle = 'rgba(0,0,0,.10)'; q.lineWidth = 1.2;
+    for (let y = 0; y < H; y += 14){ q.beginPath(); q.moveTo(0, y); q.lineTo(W, y); q.stroke(); for (let x = (y / 14) % 2 * 14; x < W; x += 28){ q.beginPath(); q.moveTo(x, y); q.lineTo(x, y + 14); q.stroke(); } }
+    q.strokeStyle = 'rgba(60,30,15,.55)'; q.lineWidth = 3; q.beginPath(); q.moveTo(o.x0, o.y0); q.lineTo(o.x1, o.y0); q.stroke();
+    q.restore();
+  }
+  // 윗면 잔디
+  q.globalCompositeOperation = 'source-over';
+  const cols = Math.ceil(W / TILE);
+  q.fillStyle = th.grass;
+  for (let x = 0; x < W; x += 2){
+    for (let y = 2; y < H; y += 2){
+      if (solidAt(L.carve, x, y) && !solidAt(L.carve, x, y - 3)){ if (y <= L.carveInfo.ys + 4) q.fillRect(x, y, 2.2, 6); break; }
+    }
+  }
+  // 땅속 굴 안쪽(지표 아래)은 어두운 흙벽으로 — 배경 풍경이 비치지 않게
+  g.save(); g.beginPath(); g.rect(0, L.carveInfo.ys + 2, W, H); g.clip();
+  g.fillStyle = th.ground; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(20,10,5,.55)'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(0,0,0,.12)'; g.lineWidth = 1;
+  for (let y = 0; y < H; y += 14){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  g.restore();
+  g.drawImage(lay, 0, 0, W, H);
 }
 function render(){
   const th = TH();
