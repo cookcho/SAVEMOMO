@@ -135,10 +135,12 @@ const MECH = [
   { k: 'rock',  lv: 4, name: '물풍선', icon: '🎈', desc: '날아온 물풍선은 부딪히면 터지며 물이 튀어요' },
   { k: 'wind',  lv: 5, name: '바람', icon: '💨', desc: '띠 안의 모든 것을 옆으로 밀어요' },
   { k: 'wasp',  lv: 6, name: '물총 오리', icon: '🦆', desc: '집사의 비밀 병기! 점선이 보이면 곧 물줄기를 쏴요' },
-  { k: 'crawl', lv: 7, name: '불독', icon: '🐶', desc: '목욕 좋아하는 옆집 불독이 같이 놀자고 달려와요' },
+  { k: 'crawl', lv: 7, name: '강아지', icon: '🐶', desc: '옆집 강아지들이 놀자고 달려와요. 깡충 뛰어 낮은 벽은 넘어요' },
+  { k: 'bigdog', lv: 33, name: '큰 개', icon: '🐕', desc: '덩치 큰 옆집 개! 느리지만 선을 통째로 밀어내요' },
+  { k: 'tank',  lv: 27, name: '헤비 드론', icon: '🛡️', desc: '집사의 대형 드론! 막히면 선을 힘으로 밀어붙여요' },
 ];
 const ARCH_UNLOCK = [['plat', 1], ['ground', 2], ['cliff', 8], ['stairs', 9], ['shelf', 11], ['valley', 13], ['pillar', 15], ['cave', 17], ['bowl', 19], ['hang', 21], ['seesaw', 23]];
-const ARCH_W = { plat: 1, ground: 0.95, cliff: 1, stairs: 1.0, shelf: 1, valley: 0.9, pillar: 1.12, cave: 0.65, bowl: 1.1, hang: 1.2, seesaw: 1.25 };
+const ARCH_W = { plat: 1, ground: 0.95, cliff: 1, stairs: 1.3, shelf: 1, valley: 0.9, pillar: 1.12, cave: 0.65, bowl: 1.1, hang: 1.2, seesaw: 1.25 };
 const ARCH_DESC = { cliff: '모모가 절벽 끝이나 절벽 아래에 있어요', stairs: '한쪽은 벽, 한쪽은 트여 있어요', shelf: '벽에 붙은 선반이에요', valley: '양쪽 벽을 기둥 삼아 보세요', pillar: '좁은 기둥 꼭대기예요', cave: '입구가 한쪽뿐인 동굴! 입구 위 핀을 써 보세요', bowl: '기울어진 판자 사이에 쏙 들어가 있어요', hang: '사슬에 매달려 부딪히면 흔들려요', seesaw: '선의 무게로 기울어요. 균형을 잡아요' };
 const ARCH_NAME = { plat: '공중 받침대', ground: '언덕 들판', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기', cliff: '절벽', cave: '동굴', bowl: 'V자 그릇', seesaw: '시소', hang: '매달린 발판', stairs: '계단' };
 // 10레벨마다 모모가 도망치는 장소가 바뀜 (70레벨 이후 2회차로 반복)
@@ -198,7 +200,7 @@ function genLevel(lv, seed, themeIdx){
   const archIntro = ARCH_UNLOCK.find(([, l]) => l === lv && l > 1);
   const unlocked = ARCH_UNLOCK.filter(([, l]) => l <= lv).map(([a]) => a);
   let arch = lv === 1 ? 'plat' : archIntro ? archIntro[0] : pick(unlocked);
-  if (intro && intro.k === 'crawl') arch = 'ground';
+  if (intro && (intro.k === 'crawl' || intro.k === 'bigdog')) arch = 'ground';
   L.archIntro = archIntro ? arch : null;
   let px, top, hw;
   if (arch === 'plat'){
@@ -282,13 +284,18 @@ function genLevel(lv, seed, themeIdx){
   ground.forEach(g => S.unshift({ x: g.x + g.w / 2, y: H - 20, w: g.w, h: 40, a: 0, kind: 'ground' }));
 
   // 2) 위협 고르기: 새로 등장한 요소는 반드시 포함
-  const pool = ['bee', 'rain', 'rock', 'wind', 'wasp', 'crawl'].filter(k => has(k) && (k !== 'crawl' || L.groundCat) && !(k === 'rain' && arch === 'cave'));
+  const pool = ['bee', 'rain', 'rock', 'wind', 'wasp', 'crawl', 'tank', 'bigdog'].filter(k => has(k) && ((k !== 'crawl' && k !== 'bigdog') || L.groundCat) && !(k === 'rain' && arch === 'cave'));
   // 위협 종류 수: 소개 레벨은 1종, 이후 레벨대에 따라 2~3종
   const kinds = [];
   if (intro && pool.includes(intro.k)) kinds.push(intro.k);
   const nT = (intro || archIntro || lv < 8) ? 1 : lv < 15 ? 2 : lv < 31 ? (r() < 0.5 ? 2 : 3) : lv < 46 ? 3 : (r() < 0.5 ? 3 : 4);
   const pickPool = archIntro ? pool.filter(k => k !== 'wind') : pool;
   for (let g = 0; kinds.length < Math.min(nT, pool.length) && g < 60; g++){ const k = pick(pickPool); if (!kinds.includes(k)) kinds.push(k); }
+  // 모모가 땅에 있으면 개가 자주 나옴(소개 레벨 제외)
+  if (!intro && !archIntro && L.groundCat && lv >= 8 && !kinds.some(k => k === 'crawl' || k === 'bigdog') && r() < 0.6){
+    const dog = has('bigdog') && r() < 0.5 ? 'bigdog' : 'crawl';
+    if (kinds.length >= nT) kinds[kinds.length - 1] = dog; else kinds.push(dog);
+  }
   if (!kinds.some(k => k !== 'wind')) kinds.push(pool.includes('bee') ? 'bee' : pick(pool.filter(k => k !== 'wind')));
   L.kinds = kinds;
   // 난이도 예산: 레벨에 비례해 완만히 증가. 새 요소 소개 레벨은 20% 낮춤. 어려운 지형일수록 위협 예산 감소
@@ -304,7 +311,8 @@ function genLevel(lv, seed, themeIdx){
   L.mods = mods; L.modIntro = modIntro;
   const capS = lv <= 30 ? 1 : Math.min(2.2, 1 + (lv - 30) / 35); // 30레벨 이후 위협 상한이 점점 커짐
   L.capS = capS;
-  let B = 10 + 3.0 * (lv - 1);
+  // 30레벨까지 레벨당 +3, 이후 +1.5 (상한이 커지는 속도와 맞춤)
+  let B = 10 + 3.0 * (Math.min(lv, 30) - 1) + 1.5 * Math.max(0, lv - 30);
   if ((intro || archIntro || modIntro) && lv > 1) B *= 0.8;
   B *= 1 - 0.08 * mods.length;
   B /= ARCH_W[arch];
@@ -324,14 +332,20 @@ function genLevel(lv, seed, themeIdx){
     return null;
   };
 
-  if (kinds.includes('crawl')){
-    const n = clamp(Math.round(u / 2.5), 3, Math.round(8 * capS));
-    // 불독은 땅 위로 모모까지 막힘없이 달려올 수 있는 쪽에서만 나옴
+  if (kinds.includes('crawl') || kinds.includes('bigdog')){
+    const n = kinds.includes('crawl') ? clamp(Math.round(u / 2.5), 3, Math.round(8 * capS)) : 0;
+    const nb = kinds.includes('bigdog') ? clamp(Math.round(u / 9), 1, Math.round(2 * capS)) : 0;
+    // 개는 땅 위로 모모까지 막힘없이 달려올 수 있는 쪽에서만 나옴
     const clearSide = sd => { const x0 = sd < 0 ? 10 : W - 10; for (let x = x0; Math.abs(x - px) > 30; x += (px - x0) > 0 ? 6 : -6){ if (S.some(o => o.kind !== 'ground' && o.kind !== 'hill' && inRect({ x, y: GY - 12 }, o, 4))) return false; } return true; };
     let sides = (r() < 0.5 ? [-1, 1] : [px < W / 2 ? 1 : -1]).filter(clearSide);
     if (!sides.length) sides = [-1, 1].filter(clearSide);
-    if (sides.length) for (let i = 0; i < n; i++) L.crawl.push({ side: sides[i % sides.length], t: 200 + i * 600 + R(0, 250) });
-    else { kinds.splice(kinds.indexOf('crawl'), 1); if (!kinds.includes('bee')) kinds.push('bee'); }
+    if (sides.length){
+      for (let i = 0; i < n; i++) L.crawl.push({ side: sides[i % sides.length], t: 200 + i * 600 + R(0, 250), big: false });
+      for (let i = 0; i < nb; i++) L.crawl.push({ side: sides[(i + 1) % sides.length], t: 400 + i * 1400 + R(0, 300), big: true });
+    } else {
+      ['crawl', 'bigdog'].forEach(k => { const i = kinds.indexOf(k); if (i >= 0) kinds.splice(i, 1); });
+      if (!kinds.includes('bee')) kinds.push('bee');
+    }
   }
   if (kinds.includes('rain')){
     const n = 1;
@@ -339,7 +353,7 @@ function genLevel(lv, seed, themeIdx){
       const w = R(90, 140);
       let cx = R(w / 2 + 10, W - w / 2 - 10);
       if (i === 0) cx = clamp(px + R(-w / 2 + 25, w / 2 - 25), w / 2 + 10, W - w / 2 - 10);
-      L.clouds.push({ x: cx, w, rate: clamp(900 / u, 45 / capS, 150) });
+      L.clouds.push({ x: cx, w, rate: clamp(900 / u, 60, 150) });
     }
   }
   if (kinds.includes('wind')){
@@ -354,6 +368,11 @@ function genLevel(lv, seed, themeIdx){
       const p = place(170, yMin, yMax) || { x: px < W / 2 ? W - 40 : 40, y: yMin + 30 };
       L.hives.push({ ...p, n: Math.round(total / nh), kind: 'bee' });
     }
+  }
+  if (kinds.includes('tank')){
+    // 헤비 드론: 수는 적지만 무거워서 선을 밀어냄
+    const p = place(170, yMin, yMax) || { x: px < W / 2 ? W - 45 : 45, y: yMin + 40 };
+    L.hives.push({ ...p, n: clamp(Math.round(u / 7), 1, Math.round(3 * capS)), kind: 'tank' });
   }
   // 두 점 사이에 지형이 없는지(오리의 사격 시야)
   const los = (a, b2) => {
@@ -404,8 +423,9 @@ function genLevel(lv, seed, themeIdx){
     const cp = { x: L.cave.mouth + (L.cave.left ? 16 : -16), y: L.cave.ceilY + 18 };
     if (free(cp, 12)){ used.push(cp); L.pins.push(cp); }
   }
-  if (has('pin') && ((intro && intro.k === 'pin') || r() < 0.6)){
-    const n = 1 + (r() < 0.35 ? 1 : 0);
+  // 31레벨부터는 어려운 대신 핀(풀이 도구)을 꼭 줌
+  if (has('pin') && ((intro && intro.k === 'pin') || lv >= 31 || r() < 0.6)){
+    const n = lv >= 45 ? 2 : 1 + (r() < 0.35 ? 1 : 0);
     for (let i = 0; i < n; i++){
       for (let t = 0; t < 80; t++){
         const ang = R(-Math.PI + 0.25, -0.25), d = R(70, 130);
@@ -686,7 +706,7 @@ function startSim(){
   if (tut) showToast('선은 물리 법칙대로 떨어져요 · 8초만 버티면 성공!');
   simRng = rng(L.seed + 7);
   spawnQ = [];
-  L.hives.filter(h => h.kind === 'bee').forEach(h => { for (let i = 0; i < h.n; i++) spawnQ.push({ t: 100 + i * 110 + simRng() * 50, h }); });
+  L.hives.filter(h => h.kind === 'bee' || h.kind === 'tank').forEach(h => { for (let i = 0; i < h.n; i++) spawnQ.push({ t: (h.kind === 'tank' ? 250 + i * 650 : 100 + i * 110) + simRng() * 50, h }); });
   ducks = L.hives.filter(h => h.kind === 'wasp').map((h, i) => ({ h, next: 600 + i * 400 + simRng() * 300, burst: 0, shotT: 0, dir: { x: 0, y: 1 }, size: h.burst, gap: h.gap }));
   popQ = new Set();
   L.crawl.forEach(c => spawnQ.push({ t: c.t, crawl: c }));
@@ -709,8 +729,9 @@ function handle(a, b, name){
   if (name === 'collisionStart' && a.parent === potBody && (b.isStatic || b.parent.label === 'line') && prevPotSpeed > 6 && simT - lastImpactT > 500){ lastImpactT = simT; ouch(30); }
   if (a.parent === potBody){
     if (b.label === 'bee') hurtBy(b, 12, true);
+    else if (b.label === 'tank') hurtBy(b, 22, true);
     else if (b.label === 'wasp') hurtBy(b, 18, true);
-    else if (b.label === 'crawl') hurtBy(b, 14, false);
+    else if (b.label === 'crawl') hurtBy(b, b.plugin.big ? 25 : 10, false);
     else if (WATER.includes(b.label)){ if (!toRemove.has(b)){ ouch(b.label === 'drop' ? 7 : b.label === 'jet' ? 6 : 4, true); toRemove.add(b); } }
     else if (b.label === 'balloon'){ if (!b.plugin.hit){ b.plugin.hit = true; ouch(18, true); } }
   }
@@ -831,10 +852,10 @@ function capV(body, max){
   if (m > max) Body.setVelocity(body, { x: v.x / m * max, y: v.y / m * max });
 }
 function clampSpeeds(){
-  for (const bug of bugs) capV(bug, L.speed * 1.8);
+  for (const bug of bugs) capV(bug, bug.label === 'tank' ? 1.6 + L.speed * 0.3 : L.speed * 1.8);
   for (const d of drops) capV(d, d.label === 'jet' ? 7.5 : 7);
   for (const k of rocks) capV(k, 9);
-  for (const c of crawlers){ const v = Body.getVelocity(c); if (Math.abs(v.x) > 1.7) Body.setVelocity(c, { x: Math.sign(v.x) * 1.7, y: v.y }); }
+  for (const c of crawlers){ const v = Body.getVelocity(c), cap = c.plugin.big ? 1.15 : 2.4; if (Math.abs(v.x) > cap) Body.setVelocity(c, { x: Math.sign(v.x) * cap, y: v.y }); }
   if (lineBody){
     capV(lineBody, 6);
     const av = Body.getAngularVelocity(lineBody);
@@ -854,14 +875,14 @@ function step(){
   while (spawnQ.length && spawnQ[0].t <= simT){
     const q = spawnQ.shift();
     if (q.crawl){
-      const x = q.crawl.side < 0 ? 8 : W - 8;
-      const c = Bodies.circle(x, GY - 13, 12, { label: 'crawl', density: 0.004, friction: 0.9, collisionFilter: { category: CAT_CRAWL, mask: CAT_DEF | CAT_CRAWL } });
-      c.plugin = { hitT: -9999, ph: simRng() * 6 };
+      const big = q.crawl.big, rr = big ? 21 : 10, x = q.crawl.side < 0 ? rr + 2 : W - rr - 2;
+      const c = Bodies.circle(x, GY - rr - 1, rr, { label: 'crawl', density: big ? 0.0045 : 0.0025, friction: 0.9, collisionFilter: { category: CAT_CRAWL, mask: CAT_DEF | CAT_CRAWL } });
+      c.plugin = { hitT: -9999, ph: simRng() * 6, big, nextHop: simT + 500 + simRng() * 600 };
       addBody(c, crawlers);
     } else {
-      const h = q.h, wasp = h.kind === 'wasp';
-      const bug = Bodies.circle(h.x + (simRng() - 0.5) * 10, h.y + 27, wasp ? 7 : 6, {
-        label: h.kind, frictionAir: 0.03, density: wasp ? 0.0009 : 0.0006, restitution: 0.4,
+      const h = q.h, tank = h.kind === 'tank';
+      const bug = Bodies.circle(h.x + (simRng() - 0.5) * 10, h.y + (tank ? 34 : 27), tank ? 11 : 6, {
+        label: h.kind, frictionAir: tank ? 0.05 : 0.03, density: tank ? 0.0035 : 0.0006, restitution: tank ? 0.1 : 0.4,
         collisionFilter: { category: CAT_BUG, mask: CAT_DEF | CAT_BUG }
       });
       bug.plugin = { hitT: -9999, ph: simRng() * 6, mode: 'aim', until: simT + 500 + simRng() * 600, dir: null };
@@ -907,6 +928,11 @@ function step(){
       if (!dk.burst) dk.next = simT + dk.gap + simRng() * 300;
     }
   }
+  for (const c of crawlers){
+    if (!c.plugin.big && simT > c.plugin.nextHop && Math.abs(c.velocity.y) < 0.4){
+      Body.setVelocity(c, { x: Body.getVelocity(c).x, y: -4.6 }); c.plugin.nextHop = simT + 900 + simRng() * 700;
+    }
+  }
   for (const d of drops) if (d.position.y > H + 20 || d.position.x < -20 || d.position.x > W + 20 || simT - d.plugin.born > (d.label === 'splash' ? 1500 : 4000)) toRemove.add(d);
   for (const k of rocks) if (k.position.y > H + 40 || k.position.x < -60 || k.position.x > W + 60) toRemove.add(k);
 
@@ -935,19 +961,22 @@ function step(){
           if (simT > P.until){ P.mode = 'aim'; P.until = simT + 700 + simRng() * 500; }
         }
       } else {
-        const acc = 0.0012 * L.speed / 2.2;
+        const tank = bug.label === 'tank';
         const fd = s === 0 ? (bug.plugin.fd = flowDir(bug)) : bug.plugin.fd;
+        // 헤비 드론은 길이 막히면(직진 모드) 추력을 올려 선을 밀어붙임
+        const acc = tank ? (fd ? 0.0010 : 0.0018) * (1 + L.capS * 0.15) : 0.0012 * L.speed / 2.2;
+        bug.plugin.ram = tank && !fd;
         let ux = dx / m, uy = dy / m;
         if (fd){ ux = fd.x; uy = fd.y; }
         // 좌우로 흔들리는 비행(일직선 방지)
-        const wob = Math.sin(simT / 200 + bug.plugin.ph) * 0.0004;
+        const wob = Math.sin(simT / 200 + bug.plugin.ph) * (tank ? 0.00012 : 0.0004);
         Body.applyForce(bug, bug.position, {
           x: bug.mass * (ux * acc - uy * wob + (simRng() - 0.5) * 0.001),
           y: bug.mass * (uy * acc + ux * wob + (simRng() - 0.5) * 0.001)
         });
       }
     }
-    for (const c of crawlers) Body.applyForce(c, c.position, { x: c.mass * 0.0009 * Math.sign(L.pot.x - c.position.x), y: 0 });
+    for (const c of crawlers) Body.applyForce(c, c.position, { x: c.mass * (c.plugin.big ? 0.0012 : 0.0011) * Math.sign(L.pot.x - c.position.x), y: 0 });
     for (const d of drops) if (d.label === 'jet') Body.applyForce(d, d.position, { x: 0, y: -d.mass * g.y * g.scale });
     for (const w of L.winds){
       const inB = y => y > w.y0 && y < w.y1;
@@ -1098,6 +1127,16 @@ function drawHive(h){
     ctx.strokeStyle = '#e8a400'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(-2, 6, 15, 10, 0, 0, 7); ctx.stroke();
     ctx.restore();
     return;
+  }
+  if (h.kind === 'tank'){
+    // 헤비 드론 격납고: 크고 노랑·검정 경고 줄무늬
+    ctx.save(); ctx.translate(h.x, h.y);
+    ctx.fillStyle = '#343a40'; rrect(-26, -12, 52, 26, 6); ctx.fill();
+    ctx.save(); rrect(-26, 6, 52, 8, 3); ctx.clip();
+    for (let x = -30; x < 30; x += 10){ ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.moveTo(x, 14); ctx.lineTo(x + 5, 14); ctx.lineTo(x + 13, 6); ctx.lineTo(x + 8, 6); ctx.fill(); }
+    ctx.restore();
+    ctx.fillStyle = Math.floor(t / 300) % 2 ? '#ff6b6b' : '#c92a2a'; ctx.beginPath(); ctx.arc(0, -3, 4, 0, 7); ctx.fill();
+    ctx.restore(); return;
   }
   // 드론 기지
   ctx.save(); ctx.translate(h.x, h.y);
@@ -1296,7 +1335,22 @@ function drawLine(){
   ctx.stroke();
 }
 // 드론: 몸체 + 회전하는 프로펠러 4개 + 깜빡이는 불빛
+function drawTank(bg){
+  const x = bg.position.x, y = bg.position.y, v = bg.velocity, tilt = clamp(v.x * 0.06, -0.3, 0.3);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
+  const spin = Math.abs(Math.sin(simT / 22 + bg.plugin.ph));
+  ctx.fillStyle = 'rgba(173,181,189,.8)';
+  for (const px of [-14, 14]){ ctx.beginPath(); ctx.ellipse(px, -9, 9 * (0.4 + spin * 0.6), 2, 0, 0, 7); ctx.fill(); }
+  ctx.strokeStyle = '#212529'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-14, -7); ctx.lineTo(14, -7); ctx.stroke();
+  ctx.fillStyle = '#c2410c'; rrect(-11, -8, 22, 17, 5); ctx.fill();
+  ctx.fillStyle = '#7c2d12'; ctx.fillRect(-11, 3, 22, 4);
+  ctx.fillStyle = '#212529'; rrect(-7, -4, 14, 6, 2); ctx.fill();
+  ctx.fillStyle = bg.plugin.ram ? '#ff2d2d' : '#ffd43b'; ctx.fillRect(-5, -3, 10, 3);
+  if (bg.plugin.ram){ ctx.strokeStyle = 'rgba(255,80,80,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 15 + Math.sin(simT / 60) * 2, 0, 7); ctx.stroke(); }
+  ctx.restore();
+}
 function drawBug(bg){
+  if (bg.label === 'tank') return drawTank(bg);
   const x = bg.position.x, y = bg.position.y, v = bg.velocity, tilt = clamp(v.x * 0.08, -0.4, 0.4);
   ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
   ctx.strokeStyle = '#495057'; ctx.lineWidth = 1.6;
@@ -1311,14 +1365,19 @@ function drawBug(bg){
 }
 // 불독
 function drawCrawler(c){
-  const x = c.position.x, y = c.position.y + 2, d = Math.sign(L.pot.x - x) || 1, step = Math.sin(simT / 70 + c.plugin.ph);
-  ctx.save(); ctx.translate(x, y); ctx.scale(d, 1);
-  ctx.fillStyle = '#8a6a4f';
+  const big = c.plugin.big, sc = c.circleRadius / 12;
+  const x = c.position.x, y = c.position.y + 2 * sc, d = Math.sign(L.pot.x - x) || 1, step = Math.sin(simT / (big ? 110 : 60) + c.plugin.ph);
+  const body = big ? '#8d8577' : '#e8c39e', dark = big ? '#4a433b' : '#b07a4a', belly = big ? '#d9d2c5' : '#fff3e2';
+  ctx.save(); ctx.translate(x, y); ctx.scale(d * sc, sc);
+  ctx.fillStyle = dark;
   for (const lx of [-9, -3, 5, 10]){ ctx.fillRect(lx - 2, 4, 4, 7 + (lx % 2 ? step : -step) * 1.5); }
-  ctx.fillStyle = '#c9a27a'; ctx.beginPath(); ctx.ellipse(-2, 0, 14, 9, 0, 0, 7); ctx.fill();
-  ctx.fillStyle = '#f1e3d3'; ctx.beginPath(); ctx.ellipse(0, 4, 9, 5, 0, 0, 7); ctx.fill();
-  ctx.fillStyle = '#c9a27a'; ctx.beginPath(); ctx.arc(12, -5, 9, 0, 7); ctx.fill();
-  ctx.fillStyle = '#5c4033'; ctx.beginPath(); ctx.ellipse(6, -12, 3.5, 2.5, -0.6, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(17, -12, 3.5, 2.5, 0.6, 0, 7); ctx.fill();
+  ctx.fillStyle = body; ctx.beginPath(); ctx.ellipse(-2, 0, 14, 9, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = belly; ctx.beginPath(); ctx.ellipse(0, 4, 9, 5, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = body; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-14, -2); ctx.lineTo(-19, -8 + step * 2); ctx.stroke();
+  ctx.fillStyle = body; ctx.beginPath(); ctx.arc(12, -5, 9, 0, 7); ctx.fill();
+  ctx.fillStyle = dark;
+  if (big){ ctx.beginPath(); ctx.ellipse(6, -12, 3.5, 2.5, -0.6, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(17, -12, 3.5, 2.5, 0.6, 0, 7); ctx.fill(); }
+  else { ctx.beginPath(); ctx.ellipse(6, -7, 3, 6, 0.3, 0, 7); ctx.fill(); }
   ctx.fillStyle = '#f1e3d3'; ctx.beginPath(); ctx.ellipse(15, -2, 6, 4.5, 0, 0, 7); ctx.fill();
   ctx.fillStyle = '#212529'; ctx.beginPath(); ctx.arc(18, -4, 1.8, 0, 7); ctx.fill();
   ctx.beginPath(); ctx.arc(11, -7, 1.4, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(16, -8, 1.4, 0, 7); ctx.fill();
@@ -1493,7 +1552,7 @@ function render(){
   L.hives.forEach(drawHive);
   if (phase === 'draw' && L.crawl.length){
     ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '700 11px sans-serif';
-    [...new Set(L.crawl.map(c => c.side))].forEach(sd => { ctx.textAlign = sd < 0 ? 'left' : 'right'; ctx.fillText(sd < 0 ? '🐶 →' : '← 🐶', sd < 0 ? 6 : W - 6, GY - 10); });
+    [...new Set(L.crawl.map(c => c.side))].forEach(sd => { ctx.textAlign = sd < 0 ? 'left' : 'right'; const ic = L.crawl.some(c => c.side === sd && c.big) ? '🐕' : '🐶'; ctx.fillText(sd < 0 ? ic + ' →' : '← ' + ic, sd < 0 ? 6 : W - 6, GY - 10); });
   }
   drawCat();
   drops.forEach(drawWater);
