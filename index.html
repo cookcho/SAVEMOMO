@@ -496,9 +496,22 @@ function addPoint(q){
   }
   return pushPt(q);
 }
-function beginAt(p){
+// 막힌 곳을 눌렀으면 가장 가까운 빈 지점(최대 34px)으로 시작점을 옮김
+function nearestFree(p, maxR = 34){
+  if (!blocked(p)) return p;
+  for (let r = 2; r <= maxR; r += 2){
+    const n = Math.max(8, Math.round(r * 1.2));
+    for (let i = 0; i < n; i++){
+      const a = i / n * Math.PI * 2, q = { x: p.x + Math.cos(a) * r, y: p.y + Math.sin(a) * r };
+      if (!blocked(q)) return q;
+    }
+  }
+  return null;
+}
+function beginAt(p0){
   if (phase !== 'draw' || drawing) return false;
-  if (blocked(p)){ showToast('물체 위에서는 시작할 수 없어요'); return false; }
+  const p = nearestFree(p0);
+  if (!p){ showToast('물체 위에서는 시작할 수 없어요'); return false; }
   drawing = true; pts = [p];
   L.pins.forEach(pin => {
     if (dist(pin, p) < 12){ pin.on = true; pts = [{ x: pin.x, y: pin.y }]; }
