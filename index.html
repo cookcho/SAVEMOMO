@@ -87,13 +87,13 @@ const CAT_DEF = 1, CAT_BUG = 2, CAT_DROP = 4, CAT_CRAWL = 8;
 
 // ---------- 요소 정의: 레벨이 오르면 하나씩 처음 등장 ----------
 const MECH = [
-  { k: 'bee',   lv: 1, name: '벌레 떼', icon: '🐝', desc: '모모를 향해 몰려와요' },
+  { k: 'bee',   lv: 1, name: '드론 떼', icon: '🛸', desc: '빠르게 날아와 모모를 들이받아요' },
   { k: 'pin',   lv: 2, name: '고정 핀', icon: '📌', desc: '선이 핀을 지나가면 그 자리에 고정돼요' },
-  { k: 'rain',  lv: 3, name: '산성비', icon: '☁️', desc: '구름 아래로 계속 떨어져요' },
-  { k: 'rock',  lv: 4, name: '낙석', icon: '🪨', desc: '무거운 돌이 떨어지거나 날아와 선을 밀어요' },
+  { k: 'rain',  lv: 3, name: '빗물', icon: '🌧️', desc: '비구름 아래로 계속 떨어져요' },
+  { k: 'rock',  lv: 4, name: '물풍선', icon: '🎈', desc: '날아와 부딪히면 터지며 물이 튀어요' },
   { k: 'wind',  lv: 5, name: '바람', icon: '💨', desc: '띠 안의 모든 것을 옆으로 밀어요' },
-  { k: 'wasp',  lv: 6, name: '말벌', icon: '🔥', desc: '노려보다가 빠르게 돌진해요' },
-  { k: 'crawl', lv: 7, name: '애벌레', icon: '🐛', desc: '땅을 기어와 모모를 물어요' },
+  { k: 'wasp',  lv: 6, name: '물총 오리', icon: '🦆', desc: '조준한 뒤 물줄기를 연달아 쏴요' },
+  { k: 'crawl', lv: 7, name: '불독', icon: '🐶', desc: '땅을 달려와 모모에게 덤벼요' },
 ];
 const ARCH_NAME = { plat: '공중 받침대', ground: '언덕 들판', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기', cliff: '절벽', cave: '동굴', bowl: 'V자 그릇', seesaw: '시소', hang: '매달린 발판', stairs: '계단' };
 const THEMES = [
@@ -261,8 +261,20 @@ function genLevel(lv, seed, themeIdx){
       L.hives.push({ ...p, n: Math.max(3, per), kind: 'bee' });
     }
   }
+  // 두 점 사이에 지형이 없는지(오리의 사격 시야)
+  const los = (a, b2) => {
+    const n = Math.ceil(dist(a, b2) / 5);
+    for (let i = 1; i < n; i++){
+      const q = { x: a.x + (b2.x - a.x) * i / n, y: a.y + (b2.y - a.y) * i / n };
+      if (dist(q, sp) < 34) break;
+      if (S.some(o => inRect(q, o, 6)) || dynRects.some(o => inRect(q, o, 2))) return false;
+    }
+    return true;
+  };
   if (kinds.includes('wasp')){
-    const p = place(190, yMin, yMax) || { x: px < W / 2 ? W - 40 : 40, y: yMin + 60 };
+    let p = null;
+    for (let t = 0; t < 40 && !p; t++){ const c = place(190, yMin, Math.min(sp.y + 40, 470)); if (c && los(c, sp)) p = c; else if (c) used.pop(); }
+    p = p || place(190, yMin, yMax) || { x: px < W / 2 ? W - 40 : 40, y: yMin + 60 };
     L.hives.push({ ...p, n: Math.max(2, Math.round(Math.min(6, 2 + lv / 3) * dens) + 1), kind: 'wasp' });
   }
   if (kinds.includes('rock')){
@@ -319,6 +331,9 @@ function genLevel(lv, seed, themeIdx){
       if (used.some(q => dist(q, o) < 70) || L.chutes.some(c => Math.abs(c.y - o.y) < 30 && c.type === 'side')) continue;
       if (S.some(s => dist(s, o) < 70 && s.kind !== 'ground')) continue;
       if (dynRects.some(d => inRect(o, d, 40)) || chainRects.some(d => inRect(o, d, 30))) continue;
+      // 오리의 사격 시야를 가리지 않게
+      S.push(o); const blocks = L.hives.some(h => h.kind === 'wasp' && !los(h, sp)); S.pop();
+      if (blocks) continue;
       S.push(o); break;
     }
   }
@@ -535,10 +550,13 @@ function startSim(){
   phase = 'sim'; simT = 0;
   simRng = rng(L.seed + 7);
   spawnQ = [];
-  L.hives.forEach(h => { for (let i = 0; i < h.n; i++) spawnQ.push({ t: 150 + i * (h.kind === 'wasp' ? 450 : 160) + simRng() * 80, h }); });
+  L.hives.filter(h => h.kind === 'bee').forEach(h => { for (let i = 0; i < h.n; i++) spawnQ.push({ t: 150 + i * 140 + simRng() * 60, h }); });
+  ducks = L.hives.filter(h => h.kind === 'wasp').map((h, i) => ({ h, next: 900 + i * 500 + simRng() * 400, burst: 0, shotT: 0, dir: { x: 0, y: 1 }, size: Math.min(8, 5 + Math.floor(L.lv / 6)) }));
+  popQ = new Set();
   L.crawl.forEach(c => spawnQ.push({ t: c.t, crawl: c }));
   spawnQ.sort((a, b) => a.t - b.t);
   chuteT = L.chutes.map(c => c.first);
+  pops = [];
   buildBaseGrid(); flow = null; flowStep = 0; prevPotSpeed = 0; lastHitT = -9999; lastImpactT = -9999;
 }
 
@@ -547,19 +565,22 @@ function onCollide(ev){
   if (phase !== 'sim') return;
   for (const pr of ev.pairs){ handle(pr.bodyA, pr.bodyB, ev.name); handle(pr.bodyB, pr.bodyA, ev.name); }
 }
-let prevPotSpeed = 0, lastHitT = -9999, lastImpactT = -9999;
-function ouch(dmg){ hp -= dmg; flashT = 280; lastHitT = simT; }
+let prevPotSpeed = 0, lastHitT = -9999, lastImpactT = -9999, lastWet = false, ducks = [], popQ = new Set();
+const WATER = ['drop', 'jet', 'splash'];
+function ouch(dmg, wet = false){ hp -= dmg; flashT = 280; lastHitT = simT; lastWet = wet; }
 function handle(a, b, name){
   // 높은 곳에서 떨어지거나 세게 부딪히면 다침
   if (name === 'collisionStart' && a.parent === potBody && (b.isStatic || b.parent.label === 'line') && prevPotSpeed > 6 && simT - lastImpactT > 500){ lastImpactT = simT; ouch(30); }
   if (a.parent === potBody){
     if (b.label === 'bee') hurtBy(b, 12, true);
     else if (b.label === 'wasp') hurtBy(b, 18, true);
-    else if (b.label === 'crawl') hurtBy(b, 10, false);
-    else if (b.label === 'drop'){ if (!toRemove.has(b)){ ouch(7); toRemove.add(b); } }
-    else if (b.label === 'rock'){ if (!b.plugin.hit){ b.plugin.hit = true; ouch(25); } }
+    else if (b.label === 'crawl') hurtBy(b, 14, false);
+    else if (WATER.includes(b.label)){ if (!toRemove.has(b)){ ouch(b.label === 'drop' ? 7 : b.label === 'jet' ? 6 : 4, true); toRemove.add(b); } }
+    else if (b.label === 'balloon'){ if (!b.plugin.hit){ b.plugin.hit = true; ouch(18, true); } }
   }
-  if (name === 'collisionStart' && a.label === 'drop' && b.parent !== potBody) toRemove.add(a);
+  if (name === 'collisionStart' && WATER.includes(a.label) && b.parent !== potBody) toRemove.add(a);
+  // 물풍선은 무엇에든 부딪히면 터짐
+  if (name === 'collisionStart' && a.label === 'balloon' && !WATER.includes(b.label) && b.label !== 'balloon') popQ.add(a);
 }
 function hurtBy(c, dmg, knock){
   if (simT - c.plugin.hitT < 600) return;
@@ -567,8 +588,7 @@ function hurtBy(c, dmg, knock){
   if (knock){
     const dx = c.position.x - sproutPart.position.x, dy = c.position.y - sproutPart.position.y, m = Math.hypot(dx, dy) || 1;
     Body.setVelocity(c, { x: dx / m * 3, y: dy / m * 3 });
-    if (c.plugin.mode === 'dash'){ c.plugin.mode = 'aim'; c.plugin.until = simT + 700; }
-  }
+  } else Body.setVelocity(c, { x: Math.sign(c.position.x - sproutPart.position.x) * 2.5, y: -2 }); // 불독은 물고 살짝 튕겨남
 }
 
 // ---------- 벌레 길찾기: 격자 거리장(flow field) ----------
@@ -675,10 +695,10 @@ function capV(body, max){
   if (m > max) Body.setVelocity(body, { x: v.x / m * max, y: v.y / m * max });
 }
 function clampSpeeds(){
-  for (const bug of bugs) capV(bug, bug.label === 'wasp' ? (bug.plugin.mode === 'dash' ? 6.5 : 2) : L.speed * 1.4);
-  for (const d of drops) capV(d, 7);
+  for (const bug of bugs) capV(bug, L.speed * 1.8);
+  for (const d of drops) capV(d, d.label === 'jet' ? 7.5 : 7);
   for (const k of rocks) capV(k, 9);
-  for (const c of crawlers){ const v = Body.getVelocity(c); if (Math.abs(v.x) > 1.4) Body.setVelocity(c, { x: Math.sign(v.x) * 1.4, y: v.y }); }
+  for (const c of crawlers){ const v = Body.getVelocity(c); if (Math.abs(v.x) > 1.7) Body.setVelocity(c, { x: Math.sign(v.x) * 1.7, y: v.y }); }
   if (lineBody){
     capV(lineBody, 6);
     const av = Body.getAngularVelocity(lineBody);
@@ -699,7 +719,7 @@ function step(){
     const q = spawnQ.shift();
     if (q.crawl){
       const x = q.crawl.side < 0 ? 8 : W - 8;
-      const c = Bodies.circle(x, GY - 9, 8, { label: 'crawl', density: 0.002, friction: 0.9, collisionFilter: { category: CAT_CRAWL, mask: CAT_DEF | CAT_CRAWL } });
+      const c = Bodies.circle(x, GY - 13, 12, { label: 'crawl', density: 0.004, friction: 0.9, collisionFilter: { category: CAT_CRAWL, mask: CAT_DEF | CAT_CRAWL } });
       c.plugin = { hitT: -9999, ph: simRng() * 6 };
       addBody(c, crawlers);
     } else {
@@ -727,13 +747,31 @@ function step(){
   L.chutes.forEach((c, i) => {
     if (simT >= chuteT[i]){
       chuteT[i] += c.interval;
-      const k = Bodies.circle(c.x, c.y, c.r, { label: 'rock', density: 0.004, friction: 0.4, restitution: 0.2 });
-      k.plugin = { hit: false };
+      const k = Bodies.circle(c.x, c.y, c.r, { label: 'balloon', density: 0.0018, friction: 0.3, restitution: 0 });
+      k.plugin = { hit: false, col: Math.floor(simRng() * 4) };
       Body.setVelocity(k, { x: c.vx, y: c.vy });
       addBody(k, rocks);
     }
   });
-  for (const d of drops) if (d.position.y > H + 20 || simT - d.plugin.born > 4000) toRemove.add(d);
+  for (const dk of ducks){
+    const h = dk.h, hd = sproutPart.position;
+    if (!dk.burst){
+      const dx = hd.x - h.x, dy = hd.y - h.y, m = Math.hypot(dx, dy) || 1;
+      dk.dir = { x: dx / m, y: dy / m }; // 조준 중에는 모모를 계속 따라감
+      if (simT >= dk.next){ dk.burst = dk.size; dk.shotT = simT; }
+    }
+    if (dk.burst && simT >= dk.shotT){
+      const j = Bodies.circle(h.x + dk.dir.x * 18, h.y + dk.dir.y * 18, 3.4, {
+        label: 'jet', frictionAir: 0, density: 0.0008, collisionFilter: { category: CAT_DROP, mask: CAT_DEF }
+      });
+      j.plugin = { born: simT };
+      Body.setVelocity(j, { x: dk.dir.x * 7, y: dk.dir.y * 7 });
+      addBody(j, drops);
+      dk.burst--; dk.shotT = simT + 55;
+      if (!dk.burst) dk.next = simT + 1400 + simRng() * 500;
+    }
+  }
+  for (const d of drops) if (d.position.y > H + 20 || d.position.x < -20 || d.position.x > W + 20 || simT - d.plugin.born > (d.label === 'splash' ? 1500 : 4000)) toRemove.add(d);
   for (const k of rocks) if (k.position.y > H + 40 || k.position.x < -60 || k.position.x > W + 60) toRemove.add(k);
 
   const g = engine.gravity, sp = sproutPart.position;
@@ -761,23 +799,24 @@ function step(){
           if (simT > P.until){ P.mode = 'aim'; P.until = simT + 700 + simRng() * 500; }
         }
       } else {
-        const acc = 0.0009 * L.speed / 2.2;
+        const acc = 0.0012 * L.speed / 2.2;
         const fd = s === 0 ? (bug.plugin.fd = flowDir(bug)) : bug.plugin.fd;
         let ux = dx / m, uy = dy / m;
         if (fd){ ux = fd.x; uy = fd.y; }
         // 좌우로 흔들리는 비행(일직선 방지)
-        const wob = Math.sin(simT / 260 + bug.plugin.ph) * 0.0006;
+        const wob = Math.sin(simT / 200 + bug.plugin.ph) * 0.0004;
         Body.applyForce(bug, bug.position, {
           x: bug.mass * (ux * acc - uy * wob + (simRng() - 0.5) * 0.001),
           y: bug.mass * (uy * acc + ux * wob + (simRng() - 0.5) * 0.001)
         });
       }
     }
-    for (const c of crawlers) Body.applyForce(c, c.position, { x: c.mass * 0.0007 * Math.sign(L.pot.x - c.position.x), y: 0 });
+    for (const c of crawlers) Body.applyForce(c, c.position, { x: c.mass * 0.0009 * Math.sign(L.pot.x - c.position.x), y: 0 });
+    for (const d of drops) if (d.label === 'jet') Body.applyForce(d, d.position, { x: 0, y: -d.mass * g.y * g.scale });
     for (const w of L.winds){
       const inB = y => y > w.y0 && y < w.y1;
       const push = (b, k) => { if (inB(b.position.y)) Body.applyForce(b, b.position, { x: b.mass * k * w.dir * w.str, y: 0 }); };
-      drops.forEach(d => push(d, 0.0007)); bugs.forEach(b => push(b, 0.0004)); rocks.forEach(k => push(k, 0.0002));
+      drops.forEach(d => { if (d.label !== 'jet') push(d, 0.0007); }); bugs.forEach(b => push(b, 0.0004)); rocks.forEach(k => push(k, 0.0002));
       if (lineBody){
         const parts = lineBody.parts.length > 1 ? lineBody.parts.slice(1) : [lineBody];
         for (const p of parts) if (inB(p.position.y)) Body.applyForce(lineBody, p.position, { x: p.mass * 0.0005 * w.dir * w.str, y: 0 });
@@ -785,6 +824,21 @@ function step(){
     }
     Engine.update(engine, STEP / SUB);
     clampSpeeds();
+  }
+  if (popQ.size){
+    popQ.forEach(bl => {
+      toRemove.add(bl);
+      for (let i = 0; i < 8; i++){
+        const ang = -Math.PI * (0.05 + 0.9 * i / 7) + (simRng() - 0.5) * 0.3, sp2 = 2.5 + simRng() * 2;
+        const sx = bl.position.x + Math.cos(ang) * (bl.circleRadius + 3), sy = bl.position.y + Math.sin(ang) * (bl.circleRadius + 3);
+        const d = Bodies.circle(sx, sy, 2.8, { label: 'splash', frictionAir: 0.01, density: 0.0008, collisionFilter: { category: CAT_DROP, mask: CAT_DEF } });
+        d.plugin = { born: simT };
+        Body.setVelocity(d, { x: Math.cos(ang) * sp2 + bl.velocity.x * 0.3, y: Math.sin(ang) * sp2 });
+        addBody(d, drops);
+      }
+      pops.push({ x: bl.position.x, y: bl.position.y, t: simT, col: bl.plugin.col });
+    });
+    popQ.clear();
   }
   if (toRemove.size){
     toRemove.forEach(b => Composite.remove(engine.world, b));
@@ -794,7 +848,7 @@ function step(){
   }
   if (flashT > 0) flashT -= STEP;
   hp = Math.max(0, hp);
-  if (hp <= 0) return finish(false, '모모가 다쳤어요');
+  if (hp <= 0) return finish(false, lastWet ? '모모가 흠뻑 젖었어요' : '모모가 다쳤어요');
   if (potBody.position.y > H + 60 || potBody.position.x < -60 || potBody.position.x > W + 60) return finish(false, '모모가 떨어졌어요');
   prevPotSpeed = Body.getSpeed(potBody);
   if (simT >= SIM_MS) return finish(true);
@@ -866,33 +920,62 @@ function drawWind(w){
   ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '800 11px sans-serif'; ctx.textAlign = w.dir > 0 ? 'left' : 'right';
   ctx.fillText(w.dir > 0 ? '💨 바람 →' : '← 바람 💨', w.dir > 0 ? 8 : W - 8, w.y0 + 14);
 }
+let pops = [];
+const BALLOON = ['#ff6b8b', '#4dabf7', '#ffd43b', '#69db7c'];
 function drawCloud(c){
-  ctx.fillStyle = '#5d6b61';
+  ctx.fillStyle = '#7d8896';
   const n = Math.max(3, Math.round(c.w / 30));
   for (let i = 0; i < n; i++){
     const x = c.x - c.w / 2 + 15 + i * (c.w - 30) / (n - 1);
     ctx.beginPath(); ctx.arc(x, 48 + (i % 2 ? -6 : 2), 18 + (i % 2) * 5, 0, 7); ctx.fill();
   }
-  ctx.fillStyle = '#9ef08b'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('산성비', c.x, 52);
+  ctx.fillStyle = '#d0ebff'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('비구름', c.x, 52);
 }
+function duckOf(h){ return ducks.find(d => d.h === h); }
 function drawHive(h){
-  const wasp = h.kind === 'wasp';
+  const t = phase === 'draw' ? performance.now() : simT;
+  if (h.kind === 'wasp'){
+    // 물총 오리
+    const dk = duckOf(h), hd = sproutPart.position;
+    const dir = dk ? dk.dir : (() => { const dx = hd.x - h.x, dy = hd.y - h.y, m = Math.hypot(dx, dy) || 1; return { x: dx / m, y: dy / m }; })();
+    const face = dir.x >= 0 ? 1 : -1, bob = Math.sin(t / 300) * 1.5;
+    if (dk && phase === 'sim' && !dk.burst && dk.next - simT < 650){
+      ctx.setLineDash([4, 5]); ctx.strokeStyle = 'rgba(77,171,247,.8)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(h.x + dir.x * 18, h.y + dir.y * 18); ctx.lineTo(h.x + dir.x * 90, h.y + dir.y * 90); ctx.stroke(); ctx.setLineDash([]);
+    }
+    ctx.save(); ctx.translate(h.x, h.y + bob);
+    ctx.save(); ctx.rotate(Math.atan2(dir.y, dir.x));
+    ctx.fillStyle = '#339af0'; rrect(2, -4, 18, 8, 3); ctx.fill(); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(4, 3, 5, 6);
+    ctx.restore();
+    ctx.scale(face, 1);
+    ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.ellipse(-2, 6, 15, 10, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-10, 2, 6, 4, -0.6, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(4, -6, 9, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ff922b'; ctx.beginPath(); ctx.ellipse(13, -4, 5, 2.8, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#212529'; ctx.beginPath(); ctx.arc(6, -8, 1.8, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#e8a400'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(-2, 6, 15, 10, 0, 0, 7); ctx.stroke();
+    ctx.restore();
+    return;
+  }
+  // 드론 기지
   ctx.save(); ctx.translate(h.x, h.y);
-  ctx.fillStyle = wasp ? '#d9622b' : '#6b4a8a'; ctx.beginPath(); ctx.ellipse(0, 0, 18, 20, 0, 0, 7); ctx.fill();
-  ctx.strokeStyle = wasp ? '#2a1a12' : '#4a3062'; ctx.lineWidth = 3;
-  for (let y = -10; y <= 10; y += 7){ ctx.beginPath(); ctx.moveTo(-15, y); ctx.lineTo(15, y); ctx.stroke(); }
-  ctx.fillStyle = '#1b1024'; ctx.beginPath(); ctx.ellipse(0, 10, 6, 4, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#495057'; rrect(-20, -8, 40, 18, 5); ctx.fill();
+  ctx.fillStyle = '#343a40'; ctx.fillRect(-14, 6, 28, 5);
+  ctx.strokeStyle = '#495057'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(12, -8); ctx.lineTo(16, -18); ctx.stroke();
+  ctx.fillStyle = Math.floor(t / 400) % 2 ? '#ff6b6b' : '#ffa8a8'; ctx.beginPath(); ctx.arc(16, -19, 2.5, 0, 7); ctx.fill();
+  ctx.fillStyle = '#74c0fc'; ctx.fillRect(-14, -3, 18, 5);
   ctx.restore();
 }
 function drawChute(c){
-  ctx.fillStyle = '#4b4f57';
-  if (c.type === 'top'){ ctx.fillRect(c.x - 17, 0, 34, 16); ctx.fillStyle = '#2b2e33'; ctx.fillRect(c.x - 13, 10, 26, 6); }
-  else { const x = c.x < 0 ? 0 : W - 22; ctx.fillRect(x, c.y - 17, 22, 34); ctx.fillStyle = '#2b2e33'; ctx.fillRect(c.x < 0 ? 16 : W - 22, c.y - 13, 6, 26); }
+  // 물풍선 발사대(파란 통)
+  ctx.fillStyle = '#4dabf7';
+  if (c.type === 'top'){ ctx.fillRect(c.x - 17, 0, 34, 16); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x - 13, 10, 26, 6); }
+  else { const x = c.x < 0 ? 0 : W - 22; ctx.fillRect(x, c.y - 17, 22, 34); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x < 0 ? 16 : W - 22, c.y - 13, 6, 26); }
   if (phase === 'draw'){
-    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center';
-    if (c.type === 'top') ctx.fillText('🪨 ↓', c.x, 30);
-    else ctx.fillText(c.x < 0 ? '🪨 →' : '← 🪨', c.x < 0 ? 40 : W - 40, c.y + 4);
+    ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center';
+    if (c.type === 'top') ctx.fillText('🎈 ↓', c.x, 30);
+    else ctx.fillText(c.x < 0 ? '🎈 →' : '← 🎈', c.x < 0 ? 40 : W - 40, c.y + 4);
   }
 }
 function rrect(x, y, w, h, r){
@@ -1009,7 +1092,7 @@ function catFace(){
   if (phase === 'end') return endInfo && endInfo.win ? 'heart' : 'angry';
   if (simT - lastHitT < 450) return 'angry';
   const hd = sproutPart.position;
-  const near = bugs.some(b => dist(b.position, hd) < 70) || rocks.some(k => dist(k.position, hd) < 80);
+  const near = bugs.some(b => dist(b.position, hd) < 70) || rocks.some(k => dist(k.position, hd) < 80) || crawlers.some(c => dist(c.position, hd) < 80) || drops.some(d => d.label === 'jet' && dist(d.position, hd) < 60);
   if (near) return 'surprised';
   if (hp < 40) return 'neutral';
   return null; // 기본 얼굴
@@ -1033,7 +1116,7 @@ function drawCat(){
     potBody.parts.slice(1).forEach(p => { poly(p.vertices); ctx.fill(); });
   }
   const hd = sproutPart.position;
-  if (flashT > 0){ ctx.fillStyle = `rgba(255,60,60,${flashT / 500})`; ctx.beginPath(); ctx.arc(hd.x, hd.y + 8, 30, 0, 7); ctx.fill(); }
+  if (flashT > 0){ ctx.fillStyle = lastWet ? `rgba(77,171,247,${flashT / 450})` : `rgba(255,60,60,${flashT / 500})`; ctx.beginPath(); ctx.arc(hd.x, hd.y + 8, 30, 0, 7); ctx.fill(); }
   if (phase === 'draw'){
     ctx.fillStyle = '#5a7bd8'; ctx.font = '800 14px sans-serif'; ctx.textAlign = 'left';
     const t = performance.now() / 600;
@@ -1062,34 +1145,62 @@ function drawLine(){
   for (let i = 1; i < P.length; i++) ctx.lineTo(P[i].x, P[i].y);
   ctx.stroke();
 }
+// 드론: 몸체 + 회전하는 프로펠러 4개 + 깜빡이는 불빛
 function drawBug(bg){
-  const x = bg.position.x, y = bg.position.y, f = Math.sin(simT / 25 + bg.plugin.ph), wasp = bg.label === 'wasp';
-  ctx.fillStyle = 'rgba(255,255,255,.8)';
-  ctx.beginPath(); ctx.ellipse(x - 5, y - 5, 5, 2.5 + f * 1.5, -0.6, 0, 7); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(x + 5, y - 5, 5, 2.5 - f * 1.5, 0.6, 0, 7); ctx.fill();
-  if (wasp){
-    if (bg.plugin.mode === 'dash'){ ctx.strokeStyle = 'rgba(255,120,40,.5)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - bg.plugin.dir.x * 18, y - bg.plugin.dir.y * 18); ctx.stroke(); }
-    ctx.fillStyle = '#f08a24'; ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill();
-    ctx.fillStyle = '#2a1a12'; ctx.fillRect(x - 6, y - 1.5, 12, 3);
-  } else {
-    ctx.fillStyle = '#3b2a4f'; ctx.beginPath(); ctx.arc(x, y, 6, 0, 7); ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1; ctx.stroke();
-  }
-  ctx.fillStyle = '#ff5a5a'; ctx.beginPath(); ctx.arc(x + 2, y - 1, 1.6, 0, 7); ctx.fill();
-}
-function drawCrawler(c){
-  const x = c.position.x, y = c.position.y, d = Math.sign(L.pot.x - x) || 1, wob = Math.sin(simT / 90 + c.plugin.ph) * 1.5;
-  ctx.fillStyle = '#7cc142';
-  for (let i = 2; i >= 0; i--){ ctx.beginPath(); ctx.arc(x - d * i * 7, y + (i % 2 ? wob : -wob) * 0.5, 8 - i, 0, 7); ctx.fill(); }
-  ctx.fillStyle = '#1b2a10'; ctx.beginPath(); ctx.arc(x + d * 3, y - 2, 1.8, 0, 7); ctx.fill();
-}
-function drawRock(k){
-  ctx.save(); ctx.translate(k.position.x, k.position.y); ctx.rotate(k.angle);
-  const r = k.circleRadius;
-  ctx.fillStyle = '#7a7268'; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
-  ctx.fillStyle = '#9a9186'; ctx.beginPath(); ctx.arc(-r * 0.3, -r * 0.3, r * 0.35, 0, 7); ctx.fill();
-  ctx.strokeStyle = '#4f4942'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
+  const x = bg.position.x, y = bg.position.y, v = bg.velocity, tilt = clamp(v.x * 0.08, -0.4, 0.4);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
+  ctx.strokeStyle = '#495057'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(-8, -3); ctx.lineTo(8, -3); ctx.stroke();
+  const spin = Math.abs(Math.sin(simT / 18 + bg.plugin.ph));
+  ctx.fillStyle = 'rgba(173,181,189,.75)';
+  for (const px of [-8, 8]){ ctx.beginPath(); ctx.ellipse(px, -4.5, 5 * (0.4 + spin * 0.6), 1.3, 0, 0, 7); ctx.fill(); }
+  ctx.fillStyle = '#343a40'; rrect(-5, -3, 10, 6, 2); ctx.fill();
+  ctx.fillStyle = Math.floor((simT + bg.plugin.ph * 100) / 250) % 2 ? '#ff6b6b' : '#ffe066';
+  ctx.beginPath(); ctx.arc(0, 0.5, 1.6, 0, 7); ctx.fill();
   ctx.restore();
+}
+// 불독
+function drawCrawler(c){
+  const x = c.position.x, y = c.position.y + 2, d = Math.sign(L.pot.x - x) || 1, step = Math.sin(simT / 70 + c.plugin.ph);
+  ctx.save(); ctx.translate(x, y); ctx.scale(d, 1);
+  ctx.fillStyle = '#8a6a4f';
+  for (const lx of [-9, -3, 5, 10]){ ctx.fillRect(lx - 2, 4, 4, 7 + (lx % 2 ? step : -step) * 1.5); }
+  ctx.fillStyle = '#c9a27a'; ctx.beginPath(); ctx.ellipse(-2, 0, 14, 9, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#f1e3d3'; ctx.beginPath(); ctx.ellipse(0, 4, 9, 5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#c9a27a'; ctx.beginPath(); ctx.arc(12, -5, 9, 0, 7); ctx.fill();
+  ctx.fillStyle = '#5c4033'; ctx.beginPath(); ctx.ellipse(6, -12, 3.5, 2.5, -0.6, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(17, -12, 3.5, 2.5, 0.6, 0, 7); ctx.fill();
+  ctx.fillStyle = '#f1e3d3'; ctx.beginPath(); ctx.ellipse(15, -2, 6, 4.5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#212529'; ctx.beginPath(); ctx.arc(18, -4, 1.8, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(11, -7, 1.4, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(16, -8, 1.4, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#212529'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(15, -0.5, 2.5, 0.2, Math.PI - 0.2); ctx.stroke();
+  ctx.restore();
+}
+// 물풍선
+function drawRock(k){
+  const r = k.circleRadius, col = BALLOON[k.plugin.col || 0];
+  ctx.save(); ctx.translate(k.position.x, k.position.y); ctx.rotate(clamp(k.velocity.x * 0.05, -0.3, 0.3));
+  ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(0, 0, r, r * 1.12, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.ellipse(-r * 0.35, -r * 0.4, r * 0.25, r * 0.4, -0.5, 0, 7); ctx.fill();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(-3, r * 1.12 + 3); ctx.lineTo(3, r * 1.12 + 3); ctx.lineTo(0, r * 1.12 - 1); ctx.fill();
+  ctx.restore();
+}
+function drawWater(d){
+  if (d.label === 'jet'){
+    const v = d.velocity, m = Math.hypot(v.x, v.y) || 1;
+    ctx.strokeStyle = 'rgba(77,171,247,.9)'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(d.position.x, d.position.y); ctx.lineTo(d.position.x - v.x / m * 9, d.position.y - v.y / m * 9); ctx.stroke();
+    return;
+  }
+  ctx.fillStyle = d.label === 'splash' ? '#a5d8ff' : '#4dabf7';
+  ctx.beginPath(); ctx.ellipse(d.position.x, d.position.y, d.circleRadius * 0.85, d.circleRadius * 1.2, 0, 0, 7); ctx.fill();
+}
+function drawPops(){
+  pops = pops.filter(p => simT - p.t < 300);
+  for (const p of pops){
+    const k = (simT - p.t) / 300;
+    ctx.strokeStyle = `rgba(165,216,255,${1 - k})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 8 + k * 22, 0, 7); ctx.stroke();
+  }
 }
 function render(){
   const th = TH();
@@ -1107,12 +1218,12 @@ function render(){
   L.hives.forEach(drawHive);
   if (phase === 'draw' && L.crawl.length){
     ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '700 11px sans-serif';
-    [...new Set(L.crawl.map(c => c.side))].forEach(sd => { ctx.textAlign = sd < 0 ? 'left' : 'right'; ctx.fillText(sd < 0 ? '🐛 →' : '← 🐛', sd < 0 ? 6 : W - 6, GY - 10); });
+    [...new Set(L.crawl.map(c => c.side))].forEach(sd => { ctx.textAlign = sd < 0 ? 'left' : 'right'; ctx.fillText(sd < 0 ? '🐶 →' : '← 🐶', sd < 0 ? 6 : W - 6, GY - 10); });
   }
   drawCat();
-  ctx.fillStyle = '#7dff6a';
-  drops.forEach(d => { ctx.beginPath(); ctx.arc(d.position.x, d.position.y, 3.5, 0, 7); ctx.fill(); });
+  drops.forEach(drawWater);
   rocks.forEach(drawRock);
+  drawPops();
   crawlers.forEach(drawCrawler);
   drawLine();
   L.pins.forEach(drawPin);
