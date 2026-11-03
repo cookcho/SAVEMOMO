@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>새싹지기 프로토타입</title>
+<title>SAVE MOMO 프로토타입</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <style>
   html,body{margin:0;height:100%;background:#16221b;color:#fff;font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
   #app{height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:520px;margin:0 auto}
   header{padding:10px 12px 4px}
   .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
-  .title{font-weight:800;font-size:17px;white-space:nowrap;display:flex;align-items:center;gap:4px}
+  .title{font-weight:800;font-size:15px;white-space:nowrap;display:flex;align-items:center;gap:4px}
   .title small{font-weight:700;color:#9fd7a8;font-size:14px;min-width:44px;text-align:center}
   .nav{border:0;background:#22332a;color:#cfe;border-radius:8px;width:26px;height:26px;font-size:12px;cursor:pointer;padding:0}
   .tabs{display:flex;background:#0d1611;border-radius:10px;padding:3px}
-  .tabs button{border:0;background:transparent;color:#a9b8ae;font-weight:700;font-size:12px;padding:6px 10px;border-radius:8px;cursor:pointer}
+  .tabs button{border:0;background:transparent;color:#a9b8ae;font-weight:700;font-size:12px;padding:6px 8px;white-space:nowrap;border-radius:8px;cursor:pointer}
   .tabs button.on{background:#2f6b43;color:#fff}
   .ink{position:relative;height:18px;background:#0d1611;border-radius:9px;margin-top:8px;overflow:hidden}
   .inkfill{position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(90deg,#2563eb,#60a5fa)}
@@ -48,7 +48,7 @@
 <div id="app">
   <header>
     <div class="row">
-      <div class="title">🌱 새싹지기 <button class="nav" id="prevLv">◀</button><small id="lvl">Lv.1</small><button class="nav" id="nextLv">▶</button></div>
+      <div class="title">🐱 SAVE MOMO <button class="nav" id="prevLv">◀</button><small id="lvl">Lv.1</small><button class="nav" id="nextLv">▶</button></div>
       <div class="tabs"><button id="tabLevel" class="on">레벨</button><button id="tabDaily">오늘의 챌린지</button></div>
     </div>
     <div class="ink"><div class="inkfill" id="inkFill"></div><span id="inkTxt">잉크 100%</span></div>
@@ -63,7 +63,7 @@
         <h2 id="mTitle">성공!</h2>
         <div class="stars" id="mStars"></div>
         <div class="stat">잉크 사용 <b id="mInk"></b></div>
-        <div class="stat">새싹 체력 <b id="mHp"></b></div>
+        <div class="stat">모모 체력 <b id="mHp"></b></div>
         <div class="stat">점수 <b id="mScore"></b> <span id="mBest"></span></div>
         <div class="btns">
           <button class="primary" id="mNext">다음 레벨</button>
@@ -87,13 +87,13 @@ const CAT_DEF = 1, CAT_BUG = 2, CAT_DROP = 4, CAT_CRAWL = 8;
 
 // ---------- 요소 정의: 레벨이 오르면 하나씩 처음 등장 ----------
 const MECH = [
-  { k: 'bee',   lv: 1, name: '벌레 떼', icon: '🐝', desc: '새싹을 향해 몰려와요' },
+  { k: 'bee',   lv: 1, name: '벌레 떼', icon: '🐝', desc: '모모를 향해 몰려와요' },
   { k: 'pin',   lv: 2, name: '고정 핀', icon: '📌', desc: '선이 핀을 지나가면 그 자리에 고정돼요' },
   { k: 'rain',  lv: 3, name: '산성비', icon: '☁️', desc: '구름 아래로 계속 떨어져요' },
   { k: 'rock',  lv: 4, name: '낙석', icon: '🪨', desc: '무거운 돌이 떨어지거나 날아와 선을 밀어요' },
   { k: 'wind',  lv: 5, name: '바람', icon: '💨', desc: '띠 안의 모든 것을 옆으로 밀어요' },
   { k: 'wasp',  lv: 6, name: '말벌', icon: '🔥', desc: '노려보다가 빠르게 돌진해요' },
-  { k: 'crawl', lv: 7, name: '애벌레', icon: '🐛', desc: '땅을 기어와 화분을 갉아요' },
+  { k: 'crawl', lv: 7, name: '애벌레', icon: '🐛', desc: '땅을 기어와 모모를 물어요' },
 ];
 const ARCH_NAME = { plat: '공중 받침대', ground: '맨땅', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기' };
 const THEMES = [
@@ -130,7 +130,7 @@ function genLevel(lv, seed, themeIdx){
   const L = { lv, seed, theme: themeIdx, intro, S: [], pins: [], hives: [], clouds: [], chutes: [], winds: [], crawl: [], obsCount: 0 };
   const S = L.S;
 
-  // 1) 화분 지형(아키타입)
+  // 1) 모모가 앉는 지형(아키타입)
   let arch;
   if (lv === 1) arch = 'plat';
   else if (lv < 4) arch = pick(['plat', 'ground']);
@@ -258,7 +258,7 @@ function genLevel(lv, seed, themeIdx){
     for (let t = 0; t < 60; t++){
       const o = { x: R(40, W - 40), y: R(140, GY - 70), w: R(50, 110), h: 14, a: R(-0.6, 0.6), kind: 'obs' };
       if (dist(o, sp) < 100 || dist(o, L.pot) < 90) continue;
-      if (o.y < sp.y && Math.abs(o.x - sp.x) < o.w / 2 + 40) continue; // 새싹 위를 덮는 공짜 지붕 금지
+      if (o.y < sp.y && Math.abs(o.x - sp.x) < o.w / 2 + 40) continue; // 모모 위를 덮는 공짜 지붕 금지
       if (used.some(q => dist(q, o) < 70) || L.chutes.some(c => Math.abs(c.y - o.y) < 30 && c.type === 'side')) continue;
       if (S.some(s => dist(s, o) < 70 && s.kind !== 'ground')) continue;
       S.push(o); break;
@@ -290,12 +290,13 @@ function setup(){
   engine.positionIterations = 12; engine.velocityIterations = 8;
   statics = L.S.map(o => Bodies.rectangle(o.x, o.y, o.w, o.h, { isStatic: true, angle: o.a, friction: 0.8, label: o.kind }));
   const px = L.pot.x, py = L.pot.y;
-  const base = Bodies.rectangle(px, py, 46, 36, { label: 'potBase', density: 0.03, friction: 1 });
-  const rim = Bodies.rectangle(px, py - 20, 60, 9, { label: 'potRim', density: 0.005 });
-  sproutPart = Bodies.circle(px, py - 42, 16, { label: 'sprout', density: 0.0005 });
-  potBody = Body.create({ parts: [base, rim, sproutPart], friction: 0.9, label: 'pot' });
-  const off = b => ({ x: b.position.x - potBody.position.x, y: b.position.y - potBody.position.y });
-  potOff = { base: off(base), rim: off(rim), sprout: off(sproutPart) };
+  // 모모: 몸통(사각) + 머리(원). 발밑 = 받침 윗면(top = py + 18)
+  const top = py + 18;
+  const torso = Bodies.rectangle(px, top - 17, 42, 34, { label: 'catTorso', density: 0.01, friction: 1 });
+  sproutPart = Bodies.circle(px, top - 45, 22, { label: 'catHead', density: 0.004 });
+  potBody = Body.create({ parts: [torso, sproutPart], friction: 0.9, label: 'cat' });
+  Body.setInertia(potBody, Infinity); // 고양이는 넘어지지 않고 미끄러지기만 함
+  potOff = { foot: top - potBody.position.y };
   Composite.add(engine.world, [...statics, potBody]);
   Events.on(engine, 'collisionStart', onCollide);
   Events.on(engine, 'collisionActive', onCollide);
@@ -303,7 +304,7 @@ function setup(){
   phase = 'draw'; pts = []; inkUsed = 0; drawing = false; simT = 0; hp = 100;
   bugs = []; drops = []; rocks = []; crawlers = []; flashT = 0; lineBody = null; toRemove = new Set();
   cloudAcc = L.clouds.map(() => 0);
-  finger = null; fingerBlocked = false; shards = []; flow = null;
+  finger = null; fingerBlocked = false; flow = null;
 
   document.getElementById('lvl').textContent = curLabel();
   document.getElementById('prevLv').style.visibility = mode === 'level' ? 'visible' : 'hidden';
@@ -319,7 +320,7 @@ function setup(){
   const hint = document.getElementById('hint');
   hint.innerHTML = L.intro && mode === 'level'
     ? `<b>NEW ${L.intro.icon} ${L.intro.name}</b><br>${L.intro.desc}`
-    : '한 번에 선을 그어 새싹을 지키세요 · 10초';
+    : '한 번에 선을 그어 모모를 지키세요 · 10초';
   hint.classList.remove('hidden');
   const b = store.get(curKey(), null);
   document.getElementById('best').textContent = b ? `최고 ${b.score}점 · 잉크 ${b.pct}%` : '첫 도전';
@@ -462,7 +463,7 @@ function startSim(){
   L.crawl.forEach(c => spawnQ.push({ t: c.t, crawl: c }));
   spawnQ.sort((a, b) => a.t - b.t);
   chuteT = L.chutes.map(c => c.first);
-  buildBaseGrid(); flow = null; flowStep = 0; prevPotSpeed = 0; pendingBreak = false;
+  buildBaseGrid(); flow = null; flowStep = 0; prevPotSpeed = 0; lastHitT = -9999; lastImpactT = -9999;
 }
 
 // ---------- 충돌 ----------
@@ -470,21 +471,23 @@ function onCollide(ev){
   if (phase !== 'sim') return;
   for (const pr of ev.pairs){ handle(pr.bodyA, pr.bodyB, ev.name); handle(pr.bodyB, pr.bodyA, ev.name); }
 }
-let prevPotSpeed = 0, pendingBreak = false, shards = [], brokenAt = 0;
+let prevPotSpeed = 0, lastHitT = -9999, lastImpactT = -9999;
+function ouch(dmg){ hp -= dmg; flashT = 280; lastHitT = simT; }
 function handle(a, b, name){
-  if (name === 'collisionStart' && a.parent === potBody && (b.isStatic || b.parent.label === 'line' || b.label === 'rock') && prevPotSpeed > 5) pendingBreak = true;
-  if (a.label === 'sprout'){
+  // 높은 곳에서 떨어지거나 세게 부딪히면 다침
+  if (name === 'collisionStart' && a.parent === potBody && (b.isStatic || b.parent.label === 'line') && prevPotSpeed > 6 && simT - lastImpactT > 500){ lastImpactT = simT; ouch(30); }
+  if (a.parent === potBody){
     if (b.label === 'bee') hurtBy(b, 12, true);
     else if (b.label === 'wasp') hurtBy(b, 18, true);
-    else if (b.label === 'drop'){ if (!toRemove.has(b)){ hp -= 7; flashT = 250; toRemove.add(b); } }
-    else if (b.label === 'rock'){ if (!b.plugin.hit){ b.plugin.hit = true; hp -= 25; flashT = 300; } }
+    else if (b.label === 'crawl') hurtBy(b, 10, false);
+    else if (b.label === 'drop'){ if (!toRemove.has(b)){ ouch(7); toRemove.add(b); } }
+    else if (b.label === 'rock'){ if (!b.plugin.hit){ b.plugin.hit = true; ouch(25); } }
   }
-  if (b.label === 'crawl' && a.parent === potBody) hurtBy(b, 10, false);
-  if (name === 'collisionStart' && a.label === 'drop' && b.label !== 'sprout') toRemove.add(a);
+  if (name === 'collisionStart' && a.label === 'drop' && b.parent !== potBody) toRemove.add(a);
 }
 function hurtBy(c, dmg, knock){
   if (simT - c.plugin.hitT < 600) return;
-  c.plugin.hitT = simT; hp -= dmg; flashT = 250;
+  c.plugin.hitT = simT; ouch(dmg);
   if (knock){
     const dx = c.position.x - sproutPart.position.x, dy = c.position.y - sproutPart.position.y, m = Math.hypot(dx, dy) || 1;
     Body.setVelocity(c, { x: dx / m * 3, y: dy / m * 3 });
@@ -493,7 +496,7 @@ function hurtBy(c, dmg, knock){
 }
 
 // ---------- 벌레 길찾기: 격자 거리장(flow field) ----------
-// 새싹에서부터 BFS로 각 칸까지의 거리를 계산. 벌레는 거리가 줄어드는 이웃 칸으로 이동해 막힌 곳을 돌아감.
+// 모모에서부터 BFS로 각 칸까지의 거리를 계산. 벌레는 거리가 줄어드는 이웃 칸으로 이동해 막힌 곳을 돌아감.
 const CELL = 10, GW = Math.ceil(W / CELL), GH = Math.ceil(H / CELL);
 let baseGrid, flow = null, flowGrid = null, flowStep = 0;
 function buildBaseGrid(){
@@ -518,10 +521,6 @@ function linePoints(){
 }
 function computeFlow(){
   const g = baseGrid.slice();
-  // 화분 몸통·테두리
-  const base = potBody.parts[1], rim = potBody.parts[2], ca = Math.cos(potBody.angle), sa = Math.sin(potBody.angle);
-  markCircle(g, base.position.x, base.position.y, 26);
-  for (const k of [-22, 0, 22]) markCircle(g, rim.position.x + ca * k, rim.position.y + sa * k, 11);
   // 선: 선 반두께 5.5 + 벌레 반지름 6 만큼 부풀려 표시
   const P = linePoints();
   for (let i = 1; i < P.length; i++){
@@ -530,10 +529,10 @@ function computeFlow(){
   }
   const d = new Int16Array(GW * GH).fill(-1), q = new Int32Array(GW * GH);
   let qh = 0, qt = 0;
-  const sp = sproutPart.position;
+  const hd = potBody.parts[2].position, tr = potBody.parts[1].position;
   for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++){
     const cx = gx * CELL + CELL / 2, cy = gy * CELL + CELL / 2;
-    if (Math.hypot(cx - sp.x, cy - sp.y) < 22){ const i = gy * GW + gx; d[i] = 0; q[qt++] = i; }
+    if (Math.hypot(cx - hd.x, cy - hd.y) < 30 || Math.hypot(cx - tr.x, cy - tr.y) < 28){ const i = gy * GW + gx; g[i] = 0; d[i] = 0; q[qt++] = i; }
   }
   while (qh < qt){
     const i = q[qh++], gx = i % GW, gy = (i / GW) | 0;
@@ -561,13 +560,13 @@ function bestNeighbor(i){
   }
   return best;
 }
-// 격자에서 a→새싹 직선이 막혔는지
+// 격자에서 a→모모 직선이 막혔는지
 function clearShot(a, b){
   if (!flowGrid) return true;
   const n = Math.ceil(dist(a, b) / 5);
   for (let i = 1; i < n; i++){
     const x = a.x + (b.x - a.x) * i / n, y = a.y + (b.y - a.y) * i / n;
-    if (Math.hypot(x - b.x, y - b.y) < 24) break;
+    if (Math.hypot(x - b.x, y - b.y) < 30) break;
     const gx = Math.floor(x / CELL), gy = Math.floor(y / CELL);
     if (gx < 0 || gy < 0 || gx >= GW || gy >= GH) continue;
     if (flowGrid[gy * GW + gx]) return false;
@@ -666,7 +665,7 @@ function step(){
             // 직선이 막혀 있으면 길을 따라 돌아서 접근
             Body.applyForce(bug, bug.position, { x: bug.mass * fd.x * 0.0012, y: bug.mass * fd.y * 0.0012 });
           } else {
-            // 새싹에서 110px 떨어진 곳에서 맴돌며 노림
+            // 모모에서 110px 떨어진 곳에서 맴돌며 노림
             const tx = sp.x - dx / m * 110, ty = sp.y - dy / m * 110;
             const ex = tx - bug.position.x, ey = ty - bug.position.y, em = Math.hypot(ex, ey) || 1;
             Body.applyForce(bug, bug.position, { x: bug.mass * (ex / em * 0.0011 + (simRng() - 0.5) * 0.001), y: bug.mass * (ey / em * 0.0011 + (simRng() - 0.5) * 0.001) });
@@ -710,52 +709,10 @@ function step(){
   }
   if (flashT > 0) flashT -= STEP;
   hp = Math.max(0, hp);
-  if (hp <= 0) return finish(false, '새싹이 시들었어요');
-  if (Math.abs(potBody.angle) > 1.15 || pendingBreak) return breakPot();
-  if (potBody.position.y > H + 60 || potBody.position.x < -60 || potBody.position.x > W + 60) return finish(false, '화분이 떨어졌어요');
+  if (hp <= 0) return finish(false, '모모가 다쳤어요');
+  if (potBody.position.y > H + 60 || potBody.position.x < -60 || potBody.position.x > W + 60) return finish(false, '모모가 떨어졌어요');
   prevPotSpeed = Body.getSpeed(potBody);
   if (simT >= SIM_MS) return finish(true);
-}
-
-// ---------- 화분 깨짐 ----------
-function breakPot(){
-  const r = rng(Math.floor(simT) + 3), o = potBody.position, a = potBody.angle;
-  shards = [];
-  for (let i = 0; i < 9; i++){
-    const ang = r() * Math.PI * 2, sp = 1.5 + r() * 3.5;
-    shards.push({ kind: 'shard', x: o.x + (r() - 0.5) * 30, y: o.y + (r() - 0.5) * 24, vx: Math.cos(ang) * sp, vy: -2 - r() * 3, rot: r() * 6, vr: (r() - 0.5) * 0.4, s: 6 + r() * 7 });
-  }
-  for (let i = 0; i < 14; i++) shards.push({ kind: 'soil', x: o.x + (r() - 0.5) * 20, y: o.y - 18, vx: (r() - 0.5) * 4, vy: -1 - r() * 3, s: 2 + r() * 2 });
-  const sp = sproutPart.position;
-  shards.push({ kind: 'sprout', x: sp.x, y: sp.y, vx: (r() - 0.5) * 2, vy: -2, rot: a, vr: (r() - 0.5) * 0.2, s: 1 });
-  brokenAt = performance.now();
-  finish(false, '화분이 깨졌어요', 1100);
-}
-function updateShards(dt){
-  const k = dt / 16.67;
-  for (const p of shards){
-    if (p.rest) continue;
-    p.vy += 0.35 * k; p.x += p.vx * k; p.y += p.vy * k; if (p.rot !== undefined) p.rot += p.vr * k;
-    const floorY = statics.some(b => b.label !== 'ground' && Query.point([b], { x: p.x, y: p.y + 2 }).length) ? p.y : (p.y > GY - 3 ? GY - 3 : null);
-    if (floorY !== null && p.vy > 0){ p.y = floorY; p.vy *= -0.25; p.vx *= 0.6; if (Math.abs(p.vy) < 0.6){ p.vy = 0; p.vx = 0; p.rest = true; } }
-  }
-}
-function drawShards(){
-  for (const p of shards){
-    if (p.kind === 'soil'){ ctx.fillStyle = '#4a3324'; ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, 7); ctx.fill(); continue; }
-    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
-    if (p.kind === 'shard'){
-      ctx.fillStyle = '#c96a3f'; ctx.beginPath(); ctx.moveTo(-p.s, -p.s * 0.6); ctx.lineTo(p.s, -p.s * 0.3); ctx.lineTo(p.s * 0.2, p.s * 0.8); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = '#8e4423'; ctx.lineWidth = 1; ctx.stroke();
-    } else {
-      ctx.strokeStyle = '#8d7a3f'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(0, 14); ctx.lineTo(0, -2); ctx.stroke();
-      ctx.fillStyle = '#9a8a3f';
-      ctx.beginPath(); ctx.ellipse(-8, -2, 9, 4, 0.3, 0, 7); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(8, -4, 9, 4, -0.3, 0, 7); ctx.fill();
-    }
-    ctx.restore();
-  }
 }
 
 // ---------- 종료 ----------
@@ -764,7 +721,7 @@ function finish(win, reason, delay = 450){
   const pct = Math.round(inkUsed / L.ink * 100);
   const stars = pct <= 22 ? 3 : pct <= 40 ? 2 : 1;
   const score = win ? Math.round((1 - inkUsed / L.ink) * 700 + hp * 3) : 0;
-  endInfo = { win, pct, stars, score, hp: Math.round(hp), reason, brk: Math.round(prevPotSpeed*10)/10, ang: Math.round(potBody.angle*100)/100 };
+  endInfo = { win, pct, stars, score, hp: Math.round(hp), reason };
   let best = store.get(curKey(), null), newBest = false;
   if (win && (!best || score > best.score)){ best = { score, pct }; store.set(curKey(), best); newBest = true; }
   if (win && mode === 'level' && level + 1 > store.get('ss_level', 1)) store.set('ss_level', level + 1);
@@ -790,7 +747,7 @@ document.getElementById('prevLv').onclick = () => { if (level > 1){ level--; set
 document.getElementById('nextLv').onclick = () => { level++; setup(); };
 document.getElementById('mShare').onclick = async () => {
   const s = endInfo;
-  const txt = `🌱 새싹지기 ${curLabel()} ${'⭐'.repeat(s.stars)}\n잉크 ${s.pct}% · ${s.score}점`;
+  const txt = `🐱 SAVE MOMO ${curLabel()} ${'⭐'.repeat(s.stars)}\n잉크 ${s.pct}% · ${s.score}점`;
   const box = document.getElementById('shareBox');
   try { await navigator.clipboard.writeText(txt); document.getElementById('mShare').textContent = '복사됨 ✓'; }
   catch(e){ box.value = txt; box.classList.remove('hidden'); box.select(); }
@@ -809,11 +766,6 @@ document.getElementById('tabDaily').onclick = () => setMode('daily');
 // ---------- 렌더링 ----------
 function poly(vs){ ctx.beginPath(); ctx.moveTo(vs[0].x, vs[0].y); for (let i = 1; i < vs.length; i++) ctx.lineTo(vs[i].x, vs[i].y); ctx.closePath(); }
 function lerpColor(a, b, t){ return a.map((v, i) => Math.round(v + (b[i] - v) * t)); }
-function leafColor(){
-  const t = 1 - hp / 100;
-  const c = t < 0.5 ? lerpColor([76, 175, 80], [201, 176, 55], t * 2) : lerpColor([201, 176, 55], [141, 110, 63], (t - 0.5) * 2);
-  return `rgb(${c})`;
-}
 const now = () => phase === 'draw' ? performance.now() : simT;
 function drawWind(w){
   ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(0, w.y0, W, w.y1 - w.y0);
@@ -885,28 +837,49 @@ function drawPin(p){
     ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, 7); ctx.stroke(); ctx.setLineDash([]);
   }
 }
-function drawPot(){
-  ctx.save();
-  ctx.translate(potBody.position.x, potBody.position.y); ctx.rotate(potBody.angle);
-  const b = potOff.base, r = potOff.rim, s = potOff.sprout;
-  ctx.fillStyle = '#c96a3f';
-  ctx.beginPath(); ctx.moveTo(b.x - 25, b.y - 18); ctx.lineTo(b.x + 25, b.y - 18); ctx.lineTo(b.x + 19, b.y + 18); ctx.lineTo(b.x - 19, b.y + 18); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#b05530'; ctx.fillRect(r.x - 30, r.y - 5, 60, 10);
-  ctx.fillStyle = '#4a3324'; ctx.beginPath(); ctx.ellipse(r.x, r.y - 4, 26, 4, 0, 0, 7); ctx.fill();
-  const lc = leafColor();
-  ctx.strokeStyle = lc; ctx.lineWidth = 4; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(s.x, r.y - 5); ctx.quadraticCurveTo(s.x - 3, s.y + 6, s.x, s.y - 2); ctx.stroke();
-  ctx.fillStyle = lc;
-  const droop = (1 - hp / 100) * 0.7;
-  ctx.beginPath(); ctx.ellipse(s.x - 10, s.y - 4, 11, 5.5, -0.5 + droop, 0, 7); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(s.x + 10, s.y - 7, 11, 5.5, 0.5 - droop, 0, 7); ctx.fill();
-  if (flashT > 0){ ctx.fillStyle = `rgba(255,60,60,${flashT / 400})`; ctx.beginPath(); ctx.arc(s.x, s.y, 20, 0, 7); ctx.fill(); }
-  ctx.restore();
-  if (phase !== 'draw'){
-    const sp = sproutPart.position;
-    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(sp.x - 22, sp.y - 34, 44, 6);
+// ---------- 모모 스프라이트 ----------
+const IMG = {};
+['sit', 'body', 'happy', 'surprised', 'neutral', 'angry', 'sleepy', 'heart'].forEach(k => { const im = new Image(); im.src = `assets/momo_${k}.png`; IMG[k] = im; });
+const ok = im => im && im.complete && im.naturalWidth > 0;
+const CAT_H = 66; // 화면상 키(px)
+function catFace(){
+  if (phase === 'draw') return 'sleepy';
+  if (phase === 'end') return endInfo && endInfo.win ? 'heart' : 'angry';
+  if (simT - lastHitT < 450) return 'angry';
+  const hd = sproutPart.position;
+  const near = bugs.some(b => dist(b.position, hd) < 70) || rocks.some(k => dist(k.position, hd) < 80);
+  if (near) return 'surprised';
+  if (hp < 40) return 'neutral';
+  return null; // 기본 얼굴
+}
+function drawCat(){
+  const x = potBody.position.x, foot = potBody.position.y + potOff.foot;
+  const face = catFace();
+  if (face === 'heart' && ok(IMG.heart)){
+    const s = CAT_H / IMG.heart.naturalHeight;
+    ctx.drawImage(IMG.heart, x - IMG.heart.naturalWidth * s / 2, foot - CAT_H, IMG.heart.naturalWidth * s, CAT_H);
+  } else if (ok(IMG.sit)){
+    const s = CAT_H / IMG.sit.naturalHeight, w = IMG.sit.naturalWidth * s, x0 = x - w / 2, y0 = foot - CAT_H;
+    const fi = face && IMG[face];
+    if (fi && ok(fi) && ok(IMG.body)){
+      ctx.drawImage(IMG.body, x0, y0, w, CAT_H);
+      const fs = w * 0.98 / fi.naturalWidth;
+      ctx.drawImage(fi, x - fi.naturalWidth * fs / 2, y0, fi.naturalWidth * fs, fi.naturalHeight * fs);
+    } else ctx.drawImage(IMG.sit, x0, y0, w, CAT_H);
+  } else {
+    ctx.fillStyle = '#8a7f78';
+    potBody.parts.slice(1).forEach(p => { poly(p.vertices); ctx.fill(); });
+  }
+  const hd = sproutPart.position;
+  if (flashT > 0){ ctx.fillStyle = `rgba(255,60,60,${flashT / 500})`; ctx.beginPath(); ctx.arc(hd.x, hd.y + 8, 30, 0, 7); ctx.fill(); }
+  if (phase === 'draw'){
+    ctx.fillStyle = '#5a7bd8'; ctx.font = '800 14px sans-serif'; ctx.textAlign = 'left';
+    const t = performance.now() / 600;
+    ctx.fillText('z', hd.x + 22, hd.y - 22 - (t % 1) * 4); ctx.font = '800 11px sans-serif'; ctx.fillText('z', hd.x + 32, hd.y - 34 - (t % 1) * 4);
+  } else {
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(hd.x - 22, hd.y - 40, 44, 6);
     ctx.fillStyle = hp > 50 ? '#4caf50' : hp > 25 ? '#e0b23a' : '#e05a3a';
-    ctx.fillRect(sp.x - 22, sp.y - 34, 44 * hp / 100, 6);
+    ctx.fillRect(hd.x - 22, hd.y - 40, 44 * Math.max(0, hp) / 100, 6);
   }
 }
 function drawLine(){
@@ -972,7 +945,7 @@ function render(){
     ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '700 11px sans-serif';
     [...new Set(L.crawl.map(c => c.side))].forEach(sd => { ctx.textAlign = sd < 0 ? 'left' : 'right'; ctx.fillText(sd < 0 ? '🐛 →' : '← 🐛', sd < 0 ? 6 : W - 6, GY - 10); });
   }
-  if (shards.length) drawShards(); else drawPot();
+  drawCat();
   ctx.fillStyle = '#7dff6a';
   drops.forEach(d => { ctx.beginPath(); ctx.arc(d.position.x, d.position.y, 3.5, 0, 7); ctx.fill(); });
   rocks.forEach(drawRock);
@@ -1002,7 +975,6 @@ function loop(t){
     while (accum >= STEP && n < 5 && phase === 'sim'){ step(); accum -= STEP; n++; }
     if (n >= 5) accum = 0;
   } else accum = 0;
-  if (shards.length) updateShards(dt);
   render();
   requestAnimationFrame(loop);
 }
