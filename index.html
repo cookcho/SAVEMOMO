@@ -41,6 +41,26 @@
   .btns{display:flex;flex-direction:column;gap:8px;margin-top:14px}
   .primary{background:#2f6b43;color:#fff}
   .secondary{background:#e8eee9;color:#16221b}
+  #story{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#2a3b31,#16221b)}
+  .scard{width:min(340px,88vw);background:#fffaf2;color:#2b2118;border-radius:22px;padding:22px 20px 18px;text-align:center;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+  .sart{height:170px;display:flex;align-items:center;justify-content:center;gap:6px;position:relative}
+  .sart img.big{height:150px}
+  .sart .row{font-size:46px;display:flex;gap:10px}
+  .sart .row span{animation:bob 1.2s ease-in-out infinite}
+  .sart .row span:nth-child(2){animation-delay:.2s}.sart .row span:nth-child(3){animation-delay:.4s}.sart .row span:nth-child(4){animation-delay:.6s}
+  .sart .zz{position:absolute;top:18px;right:62px;font-weight:900;color:#5a7bd8;font-size:22px;animation:bob 1.6s ease-in-out infinite}
+  .sart .pen{font-size:54px;animation:draw 1.6s ease-in-out infinite}
+  .bob{animation:bob 2s ease-in-out infinite}.shake{animation:shake .5s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+  @keyframes draw{0%{transform:translate(-20px,10px) rotate(-10deg)}50%{transform:translate(20px,-6px) rotate(10deg)}100%{transform:translate(-20px,10px) rotate(-10deg)}}
+  .stext{font-size:16px;line-height:1.6;margin:10px 0 12px;word-break:keep-all;min-height:76px}
+  .stext b{color:#c2410c}
+  .sdots{display:flex;gap:6px;justify-content:center;margin-bottom:14px}
+  .sdots i{width:7px;height:7px;border-radius:4px;background:#e2d5c3}.sdots i.on{background:#c2410c;width:18px}
+  .sbtns{display:flex;gap:8px}.sbtns button{flex:1;border:0;border-radius:12px;font-weight:800;font-size:15px;padding:12px;cursor:pointer}
+  #btnStory{background:#2a3a30;color:#fff;margin-left:6px}
+  #mTip{font-size:13px;color:#8a4b12;background:#fff4e0;border-radius:10px;padding:8px;margin-top:8px;word-break:keep-all}
   #shareBox{width:100%;box-sizing:border-box;margin-top:8px;font-size:12px;border:1px solid #ccd;border-radius:8px;padding:6px;resize:none}
 </style>
 </head>
@@ -65,6 +85,7 @@
         <div class="stat">잉크 사용 <b id="mInk"></b></div>
         <div class="stat">모모 체력 <b id="mHp"></b></div>
         <div class="stat">점수 <b id="mScore"></b> <span id="mBest"></span></div>
+        <div id="mTip" class="hidden"></div>
         <div class="btns">
           <button class="primary" id="mNext">다음 레벨</button>
           <button class="secondary" id="mRetry">다시 도전</button>
@@ -75,9 +96,17 @@
     </div>
   </div>
   <footer>
-    <button id="btnRetry">↺ 다시</button>
+    <div><button id="btnRetry">↺ 다시</button><button id="btnStory">📖 이야기</button></div>
     <div id="best"></div>
   </footer>
+</div>
+<div id="story" class="hidden">
+  <div class="scard">
+    <div class="sart" id="sArt"></div>
+    <div class="stext" id="sText"></div>
+    <div class="sdots" id="sDots"></div>
+    <div class="sbtns"><button id="sSkip" class="secondary">건너뛰기</button><button id="sNext" class="primary">다음 ▶</button></div>
+  </div>
 </div>
 
 <script>
@@ -87,13 +116,13 @@ const CAT_DEF = 1, CAT_BUG = 2, CAT_DROP = 4, CAT_CRAWL = 8;
 
 // ---------- 요소 정의: 레벨이 오르면 하나씩 처음 등장 ----------
 const MECH = [
-  { k: 'bee',   lv: 1, name: '드론 떼', icon: '🛸', desc: '빠르게 날아와 모모를 들이받아요' },
+  { k: 'bee',   lv: 1, name: '드론 떼', icon: '🛸', desc: '집사가 띄운 물 드론! 틈이 있으면 돌아서 들어와요' },
   { k: 'pin',   lv: 2, name: '고정 핀', icon: '📌', desc: '선이 핀을 지나가면 그 자리에 고정돼요' },
-  { k: 'rain',  lv: 3, name: '빗물', icon: '🌧️', desc: '비구름 아래로 계속 떨어져요' },
-  { k: 'rock',  lv: 4, name: '물풍선', icon: '🎈', desc: '날아와 부딪히면 터지며 물이 튀어요' },
+  { k: 'rain',  lv: 3, name: '빗물', icon: '🌧️', desc: '비구름이 몰려왔어요. 위를 막아 주세요' },
+  { k: 'rock',  lv: 4, name: '물풍선', icon: '🎈', desc: '날아온 물풍선은 부딪히면 터지며 물이 튀어요' },
   { k: 'wind',  lv: 5, name: '바람', icon: '💨', desc: '띠 안의 모든 것을 옆으로 밀어요' },
-  { k: 'wasp',  lv: 6, name: '물총 오리', icon: '🦆', desc: '조준한 뒤 물줄기를 연달아 쏴요' },
-  { k: 'crawl', lv: 7, name: '불독', icon: '🐶', desc: '땅을 달려와 모모에게 덤벼요' },
+  { k: 'wasp',  lv: 6, name: '물총 오리', icon: '🦆', desc: '집사의 비밀 병기! 점선이 보이면 곧 물줄기를 쏴요' },
+  { k: 'crawl', lv: 7, name: '불독', icon: '🐶', desc: '목욕 좋아하는 옆집 불독이 같이 놀자고 달려와요' },
 ];
 const ARCH_NAME = { plat: '공중 받침대', ground: '언덕 들판', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기', cliff: '절벽', cave: '동굴', bowl: 'V자 그릇', seesaw: '시소', hang: '매달린 발판', stairs: '계단' };
 const THEMES = [
@@ -410,7 +439,10 @@ function setup(){
   if (L.pins.length){ const m = MECH[1]; chips.push(`<span class="chip${L.intro && L.intro.k === 'pin' ? ' new' : ''}">${m.icon} 핀 ${L.pins.length}</span>`); }
   document.getElementById('chips').innerHTML = chips.join('');
   const hint = document.getElementById('hint');
-  hint.innerHTML = L.intro && mode === 'level'
+  tut = mode === 'level' && level === 1 && !store.get('momo_tut_done', false);
+  hint.innerHTML = tut
+    ? '<b>👆 튜토리얼</b><br>손가락을 떼지 말고 점선을 따라<br>모모 위에 지붕을 그려 보세요'
+    : L.intro && mode === 'level'
     ? `<b>NEW ${L.intro.icon} ${L.intro.name}</b><br>${L.intro.desc}`
     : '한 번에 선을 그어 모모를 지키세요 · 8초';
   hint.classList.remove('hidden');
@@ -549,6 +581,7 @@ function endStroke(){
 
 function startSim(){
   phase = 'sim'; simT = 0;
+  if (tut) showToast('선은 물리 법칙대로 떨어져요 · 8초만 버티면 성공!');
   simRng = rng(L.seed + 7);
   spawnQ = [];
   L.hives.filter(h => h.kind === 'bee').forEach(h => { for (let i = 0; i < h.n; i++) spawnQ.push({ t: 100 + i * 110 + simRng() * 50, h }); });
@@ -867,7 +900,12 @@ function finish(win, reason, delay = 450){
   if (win && mode === 'level' && level + 1 > store.get('ss_level', 1)) store.set('ss_level', level + 1);
   setTimeout(() => {
     if (phase !== 'end') return;
-    document.getElementById('mTitle').textContent = win ? '성공!' : '실패 · ' + reason;
+    document.getElementById('mTitle').textContent = win ? (tut ? '성공! 낮잠을 지켰어요' : '성공!') : '실패 · ' + reason;
+    const tip = document.getElementById('mTip');
+    const tipText = tut ? (win ? '잉크를 적게 쓸수록 ⭐이 늘어나요. 22% 이하면 ⭐⭐⭐!' : '틈이 있으면 드론이 돌아서 들어와요. 빈틈없이 감싸 보세요!')
+      : (!win && reason === '모모가 떨어졌어요') ? '선이 너무 무거우면 모모를 밀어낼 수 있어요' : '';
+    tip.textContent = tipText; tip.classList.toggle('hidden', !tipText);
+    if (tut && win) store.set('momo_tut_done', true);
     document.getElementById('mStars').textContent = win ? '⭐'.repeat(stars) + '☆'.repeat(3 - stars) : '💧';
     document.getElementById('mInk').textContent = pct + '%';
     document.getElementById('mHp').textContent = Math.round(hp);
@@ -1203,6 +1241,22 @@ function drawPops(){
     ctx.beginPath(); ctx.arc(p.x, p.y, 8 + k * 22, 0, 7); ctx.stroke();
   }
 }
+let tut = false;
+function guidePath(){
+  const sp = L.sp, top = L.pot.y + 18, w = 40, y = sp.y - 26;
+  return [{ x: sp.x - w, y: top - 10 }, { x: sp.x - w, y }, { x: sp.x + w, y }, { x: sp.x + w, y: top - 10 }];
+}
+function drawGuide(){
+  const P = guidePath();
+  ctx.setLineDash([7, 7]); ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(P[0].x, P[0].y); P.slice(1).forEach(q => ctx.lineTo(q.x, q.y)); ctx.stroke(); ctx.setLineDash([]);
+  const lens = P.slice(1).map((q, i) => dist(q, P[i])), total = lens.reduce((a, b) => a + b, 0);
+  let d = ((performance.now() / 1800) % 1) * total, i = 0;
+  while (i < lens.length - 1 && d > lens[i]){ d -= lens[i]; i++; }
+  const a = P[i], b = P[i + 1], t = Math.min(1, d / lens[i]), hx = a.x + (b.x - a.x) * t, hy = a.y + (b.y - a.y) * t;
+  ctx.fillStyle = 'rgba(255,209,102,.9)'; ctx.beginPath(); ctx.arc(hx, hy, 6, 0, 7); ctx.fill();
+  ctx.font = '26px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('👆', hx - 8, hy + 26);
+}
 function render(){
   const th = TH();
   ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
@@ -1228,6 +1282,7 @@ function render(){
   crawlers.forEach(drawCrawler);
   drawLine();
   L.pins.forEach(drawPin);
+  if (tut && phase === 'draw' && !drawing && pts.length === 0) drawGuide();
   bugs.forEach(drawBug);
   if (phase === 'sim') document.getElementById('timer').textContent = Math.max(0, (SIM_MS - simT) / 1000).toFixed(1);
 }
@@ -1254,7 +1309,32 @@ function loop(t){
   render();
   requestAnimationFrame(loop);
 }
+// ---------- 이야기 (처음 실행 시 한 번) ----------
+const STORY = [
+  { art: '<img src="assets/momo_sleepy.png" class="big bob" alt=""><div class="zz">z z</div>', text: '햇살 좋은 오후,<br>낮잠이 세상에서 제일 좋은 고양이 <b>모모</b>.' },
+  { art: '<div class="row"><span>🛸</span><span>🦆</span><span>🎈</span><span>🐶</span></div>', text: '그런데 오늘은 <b>목욕하는 날!</b><br>집사는 물 드론, 물총 오리, 물풍선을 꺼냈고<br>옆집 불독까지 놀자고 달려와요.' },
+  { art: '<img src="assets/momo_surprised.png" class="big shake" alt="">', text: '물이라면 질색인 모모를<br>도와줄 수 있는 건 당신의 <b>펜 한 자루</b>뿐!' },
+  { art: '<div class="pen">✏️</div><img src="assets/momo_sit.png" class="big" alt="">', text: '<b>선을 딱 한 번</b> 그어 벽을 만들고<br><b>8초</b> 동안 모모를 지켜 주세요.' },
+];
+let storyIdx = 0;
+function renderStory(){
+  const sc = STORY[storyIdx];
+  document.getElementById('sArt').innerHTML = sc.art;
+  document.getElementById('sText').innerHTML = sc.text;
+  document.getElementById('sDots').innerHTML = STORY.map((_, i) => `<i class="${i === storyIdx ? 'on' : ''}"></i>`).join('');
+  document.getElementById('sNext').textContent = storyIdx === STORY.length - 1 ? '시작하기 🐾' : '다음 ▶';
+}
+function showStory(){ storyIdx = 0; renderStory(); document.getElementById('story').classList.remove('hidden'); }
+function closeStory(){
+  document.getElementById('story').classList.add('hidden');
+  if (!store.get('momo_story_seen', false)){ store.set('momo_story_seen', true); mode = 'level'; level = 1; setup(); }
+}
+document.getElementById('sNext').onclick = () => { if (storyIdx < STORY.length - 1){ storyIdx++; renderStory(); } else closeStory(); };
+document.getElementById('sSkip').onclick = closeStory;
+document.getElementById('btnStory').onclick = showStory;
+
 resize(); setup(); requestAnimationFrame(loop);
+if (!store.get('momo_story_seen', false)) showStory();
 </script>
 </body>
 </html>
