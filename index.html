@@ -137,6 +137,9 @@ const MECH = [
   { k: 'wasp',  lv: 6, name: '물총 오리', icon: '🦆', desc: '집사의 비밀 병기! 점선이 보이면 곧 물줄기를 쏴요' },
   { k: 'crawl', lv: 7, name: '불독', icon: '🐶', desc: '목욕 좋아하는 옆집 불독이 같이 놀자고 달려와요' },
 ];
+const ARCH_UNLOCK = [['plat', 1], ['ground', 2], ['cliff', 8], ['stairs', 9], ['shelf', 11], ['valley', 13], ['pillar', 15], ['cave', 17], ['bowl', 19], ['hang', 21], ['seesaw', 23]];
+const ARCH_W = { plat: 1, ground: 0.95, cliff: 1, stairs: 1.0, shelf: 1, valley: 0.9, pillar: 1.12, cave: 0.65, bowl: 1.1, hang: 1.2, seesaw: 1.25 };
+const ARCH_DESC = { cliff: '모모가 절벽 끝이나 절벽 아래에 있어요', stairs: '한쪽은 벽, 한쪽은 트여 있어요', shelf: '벽에 붙은 선반이에요', valley: '양쪽 벽을 기둥 삼아 보세요', pillar: '좁은 기둥 꼭대기예요', cave: '입구가 한쪽뿐인 동굴! 입구 위 핀을 써 보세요', bowl: '기울어진 판자 사이에 쏙 들어가 있어요', hang: '사슬에 매달려 부딪히면 흔들려요', seesaw: '선의 무게로 기울어요. 균형을 잡아요' };
 const ARCH_NAME = { plat: '공중 받침대', ground: '언덕 들판', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기', cliff: '절벽', cave: '동굴', bowl: 'V자 그릇', seesaw: '시소', hang: '매달린 발판', stairs: '계단' };
 const THEMES = [
   { sky: ['#cfe6ee', '#f4efdc'], ground: '#7a5533', grass: '#5aa84a', stone: '#8d8a80', ink: '#1e2a4a', text: '#1d2a22' },
@@ -173,11 +176,12 @@ function genLevel(lv, seed, themeIdx){
   const L = { lv, seed, theme: themeIdx, intro, S: [], D: [], pins: [], hives: [], clouds: [], chutes: [], winds: [], crawl: [], groundCat: false, cave: null };
   const S = L.S;
 
-  // 1) 모모가 앉는 지형(아키타입)
-  const EARLY = ['plat', 'ground', 'cliff', 'stairs'];
-  const ALL = ['plat', 'ground', 'shelf', 'pillar', 'valley', 'cliff', 'cave', 'bowl', 'seesaw', 'hang', 'stairs'];
-  let arch = lv === 1 ? 'plat' : lv < 4 ? pick(EARLY) : pick(ALL);
+  // 1) 모모가 앉는 지형: 레벨에 따라 하나씩 해금(8레벨부터는 새 지형을 소개)
+  const archIntro = ARCH_UNLOCK.find(([, l]) => l === lv && l > 1);
+  const unlocked = ARCH_UNLOCK.filter(([, l]) => l <= lv).map(([a]) => a);
+  let arch = lv === 1 ? 'plat' : archIntro ? archIntro[0] : pick(unlocked);
   if (intro && intro.k === 'crawl') arch = 'ground';
+  L.archIntro = archIntro ? arch : null;
   let px, top, hw;
   if (arch === 'plat'){
     px = R(70, 290); top = R(400, 540); const pw = R(80, 120); hw = pw / 2;
@@ -261,13 +265,21 @@ function genLevel(lv, seed, themeIdx){
 
   // 2) 위협 고르기: 새로 등장한 요소는 반드시 포함
   const pool = ['bee', 'rain', 'rock', 'wind', 'wasp', 'crawl'].filter(k => has(k) && (k !== 'crawl' || L.groundCat) && !(k === 'rain' && arch === 'cave'));
+  // 위협 종류 수: 소개 레벨은 1종, 이후 레벨대에 따라 2~3종
   const kinds = [];
   if (intro && pool.includes(intro.k)) kinds.push(intro.k);
-  const nT = lv < 3 ? 1 : lv < 6 ? 1 + (r() < 0.5 ? 1 : 0) : 1 + Math.floor(r() * 3);
-  for (let g = 0; kinds.length < Math.min(nT, pool.length) && g < 60; g++){ const k = pick(pool); if (!kinds.includes(k)) kinds.push(k); }
-  if (!kinds.some(k => k !== 'wind')) kinds.push(pick(pool.filter(k => k !== 'wind')));
+  const nT = (intro || archIntro || lv < 8) ? 1 : lv < 15 ? 2 : (r() < 0.5 ? 2 : 3);
+  const pickPool = archIntro ? pool.filter(k => k !== 'wind') : pool;
+  for (let g = 0; kinds.length < Math.min(nT, pool.length) && g < 60; g++){ const k = pick(pickPool); if (!kinds.includes(k)) kinds.push(k); }
+  if (!kinds.some(k => k !== 'wind')) kinds.push(pool.includes('bee') ? 'bee' : pick(pool.filter(k => k !== 'wind')));
   L.kinds = kinds;
-  const dens = 1 / Math.sqrt(kinds.filter(k => k !== 'wind').length);
+  // 난이도 예산: 레벨에 비례해 완만히 증가. 새 요소 소개 레벨은 20% 낮춤. 어려운 지형일수록 위협 예산 감소
+  let B = 10 + 3.0 * (lv - 1);
+  if ((intro || archIntro) && lv > 1) B *= 0.8;
+  B /= ARCH_W[arch];
+  if (kinds.includes('wind')) B *= 0.8;
+  const u = B / kinds.filter(k => k !== 'wind').length;
+  L.budget = Math.round(B * 10) / 10;
   const used = [];
   const dynRects = L.D.map(d => ({ x: d.x, y: d.y, w: d.w, h: d.h + 30, a: 0 }));
   const chainRects = L.D.filter(d => d.type === 'hang').map(d => ({ x: d.x, y: (d.ay + d.y) / 2, w: d.w + 10, h: d.y - d.ay, a: 0 }));
@@ -281,27 +293,35 @@ function genLevel(lv, seed, themeIdx){
     return null;
   };
 
+  if (kinds.includes('crawl')){
+    const n = clamp(Math.round(u / 2.5), 3, 8);
+    // 불독은 땅 위로 모모까지 막힘없이 달려올 수 있는 쪽에서만 나옴
+    const clearSide = sd => { const x0 = sd < 0 ? 10 : W - 10; for (let x = x0; Math.abs(x - px) > 30; x += (px - x0) > 0 ? 6 : -6){ if (S.some(o => o.kind !== 'ground' && o.kind !== 'hill' && inRect({ x, y: GY - 12 }, o, 4))) return false; } return true; };
+    let sides = (r() < 0.5 ? [-1, 1] : [px < W / 2 ? 1 : -1]).filter(clearSide);
+    if (!sides.length) sides = [-1, 1].filter(clearSide);
+    if (sides.length) for (let i = 0; i < n; i++) L.crawl.push({ side: sides[i % sides.length], t: 200 + i * 600 + R(0, 250) });
+    else { kinds.splice(kinds.indexOf('crawl'), 1); if (!kinds.includes('bee')) kinds.push('bee'); }
+  }
   if (kinds.includes('rain')){
-    const n = (lv >= 10 && r() < 0.4) ? 2 : 1;
+    const n = 1;
     for (let i = 0; i < n; i++){
       const w = R(90, 140);
       let cx = R(w / 2 + 10, W - w / 2 - 10);
       if (i === 0) cx = clamp(px + R(-w / 2 + 25, w / 2 - 25), w / 2 + 10, W - w / 2 - 10);
-      L.clouds.push({ x: cx, w, rate: R(80, 115) / Math.max(0.75, dens) });
+      L.clouds.push({ x: cx, w, rate: clamp(900 / u, 45, 150) });
     }
   }
   if (kinds.includes('wind')){
     const y0 = clamp(R(sp.y - 210, sp.y - 70), 90, 460), h = R(110, 170);
-    L.winds.push({ y0, y1: Math.min(y0 + h, sp.y + 30), dir: r() < 0.5 ? -1 : 1, str: R(0.7, 1.1) });
+    L.winds.push({ y0, y1: Math.min(y0 + h, sp.y + 30), dir: r() < 0.5 ? -1 : 1, str: 0.6 + Math.min(0.5, lv * 0.015) });
   }
   if (L.winds.length) L.clouds.forEach(c => { c.w = Math.min(190, c.w + 40); c.x = clamp(c.x - L.winds[0].dir * 45, c.w / 2 + 10, W - c.w / 2 - 10); });
   const yMin = L.clouds.length ? 125 : 55, yMax = Math.min(sp.y - 30, 400);
   if (kinds.includes('bee')){
-    const nh = 1 + (lv >= 6 && r() < 0.5 ? 1 : 0);
-    const per = Math.round(Math.min(12, 5 + lv * 0.6) * dens / Math.sqrt(nh)) + 1;
+    const total = clamp(Math.round(u / 2), 4, 16), nh = total > 9 ? 2 : 1;
     for (let i = 0; i < nh; i++){
       const p = place(170, yMin, yMax) || { x: px < W / 2 ? W - 40 : 40, y: yMin + 30 };
-      L.hives.push({ ...p, n: Math.max(3, per), kind: 'bee' });
+      L.hives.push({ ...p, n: Math.round(total / nh), kind: 'bee' });
     }
   }
   // 두 점 사이에 지형이 없는지(오리의 사격 시야)
@@ -315,16 +335,26 @@ function genLevel(lv, seed, themeIdx){
     return true;
   };
   if (kinds.includes('wasp')){
-    let p = null;
-    for (let t = 0; t < 40 && !p; t++){ const c = place(190, yMin, Math.min(sp.y + 40, 470)); if (c && los(c, sp)) p = c; else if (c) used.pop(); }
-    p = p || place(190, yMin, yMax) || { x: px < W / 2 ? W - 40 : 40, y: yMin + 60 };
-    L.hives.push({ ...p, n: Math.max(2, Math.round(Math.min(6, 2 + lv / 3) * dens) + 1), kind: 'wasp' });
+    // 예산이 크면 오리 두 마리가 서로 다른 각도에서 쏨(벽 하나로 다 막히지 않게)
+    const nd = u > 30 ? 2 : 1, ud = u / nd;
+    for (let k = 0; k < nd; k++){
+      let p = null;
+      for (let t = 0; t < 40 && !p; t++){
+        const c = place(190, yMin, Math.min(sp.y + 40, 470));
+        const prev = L.hives.find(h => h.kind === 'wasp');
+        const angOk = !prev || !c || Math.abs(Math.atan2(c.y - sp.y, c.x - sp.x) - Math.atan2(prev.y - sp.y, prev.x - sp.x)) > 0.9;
+        if (c && los(c, sp) && angOk) p = c; else if (c) used.pop();
+      }
+      if (!p && k > 0) break;
+      p = p || place(190, yMin, yMax) || { x: px < W / 2 ? W - 40 : 40, y: yMin + 60 };
+      L.hives.push({ ...p, n: 0, burst: clamp(Math.round(3 + ud / 3), 5, 10), gap: clamp(13000 / ud, 650, 1600), kind: 'wasp' });
+    }
   }
   if (kinds.includes('rock')){
-    const n = (lv >= 10 && r() < 0.3) ? 2 : 1;
+    const n = 1;
     for (let i = 0; i < n; i++){
-      const rr = R(10, 14), interval = R(1200, 1900);
-      if (r() < 0.5 && !L.cave){
+      const rr = R(10, 14), interval = clamp(10000 / u, 480, 1500);
+      if (r() < 0.5 && !L.cave && !(intro && intro.k === 'rock')){
         L.chutes.push({ type: 'top', x: clamp(px + R(-30, 30), 24, W - 24), y: -12, vx: 0, vy: 1, r: rr, interval, first: R(350, 750) });
       } else {
         const fromLeft = L.cave ? !L.cave.left : r() < 0.5;
@@ -336,11 +366,6 @@ function genLevel(lv, seed, themeIdx){
         L.chutes.push({ type: 'side', x: x0, y, vx, vy, r: rr, interval, first: R(350, 750) });
       }
     }
-  }
-  if (kinds.includes('crawl')){
-    const n = Math.round(Math.min(6, 2 + lv / 4) * dens) + 1;
-    const sides = r() < 0.5 ? [-1, 1] : [px < W / 2 ? 1 : -1];
-    for (let i = 0; i < n; i++) L.crawl.push({ side: sides[i % sides.length], t: 200 + i * 700 + R(0, 250) });
   }
 
   // 3) 고정 핀 (도우미 요소)
@@ -381,7 +406,7 @@ function genLevel(lv, seed, themeIdx){
     }
   }
   L.ink = Math.max(380, 740 - lv * 14);
-  L.speed = Math.min(3.3, 1.8 + lv * 0.07);
+  L.speed = Math.min(3.2, 2.0 + lv * 0.04);
   return L;
 }
 
@@ -446,7 +471,7 @@ function setup(){
   setTimerUI(-1);
   document.getElementById('modalWrap').classList.add('hidden');
   document.getElementById('shareBox').classList.add('hidden');
-  const chips = [`<span class="chip">${ARCH_NAME[L.arch]}</span>`];
+  const chips = [`<span class="chip${L.archIntro ? ' new' : ''}">${ARCH_NAME[L.arch]}</span>`];
   L.kinds.forEach(k => { const m = MECH.find(x => x.k === k); chips.push(`<span class="chip${L.intro && L.intro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   if (L.pins.length){ const m = MECH[1]; chips.push(`<span class="chip${L.intro && L.intro.k === 'pin' ? ' new' : ''}">${m.icon} 핀 ${L.pins.length}</span>`); }
   document.getElementById('chips').innerHTML = chips.join('');
@@ -456,6 +481,8 @@ function setup(){
     ? '<b>👆 튜토리얼</b><br>손가락을 떼지 말고 점선을 따라<br>모모 위에 지붕을 그려 보세요'
     : L.intro && mode === 'level'
     ? `<b>NEW ${L.intro.icon} ${L.intro.name}</b><br>${L.intro.desc}`
+    : L.archIntro && mode === 'level'
+    ? `<b>NEW 지형 · ${ARCH_NAME[L.archIntro]}</b><br>${ARCH_DESC[L.archIntro]}`
     : '한 번에 선을 그어 모모를 지키세요 · 8초';
   hint.classList.remove('hidden');
   const b = store.get(curKey(), null);
@@ -610,7 +637,7 @@ function startSim(){
   simRng = rng(L.seed + 7);
   spawnQ = [];
   L.hives.filter(h => h.kind === 'bee').forEach(h => { for (let i = 0; i < h.n; i++) spawnQ.push({ t: 100 + i * 110 + simRng() * 50, h }); });
-  ducks = L.hives.filter(h => h.kind === 'wasp').map((h, i) => ({ h, next: 600 + i * 400 + simRng() * 300, burst: 0, shotT: 0, dir: { x: 0, y: 1 }, size: Math.min(8, 5 + Math.floor(L.lv / 6)) }));
+  ducks = L.hives.filter(h => h.kind === 'wasp').map((h, i) => ({ h, next: 600 + i * 400 + simRng() * 300, burst: 0, shotT: 0, dir: { x: 0, y: 1 }, size: h.burst, gap: h.gap }));
   popQ = new Set();
   L.crawl.forEach(c => spawnQ.push({ t: c.t, crawl: c }));
   spawnQ.sort((a, b) => a.t - b.t);
@@ -827,7 +854,7 @@ function step(){
       Body.setVelocity(j, { x: dk.dir.x * 7, y: dk.dir.y * 7 });
       addBody(j, drops);
       dk.burst--; dk.shotT = simT + 55;
-      if (!dk.burst) dk.next = simT + 1200 + simRng() * 400;
+      if (!dk.burst) dk.next = simT + dk.gap + simRng() * 300;
     }
   }
   for (const d of drops) if (d.position.y > H + 20 || d.position.x < -20 || d.position.x > W + 20 || simT - d.plugin.born > (d.label === 'splash' ? 1500 : 4000)) toRemove.add(d);
