@@ -95,7 +95,7 @@ const MECH = [
   { k: 'wasp',  lv: 6, name: '말벌', icon: '🔥', desc: '노려보다가 빠르게 돌진해요' },
   { k: 'crawl', lv: 7, name: '애벌레', icon: '🐛', desc: '땅을 기어와 모모를 물어요' },
 ];
-const ARCH_NAME = { plat: '공중 받침대', ground: '맨땅', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기' };
+const ARCH_NAME = { plat: '공중 받침대', ground: '언덕 들판', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기', cliff: '절벽', cave: '동굴', bowl: 'V자 그릇', seesaw: '시소', hang: '매달린 발판', stairs: '계단' };
 const THEMES = [
   { sky: ['#cfe6ee', '#f4efdc'], ground: '#7a5533', grass: '#5aa84a', stone: '#8d8a80', ink: '#1e2a4a', text: '#1d2a22' },
   { sky: ['#f2b38a', '#f7e3c4'], ground: '#6e4529', grass: '#7a9a3a', stone: '#8a7a70', ink: '#2a1e3a', text: '#3a1f12' },
@@ -108,6 +108,7 @@ function rng(seed){ let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function inRect(p, o, pad = 0){
+  if (o.shape === 'circle') return Math.hypot(p.x - o.x, p.y - o.y) <= o.r + pad;
   const c = Math.cos(-(o.a || 0)), s = Math.sin(-(o.a || 0)), dx = p.x - o.x, dy = p.y - o.y;
   return Math.abs(dx * c - dy * s) <= o.w / 2 + pad && Math.abs(dx * s + dy * c) <= o.h / 2 + pad;
 }
@@ -127,21 +128,27 @@ function genLevel(lv, seed, themeIdx){
   const r = rng(seed), R = (a, b) => a + r() * (b - a), pick = a => a[Math.floor(r() * a.length)];
   const has = k => MECH.find(m => m.k === k).lv <= lv;
   const intro = MECH.find(m => m.lv === lv) || null;
-  const L = { lv, seed, theme: themeIdx, intro, S: [], pins: [], hives: [], clouds: [], chutes: [], winds: [], crawl: [], obsCount: 0 };
+  const L = { lv, seed, theme: themeIdx, intro, S: [], D: [], pins: [], hives: [], clouds: [], chutes: [], winds: [], crawl: [], groundCat: false, cave: null };
   const S = L.S;
 
   // 1) 모모가 앉는 지형(아키타입)
-  let arch;
-  if (lv === 1) arch = 'plat';
-  else if (lv < 4) arch = pick(['plat', 'ground']);
-  else arch = pick(['plat', 'ground', 'shelf', 'pillar', 'valley', 'shelf', 'pillar']);
+  const EARLY = ['plat', 'ground', 'cliff', 'stairs'];
+  const ALL = ['plat', 'ground', 'shelf', 'pillar', 'valley', 'cliff', 'cave', 'bowl', 'seesaw', 'hang', 'stairs'];
+  let arch = lv === 1 ? 'plat' : lv < 4 ? pick(EARLY) : pick(ALL);
   if (intro && intro.k === 'crawl') arch = 'ground';
   let px, top, hw;
   if (arch === 'plat'){
     px = R(70, 290); top = R(400, 540); const pw = R(80, 120); hw = pw / 2;
     S.push({ x: px, y: top + 8, w: pw, h: 16, a: 0, kind: 'plat' });
   } else if (arch === 'ground'){
-    px = R(60, 300); top = GY; hw = 999;
+    px = R(60, 300); top = GY; hw = 999; L.groundCat = true;
+    // 언덕: 모모 자리는 피해서 0~2개
+    const nh = Math.floor(R(0, 2.7));
+    for (let i = 0; i < nh; i++) for (let t = 0; t < 30; t++){
+      const hr = R(50, 90), hx = R(20, W - 20);
+      if (Math.abs(hx - px) < hr * 0.85 + 40 || S.some(o => o.kind === 'hill' && Math.abs(o.x - hx) < o.r + hr)) continue;
+      S.push({ shape: 'circle', x: hx, y: GY + hr * 0.55, r: hr, kind: 'hill' }); break;
+    }
   } else if (arch === 'shelf'){
     const left = r() < 0.5, sw = R(110, 165); top = R(380, 540);
     S.push({ x: left ? sw / 2 : W - sw / 2, y: top + 8, w: sw, h: 16, a: 0, kind: 'shelf', left });
@@ -149,11 +156,51 @@ function genLevel(lv, seed, themeIdx){
   } else if (arch === 'pillar'){
     px = R(70, 290); const pwid = R(56, 70); top = R(380, 510); hw = pwid / 2;
     S.push({ x: px, y: (top + GY) / 2 + 2, w: pwid, h: GY - top + 4, a: 0, kind: 'pillar' });
-  } else { // valley
+  } else if (arch === 'valley'){
     const gap = R(110, 150); px = R(gap / 2 + 26, W - gap / 2 - 26); top = GY; hw = gap / 2;
     const h1 = R(70, 140), h2 = R(70, 140);
     S.push({ x: px - gap / 2 - 8, y: GY - h1 / 2 + 2, w: 16, h: h1 + 4, a: 0, kind: 'wall' });
     S.push({ x: px + gap / 2 + 8, y: GY - h2 / 2 + 2, w: 16, h: h2 + 4, a: 0, kind: 'wall' });
+  } else if (arch === 'cliff'){
+    // 한쪽이 높은 절벽: 모모는 절벽 끝 위 또는 절벽 아래
+    const left = r() < 0.5, cw = R(120, 190), ch = R(110, 210), edge = left ? cw : W - cw;
+    S.push({ x: left ? cw / 2 : W - cw / 2, y: GY - ch / 2 + 2, w: cw, h: ch + 4, a: 0, kind: 'cliff' });
+    if (r() < 0.55){ top = GY - ch; px = left ? edge - R(30, 50) : edge + R(30, 50); hw = 30; }
+    else { top = GY; px = left ? edge + R(38, 75) : edge - R(38, 75); hw = 999; L.groundCat = true; }
+  } else if (arch === 'cave'){
+    // 벽에 붙은 동굴: 입구가 한쪽뿐
+    const left = r() < 0.5, depth = R(100, 140), ft = R(400, 530), open = R(90, 110);
+    const fw = depth + R(15, 40), cw2 = depth + R(-10, 25);
+    S.push({ x: left ? fw / 2 : W - fw / 2, y: ft + 10, w: fw, h: 20, a: 0, kind: 'cave' });
+    S.push({ x: left ? cw2 / 2 : W - cw2 / 2, y: ft - open - 10, w: cw2, h: 20, a: 0, kind: 'cave' });
+    top = ft; px = left ? R(40, depth - 30) : W - R(40, depth - 30); hw = 30;
+    L.cave = { left, mouth: left ? Math.max(fw, cw2) : W - Math.max(fw, cw2), ceilY: ft - open, floorY: ft };
+  } else if (arch === 'bowl'){
+    // V자 그릇: 짧은 바닥 + 양쪽으로 기운 판자
+    px = R(100, 260); const by = R(440, 550); top = by - 7; hw = 25;
+    S.push({ x: px, y: by, w: 56, h: 14, a: 0, kind: 'plank' });
+    const ang = R(0.55, 0.95), len = R(85, 120);
+    for (const sd of [-1, 1]){
+      const dx = sd * Math.cos(ang), dy = -Math.sin(ang), sx = px + sd * 26, sy = by - 2;
+      S.push({ x: sx + dx * len / 2, y: sy + dy * len / 2, w: len, h: 12, a: Math.atan2(dy, dx), kind: 'plank' });
+    }
+  } else if (arch === 'seesaw'){
+    // 시소: 기둥 위 축에 고정된 판자. 선의 무게로 기울어짐
+    px = R(110, 250); const py0 = R(440, 540); top = py0 - 6; hw = 40;
+    S.push({ x: px, y: (py0 + 8 + GY) / 2 + 2, w: 14, h: GY - py0 - 8 + 4, a: 0, kind: 'post' });
+    L.D.push({ type: 'seesaw', x: px, y: py0, w: R(150, 200), h: 12 });
+  } else if (arch === 'hang'){
+    // 사슬 두 줄에 매달린 발판: 부딪히면 흔들림
+    px = R(90, 270); const pw = R(95, 130), py0 = R(390, 500); top = py0 - 7; hw = pw / 2;
+    L.D.push({ type: 'hang', x: px, y: py0, w: pw, h: 14, ay: Math.max(26, py0 - R(150, 260)) });
+  } else { // stairs: 벽 쪽이 가장 높은 계단
+    const left = r() < 0.5, n = 3 + Math.floor(R(0, 2)), sw = R(60, 74), sh = R(38, 56);
+    for (let i = 0; i < n; i++){
+      const hgt = (n - i) * sh, x = left ? sw * i + sw / 2 : W - sw * i - sw / 2;
+      S.push({ x, y: GY - hgt / 2 + 2, w: sw + 1, h: hgt + 4, a: 0, kind: 'stair' });
+    }
+    const i = Math.floor(R(0, n));
+    px = left ? sw * i + sw / 2 : W - sw * i - sw / 2; top = GY - (n - i) * sh; hw = sw / 2;
   }
   L.arch = arch;
   L.pot = { x: px, y: top - 18 };
@@ -162,7 +209,7 @@ function genLevel(lv, seed, themeIdx){
 
   // 바닥(구덩이 가능)
   let ground = [{ x: 0, w: W }];
-  if (lv >= 5 && (arch === 'plat' || arch === 'shelf') && r() < 0.5){
+  if (lv >= 5 && ['plat', 'shelf', 'hang', 'bowl'].includes(arch) && r() < 0.5){
     const gw = R(60, 90); let gx, t = 0;
     do { gx = R(30, W - gw - 30); t++; } while (Math.abs(gx + gw / 2 - px) < hw + 60 && t < 40);
     ground = [{ x: 0, w: gx }, { x: gx + gw, w: W - gx - gw }];
@@ -171,7 +218,7 @@ function genLevel(lv, seed, themeIdx){
   ground.forEach(g => S.unshift({ x: g.x + g.w / 2, y: H - 20, w: g.w, h: 40, a: 0, kind: 'ground' }));
 
   // 2) 위협 고르기: 새로 등장한 요소는 반드시 포함
-  const pool = ['bee', 'rain', 'rock', 'wind', 'wasp', 'crawl'].filter(k => has(k) && (k !== 'crawl' || arch === 'ground'));
+  const pool = ['bee', 'rain', 'rock', 'wind', 'wasp', 'crawl'].filter(k => has(k) && (k !== 'crawl' || L.groundCat) && !(k === 'rain' && arch === 'cave'));
   const kinds = [];
   if (intro && pool.includes(intro.k)) kinds.push(intro.k);
   const nT = lv < 3 ? 1 : lv < 6 ? 1 + (r() < 0.5 ? 1 : 0) : 1 + Math.floor(r() * 3);
@@ -180,7 +227,9 @@ function genLevel(lv, seed, themeIdx){
   L.kinds = kinds;
   const dens = 1 / Math.sqrt(kinds.filter(k => k !== 'wind').length);
   const used = [];
-  const free = (p, pad) => p.x > 15 && p.x < W - 15 && p.y > 15 && !S.some(o => inRect(p, o, pad));
+  const dynRects = L.D.map(d => ({ x: d.x, y: d.y, w: d.w, h: d.h + 30, a: 0 }));
+  const chainRects = L.D.filter(d => d.type === 'hang').map(d => ({ x: d.x, y: (d.ay + d.y) / 2, w: d.w + 10, h: d.y - d.ay, a: 0 }));
+  const free = (p, pad) => p.x > 15 && p.x < W - 15 && p.y > 15 && !S.some(o => inRect(p, o, pad)) && !dynRects.some(o => inRect(p, o, pad)) && !chainRects.some(o => inRect(p, o, pad));
   const place = (minD, y0, y1, gap = 80) => {
     for (let t = 0; t < 120; t++){
       const p = { x: R(30, W - 30), y: R(y0, y1) };
@@ -220,10 +269,10 @@ function genLevel(lv, seed, themeIdx){
     const n = (lv >= 10 && r() < 0.3) ? 2 : 1;
     for (let i = 0; i < n; i++){
       const rr = R(10, 14), interval = R(1400, 2200);
-      if (r() < 0.5){
+      if (r() < 0.5 && !L.cave){
         L.chutes.push({ type: 'top', x: clamp(px + R(-30, 30), 24, W - 24), y: -12, vx: 0, vy: 1, r: rr, interval, first: R(600, 1100) });
       } else {
-        const fromLeft = r() < 0.5;
+        const fromLeft = L.cave ? !L.cave.left : r() < 0.5;
         let y = R(Math.max(120, sp.y - 230), sp.y - 50);
         for (let t = 0; t < 20 && !free({ x: fromLeft ? 20 : W - 20, y }, 20); t++) y = R(120, sp.y - 40);
         const vx = (fromLeft ? 1 : -1) * R(3.2, 4.2), x0 = fromLeft ? -12 : W + 12;
@@ -240,6 +289,10 @@ function genLevel(lv, seed, themeIdx){
   }
 
   // 3) 고정 핀 (도우미 요소)
+  if (L.cave && has('pin')){
+    const cp = { x: L.cave.mouth + (L.cave.left ? 16 : -16), y: L.cave.ceilY + 18 };
+    if (free(cp, 12)){ used.push(cp); L.pins.push(cp); }
+  }
   if (has('pin') && ((intro && intro.k === 'pin') || r() < 0.6)){
     const n = 1 + (r() < 0.35 ? 1 : 0);
     for (let i = 0; i < n; i++){
@@ -256,11 +309,16 @@ function genLevel(lv, seed, themeIdx){
   let no = Math.min(3, Math.floor(lv / 2)) - (arch === 'valley' || arch === 'pillar' ? 1 : 0);
   for (let i = 0; i < no; i++){
     for (let t = 0; t < 60; t++){
-      const o = { x: R(40, W - 40), y: R(140, GY - 70), w: R(50, 110), h: 14, a: R(-0.6, 0.6), kind: 'obs' };
+      const kr = r(), x = R(40, W - 40), y = R(140, GY - 70);
+      const o = kr < 0.55 ? { x, y, w: R(50, 110), h: 14, a: R(-0.6, 0.6), kind: 'obs' }
+              : kr < 0.8 ? (() => { const sz = R(28, 44); return { x, y, w: sz, h: sz, a: R(-0.4, 0.4), kind: 'box' }; })()
+              : { shape: 'circle', x, y, r: R(14, 24), kind: 'boulder' };
+      if (o.shape === 'circle'){ o.w = o.r * 2; }
       if (dist(o, sp) < 100 || dist(o, L.pot) < 90) continue;
       if (o.y < sp.y && Math.abs(o.x - sp.x) < o.w / 2 + 40) continue; // 모모 위를 덮는 공짜 지붕 금지
       if (used.some(q => dist(q, o) < 70) || L.chutes.some(c => Math.abs(c.y - o.y) < 30 && c.type === 'side')) continue;
       if (S.some(s => dist(s, o) < 70 && s.kind !== 'ground')) continue;
+      if (dynRects.some(d => inRect(o, d, 40)) || chainRects.some(d => inRect(o, d, 30))) continue;
       S.push(o); break;
     }
   }
@@ -272,7 +330,7 @@ function genLevel(lv, seed, themeIdx){
 // ---------- 상태 ----------
 let mode = 'level';
 let level = store.get('ss_level', 1);
-let L, engine, statics, potBody, potOff, sproutPart, lineBody, lineLocal;
+let L, engine, statics, dynBodies = [], potBody, potOff, sproutPart, lineBody, lineLocal;
 let phase, pts, inkUsed, drawing, simT, hp, bugs, drops, rocks, crawlers, spawnQ, cloudAcc, chuteT, simRng, flashT, toRemove, endInfo;
 let finger = null, fingerBlocked = false, blockToastShown = false, toastTimer = 0;
 
@@ -288,7 +346,25 @@ function setup(){
   engine = Engine.create();
   engine.gravity.y = 1;
   engine.positionIterations = 12; engine.velocityIterations = 8;
-  statics = L.S.map(o => Bodies.rectangle(o.x, o.y, o.w, o.h, { isStatic: true, angle: o.a, friction: 0.8, label: o.kind }));
+  statics = L.S.map(o => {
+    const b = o.shape === 'circle'
+      ? Bodies.circle(o.x, o.y, o.r, { isStatic: true, friction: 0.8, label: o.kind })
+      : Bodies.rectangle(o.x, o.y, o.w, o.h, { isStatic: true, angle: o.a, friction: 0.8, label: o.kind });
+    b.plugin = { w: o.w, h: o.h, r: o.r };
+    return b;
+  });
+  // 움직이는 지형(시소·매달린 발판)
+  dynBodies = []; const dynCons = [];
+  L.D.forEach(d => {
+    const b = Bodies.rectangle(d.x, d.y, d.w, d.h, { label: d.type, density: d.type === 'seesaw' ? 0.002 : 0.003, friction: 0.9, frictionAir: 0.02 });
+    b.plugin = { w: d.w, h: d.h, d };
+    dynBodies.push(b);
+    if (d.type === 'seesaw') dynCons.push(Constraint.create({ pointA: { x: d.x, y: d.y }, bodyB: b, pointB: { x: 0, y: 0 }, length: 0, stiffness: 1 }));
+    else for (const sd of [-1, 1]){
+      const ox = sd * (d.w / 2 - 10);
+      dynCons.push(Constraint.create({ pointA: { x: d.x + ox, y: d.ay }, bodyB: b, pointB: { x: ox, y: 0 }, length: d.y - d.ay, stiffness: 0.9, damping: 0.05 }));
+    }
+  });
   const px = L.pot.x, py = L.pot.y;
   // 모모: 몸통(사각) + 머리(원). 발밑 = 받침 윗면(top = py + 18)
   const top = py + 18;
@@ -297,7 +373,7 @@ function setup(){
   potBody = Body.create({ parts: [torso, sproutPart], friction: 0.9, label: 'cat' });
   Body.setInertia(potBody, Infinity); // 고양이는 넘어지지 않고 미끄러지기만 함
   potOff = { foot: top - potBody.position.y };
-  Composite.add(engine.world, [...statics, potBody]);
+  Composite.add(engine.world, [...statics, ...dynBodies, ...dynCons, potBody]);
   Events.on(engine, 'collisionStart', onCollide);
   Events.on(engine, 'collisionActive', onCollide);
 
@@ -339,7 +415,7 @@ function toWorld(e){ const r = cv.getBoundingClientRect(); return { x: (e.client
 const EDGE = 6, PROBES = [[0, 0], [EDGE, 0], [-EDGE, 0], [0, EDGE], [0, -EDGE], [4.2, 4.2], [-4.2, 4.2], [4.2, -4.2], [-4.2, -4.2]];
 function blocked(p){
   if (p.x < 2 || p.x > W - 2 || p.y < 2 || p.y > H - 2) return true;
-  const bs = [...statics, potBody];
+  const bs = [...statics, ...dynBodies, potBody];
   return PROBES.some(([ox, oy]) => Query.point(bs, { x: p.x + ox, y: p.y + oy }).length > 0);
 }
 function segFree(a, b){
@@ -521,6 +597,11 @@ function linePoints(){
 }
 function computeFlow(){
   const g = baseGrid.slice();
+  // 움직이는 지형
+  for (const b of dynBodies){
+    const c = Math.cos(b.angle), sn = Math.sin(b.angle), w = b.plugin.w;
+    for (let t = -w / 2; t <= w / 2; t += 6) markCircle(g, b.position.x + c * t, b.position.y + sn * t, b.plugin.h / 2 + 6);
+  }
   // 선: 선 반두께 5.5 + 벌레 반지름 6 만큼 부풀려 표시
   const P = linePoints();
   for (let i = 1; i < P.length; i++){
@@ -604,6 +685,10 @@ function clampSpeeds(){
     if (Math.abs(av) > 0.04) Body.setAngularVelocity(lineBody, Math.sign(av) * 0.04);
   }
   capV(potBody, 8);
+  for (const b of dynBodies){
+    if (b.label === 'seesaw' && Math.abs(b.angle) > 0.42){ Body.setAngle(b, Math.sign(b.angle) * 0.42); Body.setAngularVelocity(b, 0); }
+    capV(b, 6);
+  }
 }
 function addBody(b, arr){ arr.push(b); Composite.add(engine.world, b); }
 
@@ -810,22 +895,99 @@ function drawChute(c){
     else ctx.fillText(c.x < 0 ? '🪨 →' : '← 🪨', c.x < 0 ? 40 : W - 40, c.y + 4);
   }
 }
+function rrect(x, y, w, h, r){
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
+}
+function hash(n){ n = Math.sin(n * 127.1) * 43758.5453; return n - Math.floor(n); }
+// 돌 블록: 둥근 모서리 + 잔디 윗면 + 돌 무늬
+function drawStone(b, grassTop){
+  const th = TH(), w = b.plugin.w, h = b.plugin.h, seed = b.position.x * 0.37 + b.position.y;
+  ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+  ctx.fillStyle = th.stone; rrect(-w / 2, -h / 2, w, h, Math.min(6, h / 3)); ctx.fill();
+  ctx.save(); ctx.clip();
+  ctx.fillStyle = 'rgba(0,0,0,.10)';
+  const n = Math.max(2, Math.floor(w * h / 900));
+  for (let i = 0; i < n; i++){ ctx.beginPath(); ctx.ellipse(-w / 2 + hash(seed + i) * w, -h / 2 + 8 + hash(seed + i * 3.1) * (h - 8), 3 + hash(seed + i * 7) * 6, 2 + hash(seed + i * 5) * 3, 0, 0, 7); ctx.fill(); }
+  ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(-w / 2, -h / 2, w, 3);
+  if (grassTop){
+    ctx.fillStyle = th.grass; ctx.fillRect(-w / 2, -h / 2, w, 6);
+    for (let x = -w / 2 + 4; x < w / 2; x += 7) { ctx.beginPath(); ctx.moveTo(x, -h / 2 + 6); ctx.lineTo(x + 3, -h / 2 + 10); ctx.lineTo(x + 6, -h / 2 + 6); ctx.fill(); }
+  }
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 2; rrect(-w / 2, -h / 2, w, h, Math.min(6, h / 3)); ctx.stroke();
+  ctx.restore();
+}
+// 나무 판자
+function drawWood(b){
+  const w = b.plugin.w, h = b.plugin.h;
+  ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+  ctx.fillStyle = '#b07a43'; rrect(-w / 2, -h / 2, w, h, 3); ctx.fill();
+  ctx.strokeStyle = 'rgba(80,45,15,.35)'; ctx.lineWidth = 1;
+  for (let y = -h / 2 + 4; y < h / 2 - 1; y += 4){ ctx.beginPath(); ctx.moveTo(-w / 2 + 3, y); ctx.lineTo(w / 2 - 3, y + (y % 8 ? 0.6 : -0.6)); ctx.stroke(); }
+  ctx.fillStyle = '#5b3a1c';
+  for (const x of [-w / 2 + 6, w / 2 - 6]){ ctx.beginPath(); ctx.arc(x, 0, 1.6, 0, 7); ctx.fill(); }
+  ctx.strokeStyle = '#6b4423'; ctx.lineWidth = 1.5; rrect(-w / 2, -h / 2, w, h, 3); ctx.stroke();
+  ctx.restore();
+}
 function drawStatic(b){
-  const th = TH();
-  if (b.label === 'ground'){
+  const th = TH(), k = b.label;
+  if (k === 'ground'){
     const v = b.vertices, x0 = Math.min(...v.map(p => p.x)), x1 = Math.max(...v.map(p => p.x));
     ctx.fillStyle = th.ground; ctx.fillRect(x0, GY, x1 - x0, 40);
     ctx.fillStyle = th.grass; ctx.fillRect(x0, GY, x1 - x0, 7);
     return;
   }
-  ctx.fillStyle = b.label === 'obs' ? '#7c8794' : th.stone;
-  poly(b.vertices); ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,.22)'; ctx.lineWidth = 2; ctx.stroke();
-  if (b.label === 'pillar'){
+  if (k === 'hill'){
+    const r = b.circleRadius;
+    ctx.fillStyle = th.ground; ctx.beginPath(); ctx.arc(b.position.x, b.position.y, r, 0, 7); ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, GY + 6); ctx.clip();
+    ctx.strokeStyle = th.grass; ctx.lineWidth = 12; ctx.beginPath(); ctx.arc(b.position.x, b.position.y, r - 5, 0, 7); ctx.stroke();
+    ctx.restore(); return;
+  }
+  if (k === 'boulder'){
+    const r = b.circleRadius;
+    ctx.fillStyle = '#8a8278'; ctx.beginPath(); ctx.arc(b.position.x, b.position.y, r, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.arc(b.position.x - r * 0.3, b.position.y - r * 0.35, r * 0.4, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#5a534b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(b.position.x, b.position.y, r, 0, 7); ctx.stroke();
+    return;
+  }
+  if (k === 'obs' || k === 'plank') return drawWood(b);
+  if (k === 'box'){
+    const w = b.plugin.w;
+    ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+    ctx.fillStyle = '#c08a4a'; ctx.fillRect(-w / 2, -w / 2, w, w);
+    ctx.strokeStyle = '#6b4423'; ctx.lineWidth = 2.5; ctx.strokeRect(-w / 2 + 1, -w / 2 + 1, w - 2, w - 2);
+    ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-w / 2 + 3, -w / 2 + 3); ctx.lineTo(w / 2 - 3, w / 2 - 3); ctx.moveTo(w / 2 - 3, -w / 2 + 3); ctx.lineTo(-w / 2 + 3, w / 2 - 3); ctx.stroke();
+    ctx.restore(); return;
+  }
+  if (k === 'pillar' || k === 'post'){
+    drawStone(b, k === 'pillar');
     ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = 1.5;
     const v = b.vertices, x0 = v[0].x, x1 = v[1].x;
     for (let y = v[0].y + 20; y < GY; y += 20){ ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); }
+    return;
   }
+  drawStone(b, ['plat', 'shelf', 'cliff', 'stair', 'cave'].includes(k));
+}
+function drawDyn(b){
+  const d = b.plugin.d;
+  if (d.type === 'hang'){
+    const c = Math.cos(b.angle), sn = Math.sin(b.angle);
+    for (const sd of [-1, 1]){
+      const ox = sd * (d.w / 2 - 10), ex = b.position.x + c * ox, ey = b.position.y + sn * ox, ax = d.x + ox;
+      const n = Math.max(4, Math.round(Math.hypot(ex - ax, ey - d.ay) / 9));
+      ctx.strokeStyle = '#4a4a52'; ctx.lineWidth = 2.5;
+      for (let i = 0; i < n; i++){
+        const t0 = i / n, t1 = (i + 0.7) / n;
+        ctx.beginPath(); ctx.moveTo(ax + (ex - ax) * t0, d.ay + (ey - d.ay) * t0); ctx.lineTo(ax + (ex - ax) * t1, d.ay + (ey - d.ay) * t1); ctx.stroke();
+      }
+      ctx.fillStyle = '#4a4a52'; ctx.beginPath(); ctx.arc(ax, d.ay, 4, 0, 7); ctx.fill();
+    }
+  }
+  drawWood(b);
+  if (d.type === 'seesaw'){ ctx.fillStyle = '#3a3a40'; ctx.beginPath(); ctx.arc(d.x, d.y, 4, 0, 7); ctx.fill(); }
 }
 function drawPin(p){
   ctx.fillStyle = p.on ? '#ffd166' : '#c9a54a';
@@ -938,7 +1100,9 @@ function render(){
   if (L.theme === 2){ ctx.fillStyle = 'rgba(255,255,255,.7)'; for (let i = 0; i < 24; i++){ ctx.fillRect((i * 97) % W, (i * 53) % 300, 1.5, 1.5); } }
   L.winds.forEach(drawWind);
   L.clouds.forEach(drawCloud);
+  if (L.cave){ const c = L.cave, x0 = c.left ? 0 : c.mouth, x1 = c.left ? c.mouth : W; ctx.fillStyle = 'rgba(30,20,10,.22)'; ctx.fillRect(x0, c.ceilY, x1 - x0, c.floorY - c.ceilY); }
   statics.forEach(drawStatic);
+  dynBodies.forEach(drawDyn);
   L.chutes.forEach(drawChute);
   L.hives.forEach(drawHive);
   if (phase === 'draw' && L.crawl.length){
