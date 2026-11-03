@@ -82,7 +82,7 @@
 
 <script>
 const {Engine, Bodies, Body, Composite, Events, Query, Constraint} = Matter;
-const W = 360, H = 640, GY = H - 40, SIM_MS = 10000, STEP = 1000 / 60, SUB = 2;
+const W = 360, H = 640, GY = H - 40, SIM_MS = 8000, STEP = 1000 / 60, SUB = 2;
 const CAT_DEF = 1, CAT_BUG = 2, CAT_DROP = 4, CAT_CRAWL = 8;
 
 // ---------- 요소 정의: 레벨이 오르면 하나씩 처음 등장 ----------
@@ -245,13 +245,14 @@ function genLevel(lv, seed, themeIdx){
       const w = R(90, 140);
       let cx = R(w / 2 + 10, W - w / 2 - 10);
       if (i === 0) cx = clamp(px + R(-w / 2 + 25, w / 2 - 25), w / 2 + 10, W - w / 2 - 10);
-      L.clouds.push({ x: cx, w, rate: R(95, 140) / Math.max(0.75, dens) });
+      L.clouds.push({ x: cx, w, rate: R(80, 115) / Math.max(0.75, dens) });
     }
   }
   if (kinds.includes('wind')){
     const y0 = clamp(R(sp.y - 210, sp.y - 70), 90, 460), h = R(110, 170);
     L.winds.push({ y0, y1: Math.min(y0 + h, sp.y + 30), dir: r() < 0.5 ? -1 : 1, str: R(0.7, 1.1) });
   }
+  if (L.winds.length) L.clouds.forEach(c => { c.w = Math.min(190, c.w + 40); c.x = clamp(c.x - L.winds[0].dir * 45, c.w / 2 + 10, W - c.w / 2 - 10); });
   const yMin = L.clouds.length ? 125 : 55, yMax = Math.min(sp.y - 30, 400);
   if (kinds.includes('bee')){
     const nh = 1 + (lv >= 6 && r() < 0.5 ? 1 : 0);
@@ -280,9 +281,9 @@ function genLevel(lv, seed, themeIdx){
   if (kinds.includes('rock')){
     const n = (lv >= 10 && r() < 0.3) ? 2 : 1;
     for (let i = 0; i < n; i++){
-      const rr = R(10, 14), interval = R(1400, 2200);
+      const rr = R(10, 14), interval = R(1200, 1900);
       if (r() < 0.5 && !L.cave){
-        L.chutes.push({ type: 'top', x: clamp(px + R(-30, 30), 24, W - 24), y: -12, vx: 0, vy: 1, r: rr, interval, first: R(600, 1100) });
+        L.chutes.push({ type: 'top', x: clamp(px + R(-30, 30), 24, W - 24), y: -12, vx: 0, vy: 1, r: rr, interval, first: R(350, 750) });
       } else {
         const fromLeft = L.cave ? !L.cave.left : r() < 0.5;
         let y = R(Math.max(120, sp.y - 230), sp.y - 50);
@@ -290,14 +291,14 @@ function genLevel(lv, seed, themeIdx){
         const vx = (fromLeft ? 1 : -1) * R(3.2, 4.2), x0 = fromLeft ? -12 : W + 12;
         const t = Math.abs(sp.x - x0) / Math.abs(vx), gstep = 0.278;
         const vy = clamp((sp.y - 6 - y - 0.5 * gstep * t * t) / t, -8, 2);
-        L.chutes.push({ type: 'side', x: x0, y, vx, vy, r: rr, interval, first: R(600, 1100) });
+        L.chutes.push({ type: 'side', x: x0, y, vx, vy, r: rr, interval, first: R(350, 750) });
       }
     }
   }
   if (kinds.includes('crawl')){
     const n = Math.round(Math.min(6, 2 + lv / 4) * dens) + 1;
     const sides = r() < 0.5 ? [-1, 1] : [px < W / 2 ? 1 : -1];
-    for (let i = 0; i < n; i++) L.crawl.push({ side: sides[i % sides.length], t: 300 + i * 900 + R(0, 300) });
+    for (let i = 0; i < n; i++) L.crawl.push({ side: sides[i % sides.length], t: 200 + i * 700 + R(0, 250) });
   }
 
   // 3) 고정 핀 (도우미 요소)
@@ -411,7 +412,7 @@ function setup(){
   const hint = document.getElementById('hint');
   hint.innerHTML = L.intro && mode === 'level'
     ? `<b>NEW ${L.intro.icon} ${L.intro.name}</b><br>${L.intro.desc}`
-    : '한 번에 선을 그어 모모를 지키세요 · 10초';
+    : '한 번에 선을 그어 모모를 지키세요 · 8초';
   hint.classList.remove('hidden');
   const b = store.get(curKey(), null);
   document.getElementById('best').textContent = b ? `최고 ${b.score}점 · 잉크 ${b.pct}%` : '첫 도전';
@@ -550,8 +551,8 @@ function startSim(){
   phase = 'sim'; simT = 0;
   simRng = rng(L.seed + 7);
   spawnQ = [];
-  L.hives.filter(h => h.kind === 'bee').forEach(h => { for (let i = 0; i < h.n; i++) spawnQ.push({ t: 150 + i * 140 + simRng() * 60, h }); });
-  ducks = L.hives.filter(h => h.kind === 'wasp').map((h, i) => ({ h, next: 900 + i * 500 + simRng() * 400, burst: 0, shotT: 0, dir: { x: 0, y: 1 }, size: Math.min(8, 5 + Math.floor(L.lv / 6)) }));
+  L.hives.filter(h => h.kind === 'bee').forEach(h => { for (let i = 0; i < h.n; i++) spawnQ.push({ t: 100 + i * 110 + simRng() * 50, h }); });
+  ducks = L.hives.filter(h => h.kind === 'wasp').map((h, i) => ({ h, next: 600 + i * 400 + simRng() * 300, burst: 0, shotT: 0, dir: { x: 0, y: 1 }, size: Math.min(8, 5 + Math.floor(L.lv / 6)) }));
   popQ = new Set();
   L.crawl.forEach(c => spawnQ.push({ t: c.t, crawl: c }));
   spawnQ.sort((a, b) => a.t - b.t);
@@ -768,7 +769,7 @@ function step(){
       Body.setVelocity(j, { x: dk.dir.x * 7, y: dk.dir.y * 7 });
       addBody(j, drops);
       dk.burst--; dk.shotT = simT + 55;
-      if (!dk.burst) dk.next = simT + 1400 + simRng() * 500;
+      if (!dk.burst) dk.next = simT + 1200 + simRng() * 400;
     }
   }
   for (const d of drops) if (d.position.y > H + 20 || d.position.x < -20 || d.position.x > W + 20 || simT - d.plugin.born > (d.label === 'splash' ? 1500 : 4000)) toRemove.add(d);
