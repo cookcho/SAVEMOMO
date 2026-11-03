@@ -139,7 +139,7 @@
   </div>
   <footer>
     <div><button id="btnRetry">↺ 다시</button><button id="btnStory">📖 이야기</button><button id="btnInstall" class="hidden">📲 설치</button></div>
-    <div><span id="best"></span><span id="ver">v2026.11.04c</span></div>
+    <div><span id="best"></span><span id="ver">v2026.11.04d</span></div>
   </footer>
 </div>
 <div id="picker" class="hidden">
@@ -176,7 +176,7 @@ const MECH = [
 ];
 const CARVED = ['pocket', 'well', 'alcove'];
 const ARCH_UNLOCK = [['plat', 1], ['ground', 2], ['pocket', 10], ['well', 14], ['alcove', 18], ['cliff', 8], ['stairs', 9], ['shelf', 11], ['valley', 13], ['pillar', 15], ['cave', 17], ['bowl', 19], ['hang', 21], ['seesaw', 23]];
-const ARCH_W = { pocket: 0.9, well: 0.9, alcove: 1.0, plat: 1, ground: 0.95, cliff: 1, stairs: 1.3, shelf: 1, valley: 0.9, pillar: 1.12, cave: 0.65, bowl: 1.1, hang: 1.2, seesaw: 1.25 };
+const ARCH_W = { pocket: 0.9, well: 0.9, alcove: 1.2, plat: 1, ground: 0.95, cliff: 1, stairs: 1.3, shelf: 1, valley: 0.9, pillar: 1.12, cave: 0.65, bowl: 1.1, hang: 1.4, seesaw: 1.35 };
 const ARCH_DESC = { pocket: '땅속 굴에 숨은 모모! 통로 입구를 막아 보세요', well: '깊은 우물 바닥이에요. 입구를 덮거나 중간을 막아요', alcove: '절벽 속 굴이에요. 옆 구덩이에서 드론이 올라와요', cliff: '모모가 절벽 끝이나 절벽 아래에 있어요', stairs: '한쪽은 벽, 한쪽은 트여 있어요', shelf: '벽에 붙은 선반이에요', valley: '양쪽 벽을 기둥 삼아 보세요', pillar: '좁은 기둥 꼭대기예요', cave: '입구가 한쪽뿐인 동굴! 입구 위 핀을 써 보세요', bowl: '기울어진 판자 사이에 쏙 들어가 있어요', hang: '사슬에 매달려 부딪히면 흔들려요', seesaw: '선의 무게로 기울어요. 균형을 잡아요' };
 const ARCH_NAME = { pocket: '땅굴', well: '우물', alcove: '절벽 굴', plat: '공중 받침대', ground: '언덕 들판', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기', cliff: '절벽', cave: '동굴', bowl: 'V자 그릇', seesaw: '시소', hang: '매달린 발판', stairs: '계단' };
 // 10레벨마다 모모가 도망치는 장소가 바뀜 (70레벨 이후 2회차로 반복)
@@ -233,8 +233,9 @@ function inShape(x, y, o){
 }
 function solidAt(ops, x, y){ let v = false; for (const o of ops){ if (inShape(x, y, o)) v = o.op === 'add'; } return v; }
 function carveToRects(ops){
-  const cols = Math.ceil(W / TILE), rows = Math.ceil(H / TILE), sol = new Uint8Array(cols * rows), used = new Uint8Array(cols * rows);
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) sol[r * cols + c] = solidAt(ops, c * TILE + TILE / 2, r * TILE + TILE / 2) ? 1 : 0;
+  const X0 = -3 * TILE; // 화면 밖까지 땅을 만들어 드론이 바깥으로 돌아 들어오지 못하게
+  const cols = Math.ceil((W - 2 * X0) / TILE), rows = Math.ceil(H / TILE), sol = new Uint8Array(cols * rows), used = new Uint8Array(cols * rows);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) sol[r * cols + c] = solidAt(ops, X0 + c * TILE + TILE / 2, r * TILE + TILE / 2) ? 1 : 0;
   const out = [];
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++){
     if (!sol[r * cols + c] || used[r * cols + c]) continue;
@@ -242,7 +243,7 @@ function carveToRects(ops){
     let h = 1;
     outer: while (r + h < rows){ for (let k = 0; k < w; k++){ const i = (r + h) * cols + c + k; if (!sol[i] || used[i]) break outer; } h++; }
     for (let a = 0; a < h; a++) for (let k = 0; k < w; k++) used[(r + a) * cols + c + k] = 1;
-    out.push({ x: (c + w / 2) * TILE, y: (r + h / 2) * TILE, w: w * TILE, h: h * TILE, a: 0, kind: 'tile' });
+    out.push({ x: X0 + (c + w / 2) * TILE, y: (r + h / 2) * TILE, w: w * TILE, h: h * TILE, a: 0, kind: 'tile' });
   }
   return out;
 }
@@ -253,15 +254,15 @@ function buildCarve(arch, R, r){
     // 지표 아래 타원형 방 + 지표로 이어진 통로
     const ys = snap(R(300, 390)), cx = R(110, 250), rx = R(78, 108), ry = R(52, 68), cy = ys + R(125, 170);
     const floorY = snap(cy + ry * 0.55), sw = R(50, 78), sx = clamp(cx + R(-rx * 0.35, rx * 0.35), sw / 2 + 20, W - sw / 2 - 20);
-    ops.push({ op: 'add', t: 'rect', x0: -10, y0: ys, x1: W + 10, y1: H + 10 });
+    ops.push({ op: 'add', t: 'rect', x0: -40, y0: ys, x1: W + 40, y1: H + 10 });
     ops.push({ op: 'cut', t: 'ellipse', cx, cy, rx, ry });
     ops.push({ op: 'cut', t: 'rect', x0: sx - sw / 2, y0: ys - 10, x1: sx + sw / 2, y1: cy });
-    ops.push({ op: 'add', t: 'rect', x0: -10, y0: floorY, x1: W + 10, y1: H + 10 });
+    ops.push({ op: 'add', t: 'rect', x0: -40, y0: floorY, x1: W + 40, y1: H + 10 });
     Object.assign(info, { ys, shaftX: sx, shaftW: sw, floorY, px: clamp(cx + R(-20, 20), cx - rx * 0.5, cx + rx * 0.5) });
   } else if (arch === 'well'){
     // 깊고 좁은 수직 우물, 바닥은 조금 넓음
     const ys = snap(R(250, 340)), sw = R(70, 92), sx = R(sw / 2 + 50, W - sw / 2 - 50), floorY = snap(ys + R(170, 240));
-    ops.push({ op: 'add', t: 'rect', x0: -10, y0: ys, x1: W + 10, y1: H + 10 });
+    ops.push({ op: 'add', t: 'rect', x0: -40, y0: ys, x1: W + 40, y1: H + 10 });
     ops.push({ op: 'cut', t: 'rect', x0: sx - sw / 2, y0: ys - 10, x1: sx + sw / 2, y1: floorY });
     ops.push({ op: 'cut', t: 'rect', x0: sx - sw / 2 - R(15, 30), y0: floorY - 90, x1: sx + sw / 2 + R(15, 30), y1: floorY });
     Object.assign(info, { ys, shaftX: sx, shaftW: sw, floorY, px: sx });
@@ -270,8 +271,8 @@ function buildCarve(arch, R, r){
     const left = r() < 0.5, ys = snap(R(220, 300)), ay = snap(R(420, 500)), aw = R(95, 125), pw = R(72, 95), pitBot = snap(ay + R(60, 120));
     const ax0 = left ? 0 : W - aw, ax1 = left ? aw : W;
     const px0 = left ? aw : W - aw - pw, px1 = left ? aw + pw : W - aw;
-    ops.push({ op: 'add', t: 'rect', x0: -10, y0: ys, x1: W + 10, y1: H + 10 });
-    ops.push({ op: 'cut', t: 'rect', x0: ax0 - 10, y0: ay - 92, x1: ax1, y1: ay });
+    ops.push({ op: 'add', t: 'rect', x0: -40, y0: ys, x1: W + 40, y1: H + 10 });
+    ops.push({ op: 'cut', t: 'rect', x0: Math.max(0, ax0 - 10), y0: ay - 92, x1: Math.min(W, ax1 + (left ? 10 : 0)), y1: ay });
     ops.push({ op: 'cut', t: 'rect', x0: px0, y0: ys - 10, x1: px1, y1: pitBot });
     Object.assign(info, { ys, floorY: ay, left, mouthX: left ? aw : W - aw, mouthTop: ay - 92, pit: { x: (px0 + px1) / 2, y: pitBot - 26 }, px: left ? R(45, aw - 35) : W - R(45, aw - 35) });
   }
@@ -394,6 +395,7 @@ function genLevel(lv, seed, themeIdx){
     const dog = has('bigdog') && r() < 0.5 ? 'bigdog' : 'crawl';
     if (kinds.length >= nT) kinds[kinds.length - 1] = dog; else kinds.push(dog);
   }
+  if (kinds.includes('wind') && kinds.filter(k => k !== 'wind').every(k => k === 'rain') && pool.includes('bee') && !kinds.includes('bee')) kinds.push('bee');
   if (!kinds.some(k => k !== 'wind')) kinds.push(pool.includes('bee') ? 'bee' : pick(pool.filter(k => k !== 'wind')));
   L.kinds = kinds;
   // 난이도 예산: 레벨에 비례해 완만히 증가. 새 요소 소개 레벨은 20% 낮춤. 어려운 지형일수록 위협 예산 감소
@@ -406,6 +408,8 @@ function genLevel(lv, seed, themeIdx){
     const avail = MODS.map(m => m.k);
     while (mods.length < nm){ const k = pick(avail); if (!mods.includes(k)) mods.push(k); }
   }
+  // 흔들리는 지형(시소·매달린 발판)에 무거운 잉크는 너무 가혹 → 제외
+  if ((arch === 'hang' || arch === 'seesaw') && mods.includes('heavy') && !modIntro) mods = mods.filter(k => k !== 'heavy');
   L.mods = mods; L.modIntro = modIntro;
   const capS = lv <= 30 ? 1 : Math.min(2.2, 1 + (lv - 30) / 35); // 30레벨 이후 위협 상한이 점점 커짐
   L.capS = capS;
@@ -508,9 +512,9 @@ function genLevel(lv, seed, themeIdx){
         L.chutes.push({ type: 'top', x: clamp(px + R(-30, 30), 24, W - 24), y: -12, vx: 0, vy: 1, r: rr, interval, first: R(350, 750) });
       } else {
         const fromLeft = L.cave ? !L.cave.left : r() < 0.5;
-        let y = R(Math.max(120, sp.y - 230), sp.y - 50);
-        for (let t = 0; t < 20 && !free({ x: fromLeft ? 20 : W - 20, y }, 20); t++) y = R(120, sp.y - 40);
-        const vx = (fromLeft ? 1 : -1) * R(3.2, 4.2), x0 = fromLeft ? -12 : W + 12;
+        let y = L.carve ? R(110, L.carveInfo.ys - 40) : R(Math.max(120, sp.y - 230), sp.y - 50);
+        for (let t = 0; t < 20 && !free({ x: fromLeft ? 20 : W - 20, y }, 20); t++) y = L.carve ? R(110, L.carveInfo.ys - 40) : R(120, sp.y - 40);
+        const vx = (fromLeft ? 1 : -1) * R(3.2, 4.2), x0 = fromLeft ? -40 : W + 40;
         const t = Math.abs(sp.x - x0) / Math.abs(vx), gstep = 0.278;
         const vy = clamp((sp.y - 6 - y - 0.5 * gstep * t * t) / t, -8, 2);
         L.chutes.push({ type: 'side', x: x0, y, vx, vy, r: rr, interval, first: R(350, 750) });
@@ -521,8 +525,10 @@ function genLevel(lv, seed, themeIdx){
   // 3) 고정 핀 (도우미 요소)
   if (L.carve && has('pin')){
     const ci = L.carveInfo;
-    const cp = ci.arch === 'alcove' ? { x: ci.mouthX + (ci.left ? 14 : -14), y: ci.mouthTop + 16 } : { x: ci.shaftX + (r() < 0.5 ? -1 : 1) * (ci.shaftW / 2 + 14), y: ci.ys - 16 };
-    if (free(cp, 10)){ used.push(cp); L.pins.push(cp); }
+    const cps = ci.arch === 'alcove'
+      ? [{ x: ci.mouthX + (ci.left ? 10 : -10), y: ci.mouthTop + 8 }, { x: ci.mouthX + (ci.left ? 10 : -10), y: ci.floorY - 8 }] // 두 핀을 이으면 틈 없는 문
+      : [{ x: ci.shaftX + (r() < 0.5 ? -1 : 1) * (ci.shaftW / 2 + 14), y: ci.ys - 16 }];
+    for (const cp of cps) if (free(cp, ci.arch === 'alcove' ? 6 : 10)){ used.push(cp); L.pins.push(cp); }
   }
   if (L.cave && has('pin')){
     const cp = { x: L.cave.mouth + (L.cave.left ? 16 : -16), y: L.cave.ceilY + 18 };
@@ -617,12 +623,13 @@ function setup(){
   const px = L.pot.x, py = L.pot.y;
   // 모모: 몸통(사각) + 머리(원). 발밑 = 받침 윗면(top = py + 18)
   const top = py + 18;
-  const torso = Bodies.rectangle(px, top - 17, 42, 34, { label: 'catTorso', density: 0.01, friction: 1 });
+  const torso = Bodies.rectangle(px, top - 17, 42, 34, { label: 'catTorso', density: 0.02, friction: 1 });
   sproutPart = Bodies.circle(px, top - 45, 22, { label: 'catHead', density: 0.004 });
   potBody = Body.create({ parts: [torso, sproutPart], friction: 0.9, label: 'cat' });
   Body.setInertia(potBody, Infinity); // 고양이는 넘어지지 않고 미끄러지기만 함
   potOff = { foot: top - potBody.position.y };
-  Composite.add(engine.world, [...statics, ...dynBodies, ...dynCons, potBody]);
+  const edgeWalls = [-15, W + 15].map(x => Bodies.rectangle(x, H / 2 - 200, 30, H + 400, { isStatic: true, label: 'edge', collisionFilter: { category: 16, mask: CAT_DEF } }));
+  Composite.add(engine.world, [...statics, ...dynBodies, ...dynCons, potBody, ...edgeWalls]);
   Events.on(engine, 'collisionStart', onCollide);
   Events.on(engine, 'collisionActive', onCollide);
 
@@ -767,7 +774,7 @@ function showToast(msg){
   toastTimer = setTimeout(() => { if (phase !== 'draw' || drawing) h.classList.add('hidden'); }, 2200);
 }
 
-const inkDensity = () => L.mods.includes('heavy') ? 0.0055 : 0.0025;
+const inkDensity = () => L.mods.includes('heavy') ? 0.0028 : 0.0012; // 선이 가벼워야 적에게 밀림
 function endStroke(){
   drawing = false; fingerBlocked = false;
   if (inkUsed < 12){
@@ -800,7 +807,7 @@ function endStroke(){
   }
   lineBody.label = 'line';
   const ice = L.mods.includes('ice');
-  lineBody.friction = ice ? 0.02 : 0.6; lineBody.frictionStatic = ice ? 0.05 : 1; lineBody.frictionAir = 0.03;
+  lineBody.friction = ice ? 0.02 : 0.6; lineBody.frictionStatic = ice ? 0.05 : 1; lineBody.frictionAir = 0.01;
   if (ice) lineBody.parts.forEach(pt => { pt.friction = 0.02; pt.frictionStatic = 0.05; });
   const p0 = { x: lineBody.position.x, y: lineBody.position.y };
   lineLocal = pts.map(p => ({ x: p.x - p0.x, y: p.y - p0.y }));
@@ -849,7 +856,23 @@ function handle(a, b, name){
     else if (WATER.includes(b.label)){ if (!toRemove.has(b)){ ouch(b.label === 'drop' ? 7 : b.label === 'jet' ? 6 : 4, true); toRemove.add(b); } }
     else if (b.label === 'balloon'){ if (!b.plugin.hit){ b.plugin.hit = true; ouch(18, true); } }
   }
-  if (name === 'collisionStart' && a.label === 'jet' && b.parent.label === 'line') jetPush.push({ x: a.position.x, y: a.position.y, vx: a.velocity.x, vy: a.velocity.y });
+  if (name === 'collisionStart' && a.label === 'jet' && b.parent.label === 'line') jetPush.push({ x: a.position.x, y: a.position.y, vx: a.velocity.x, vy: a.velocity.y, k: 0.004 });
+  // 적이 선에 부딪히면 날아오던 방향으로 선을 튕겨냄(적마다 세기 다름). 무거운 적은 붙어 있는 동안 계속 밂
+  if (b.parent.label === 'line'){
+    const big = a.label === 'tank' || (a.label === 'crawl' && a.plugin && a.plugin.big);
+    const k = name === 'collisionStart'
+      ? ({ bee: 0.0035, tank: 0.009, balloon: 0.008, crawl: big ? 0.009 : 0.0035 })[a.label]
+      : (big ? 0.0005 : 0);
+    // 선이 여러 조각이라 한 번 부딪혀도 충돌이 여러 개 생김 → 적 하나당 충격은 0.12초에 한 번, 미는 힘은 프레임당 한 번
+    const P = a.plugin || {};
+    const okHit = name === 'collisionStart' ? simT - (P.pushT ?? -1e9) >= 120 : P.pushStep !== simT;
+    if (k && okHit){
+      if (name === 'collisionStart') P.pushT = simT; else P.pushStep = simT;
+      let vx = a.velocity.x, vy = a.velocity.y;
+      if (Math.hypot(vx, vy) < 0.3){ vx = a.position.x - b.position.x; vy = a.position.y - b.position.y; vx = -vx; vy = -vy; }
+      jetPush.push({ x: a.position.x, y: a.position.y, vx, vy, k });
+    }
+  }
   if (name === 'collisionStart' && WATER.includes(a.label) && b.parent !== potBody) toRemove.add(a);
   // 물풍선은 무엇에든 부딪히면 터짐
   if (name === 'collisionStart' && a.label === 'balloon' && !WATER.includes(b.label) && b.label !== 'balloon') popQ.add(a);
@@ -972,13 +995,14 @@ function clampSpeeds(){
   for (const k of rocks) capV(k, 9);
   for (const c of crawlers){ const v = Body.getVelocity(c), cap = c.plugin.big ? 1.15 : 2.4; if (Math.abs(v.x) > cap) Body.setVelocity(c, { x: Math.sign(v.x) * cap, y: v.y }); }
   if (lineBody){
-    capV(lineBody, 7);
+    capV(lineBody, 9);
     const av = Body.getAngularVelocity(lineBody);
-    if (Math.abs(av) > 0.06) Body.setAngularVelocity(lineBody, Math.sign(av) * 0.06);
+    if (Math.abs(av) > 0.09) Body.setAngularVelocity(lineBody, Math.sign(av) * 0.09);
   }
   capV(potBody, 8);
   for (const b of dynBodies){
     if (b.label === 'seesaw' && Math.abs(b.angle) > 0.42){ Body.setAngle(b, Math.sign(b.angle) * 0.42); Body.setAngularVelocity(b, 0); }
+    if (b.label === 'hang' && Math.abs(b.angle) > 0.3){ Body.setAngle(b, Math.sign(b.angle) * 0.3); Body.setAngularVelocity(b, 0); }
     capV(b, 6);
   }
 }
@@ -991,13 +1015,13 @@ function step(){
     const q = spawnQ.shift();
     if (q.crawl){
       const big = q.crawl.big, rr = big ? 21 : 10, x = q.crawl.side < 0 ? rr + 2 : W - rr - 2;
-      const c = Bodies.circle(x, GY - rr - 1, rr, { label: 'crawl', density: big ? 0.008 : 0.0045, friction: 0.9, collisionFilter: { category: CAT_CRAWL, mask: CAT_DEF | CAT_CRAWL } });
+      const c = Bodies.circle(x, GY - rr - 1, rr, { label: 'crawl', density: big ? 0.014 : 0.0075, friction: 0.9, collisionFilter: { category: CAT_CRAWL, mask: CAT_DEF | CAT_CRAWL } });
       c.plugin = { hitT: -9999, ph: simRng() * 6, big, nextHop: simT + 500 + simRng() * 600 };
       addBody(c, crawlers);
     } else {
       const h = q.h, tank = h.kind === 'tank';
       const bug = Bodies.circle(h.x + (simRng() - 0.5) * 10, h.y + (tank ? 34 : 27), tank ? 11 : 6, {
-        label: h.kind, frictionAir: tank ? 0.05 : 0.03, density: tank ? 0.0065 : 0.0016, restitution: tank ? 0.1 : 0.4,
+        label: h.kind, frictionAir: tank ? 0.05 : 0.03, density: tank ? 0.012 : 0.003, restitution: tank ? 0.1 : 0.4,
         collisionFilter: { category: CAT_BUG, mask: CAT_DEF | CAT_BUG }
       });
       bug.plugin = { hitT: -9999, ph: simRng() * 6, mode: 'aim', until: simT + 500 + simRng() * 600, dir: null };
@@ -1019,7 +1043,7 @@ function step(){
   L.chutes.forEach((c, i) => {
     if (simT >= chuteT[i]){
       chuteT[i] += c.interval;
-      const k = Bodies.circle(c.x, c.y, c.r, { label: 'balloon', density: 0.0045, friction: 0.3, restitution: 0.2 });
+      const k = Bodies.circle(c.x, c.y, c.r, { label: 'balloon', density: 0.008, friction: 0.3, restitution: 0.25, collisionFilter: { category: 32, mask: 0xFFFFFFFF & ~16 } });
       k.plugin = { hit: false, col: Math.floor(simRng() * 4) };
       Body.setVelocity(k, { x: c.vx, y: c.vy });
       addBody(k, rocks);
@@ -1079,7 +1103,7 @@ function step(){
         const tank = bug.label === 'tank';
         const fd = s === 0 ? (bug.plugin.fd = flowDir(bug)) : bug.plugin.fd;
         // 헤비 드론은 길이 막히면(직진 모드) 추력을 올려 선을 밀어붙임
-        const acc = tank ? (fd ? 0.0010 : 0.0018) * (1 + L.capS * 0.15) : 0.0012 * L.speed / 2.2;
+        const acc = tank ? (fd ? 0.0010 : 0.0018) * (1 + L.capS * 0.15) : 0.0012 * L.speed / 2.2 * (fd ? 1 : 1.6);
         bug.plugin.ram = tank && !fd;
         let ux = dx / m, uy = dy / m;
         if (fd){ ux = fd.x; uy = fd.y; }
@@ -1091,7 +1115,7 @@ function step(){
         });
       }
     }
-    for (const c of crawlers) Body.applyForce(c, c.position, { x: c.mass * (c.plugin.big ? 0.0012 : 0.0011) * Math.sign(L.pot.x - c.position.x), y: 0 });
+    for (const c of crawlers) Body.applyForce(c, c.position, { x: c.mass * (c.plugin.big ? 0.0012 : 0.0011) * Math.sign(potBody.position.x - c.position.x), y: 0 });
     for (const d of drops) if (d.label === 'jet') Body.applyForce(d, d.position, { x: 0, y: -d.mass * g.y * g.scale });
     for (const w of L.winds){
       const inB = y => y > w.y0 && y < w.y1;
@@ -1103,7 +1127,7 @@ function step(){
       }
     }
     if (jetPush.length && lineBody){
-      for (const j of jetPush){ const m = Math.hypot(j.vx, j.vy) || 1; Body.applyForce(lineBody, { x: j.x, y: j.y }, { x: j.vx / m * lineBody.mass * 0.004, y: j.vy / m * lineBody.mass * 0.004 }); }
+      for (const j of jetPush){ const m = Math.hypot(j.vx, j.vy) || 1; Body.applyForce(lineBody, { x: j.x, y: j.y }, { x: j.vx / m * lineBody.mass * j.k, y: j.vy / m * lineBody.mass * j.k }); }
       jetPush = [];
     }
     Engine.update(engine, STEP / SUB);
@@ -1296,7 +1320,7 @@ function drawChute(c){
   // 물풍선 발사대(파란 통)
   ctx.fillStyle = '#4dabf7';
   if (c.type === 'top'){ ctx.fillRect(c.x - 17, 0, 34, 16); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x - 13, 10, 26, 6); }
-  else { const x = c.x < 0 ? 0 : W - 22; ctx.fillRect(x, c.y - 17, 22, 34); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x < 0 ? 16 : W - 22, c.y - 13, 6, 26); }
+  else { const x = c.x < 0 ? 0 : W - 22; /* 발사구는 화면 가장자리에 그림 */ ctx.fillRect(x, c.y - 17, 22, 34); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x < 0 ? 16 : W - 22, c.y - 13, 6, 26); }
   if (phase === 'draw'){
     ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center';
     if (c.type === 'top') ctx.fillText('🎈 ↓', c.x, 30);
@@ -1512,7 +1536,7 @@ function drawBug(bg){
 // 불독
 function drawCrawler(c){
   const big = c.plugin.big, sc = c.circleRadius / 12;
-  const x = c.position.x, y = c.position.y + 2 * sc, d = Math.sign(L.pot.x - x) || 1, step = Math.sin(simT / (big ? 110 : 60) + c.plugin.ph);
+  const x = c.position.x, y = c.position.y + 2 * sc, d = Math.sign(potBody.position.x - x) || 1, step = Math.sin(simT / (big ? 110 : 60) + c.plugin.ph);
   const body = big ? '#8d8577' : '#e8c39e', dark = big ? '#4a433b' : '#b07a4a', belly = big ? '#d9d2c5' : '#fff3e2';
   ctx.save(); ctx.translate(x, y); ctx.scale(d * sc, sc);
   ctx.fillStyle = dark;
