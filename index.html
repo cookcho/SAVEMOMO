@@ -28,8 +28,9 @@
   .ink{position:relative;height:18px;background:#0d1611;border-radius:9px;margin-top:8px;overflow:hidden}
   .inkfill{position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(90deg,#2563eb,#60a5fa)}
   #inkTxt{position:absolute;inset:0;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:800}
-  #chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;min-height:20px}
-  .chip{font-size:11px;font-weight:700;background:#22332a;color:#cfe;padding:2px 8px;border-radius:10px}
+  #chips{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;margin-top:6px;height:22px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  #chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;white-space:nowrap;font-size:11px;font-weight:700;background:#22332a;color:#cfe;padding:2px 8px;border-radius:10px}
   .chip.new{background:#e0a92e;color:#2a1a00}
   #stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;padding:4px 0}
   canvas{touch-action:none;border-radius:14px;display:block;box-shadow:0 6px 24px rgba(0,0,0,.35)}
@@ -562,6 +563,7 @@ function setup(){
   const b = store.get(curKey(), null);
   document.getElementById('best').textContent = b ? `최고 ${b.score}점 · 잉크 ${b.pct}%` : '첫 도전';
   updateInk();
+  resize();
   if (typeof maybeChapterCard === 'function' && store.get('momo_story_seen', false)) maybeChapterCard();
 }
 
@@ -1580,12 +1582,14 @@ function render(){
 function resize(){
   const st = document.getElementById('stage');
   const w = st.clientWidth - 16, h = st.clientHeight - 8;
-  scale = Math.min(w / W, h / H);
-  dpr = window.devicePixelRatio || 1;
+  const ns = Math.min(w / W, h / H), nd = window.devicePixelRatio || 1;
+  if (ns === scale && nd === dpr && cv.width) return; // 크기 그대로면 다시 만들지 않음
+  scale = ns; dpr = nd;
   cv.style.width = W * scale + 'px'; cv.style.height = H * scale + 'px';
   cv.width = Math.round(W * scale * dpr); cv.height = Math.round(H * scale * dpr);
 }
 window.addEventListener('resize', resize);
+if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(document.getElementById('stage'));
 let last = performance.now(), accum = 0;
 function loop(t){
   const dt = Math.min(100, t - last); last = t;
