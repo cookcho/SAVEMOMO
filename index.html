@@ -54,6 +54,21 @@
   footer button,.modal button{border:0;border-radius:12px;font-weight:800;font-size:14px;padding:10px 16px;cursor:pointer}
   #btnRetry{background:#2a3a30;color:#fff}
   #best{font-size:12px;color:#a9b8ae;text-align:right}
+  #ver{display:block;font-size:10px;color:#5f7268;margin-top:2px}
+  #lvl{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+  #picker{position:fixed;inset:0;z-index:15;background:rgba(10,16,12,.92);display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  .pk{width:min(500px,100%);flex:1;display:flex;flex-direction:column;min-height:0}
+  .pkTop{display:flex;align-items:center;gap:8px;padding:14px 14px 8px}
+  .pkTop h3{margin:0;font-size:18px;flex:1}
+  .pkTop input{width:76px;padding:8px;border-radius:10px;border:0;font-size:15px;font-weight:700;text-align:center}
+  .pkTop button{border:0;border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer}
+  .pkList{flex:1;overflow-y:auto;padding:4px 14px 20px}
+  .pkCh{margin:12px 0 6px;font-weight:800;font-size:14px;color:#cfe}
+  .pkGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+  .pkGrid button{border:0;border-radius:10px;padding:8px 0 6px;background:#22332a;color:#fff;font-weight:800;font-size:15px;cursor:pointer;line-height:1.1}
+  .pkGrid button small{display:block;font-size:10px;color:#ffd166;font-weight:700;min-height:12px}
+  .pkGrid button.cur{background:#2f6b43;outline:2px solid #9fd7a8}
+  .pkGrid button.lock{opacity:.45}
   .modalWrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
   .hidden{display:none!important}
   .modal{background:#fff;color:#16221b;border-radius:18px;padding:20px 22px;width:250px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.4)}
@@ -120,8 +135,14 @@
   </div>
   <footer>
     <div><button id="btnRetry">↺ 다시</button><button id="btnStory">📖 이야기</button><button id="btnInstall" class="hidden">📲 설치</button></div>
-    <div id="best"></div>
+    <div><span id="best"></span><span id="ver">v2026.11.04a</span></div>
   </footer>
+</div>
+<div id="picker" class="hidden">
+  <div class="pk">
+    <div class="pkTop"><h3>레벨 선택</h3><input id="pkNum" type="number" inputmode="numeric" min="1" placeholder="번호"><button id="pkGo" class="primary">이동</button><button id="pkClose" class="secondary">닫기</button></div>
+    <div class="pkList" id="pkList"></div>
+  </div>
 </div>
 <div id="story" class="hidden">
   <div class="scard">
@@ -532,6 +553,7 @@ function setup(){
   Events.on(engine, 'collisionActive', onCollide);
 
   phase = 'draw'; pts = []; inkUsed = 0; drawing = false; simT = 0; hp = 100;
+  if (activePointer !== null){ try { cv.releasePointerCapture(activePointer); } catch (_){} activePointer = null; }
   bugs = []; drops = []; rocks = []; crawlers = []; flashT = 0; lineBody = null; toRemove = new Set();
   cloudAcc = L.clouds.map(() => 0);
   finger = null; fingerBlocked = false; flow = null;
@@ -654,9 +676,15 @@ function release(){
   if (pts.length > 10 && dist(a, z) < 28 && segFree(z, a) >= 1) addPoint({ x: a.x, y: a.y });
   if (drawing) endStroke();
 }
-cv.addEventListener('pointerdown', e => { if (beginAt(toWorld(e))) cv.setPointerCapture(e.pointerId); });
+let activePointer = null;
+cv.addEventListener('pointerdown', e => {
+  // 이전 손가락 상태가 남아 있으면(놓친 pointerup) 정리하고 새로 시작
+  if (drawing && phase === 'draw' && activePointer !== e.pointerId){ drawing = false; if (pts.length < 2){ pts = []; inkUsed = 0; } }
+  if (beginAt(toWorld(e))){ activePointer = e.pointerId; try { cv.setPointerCapture(e.pointerId); } catch (_){} }
+});
+cv.addEventListener('lostpointercapture', () => { if (drawing) release(); activePointer = null; });
 cv.addEventListener('pointermove', e => moveTo(toWorld(e)));
-['pointerup', 'pointercancel'].forEach(t => cv.addEventListener(t, release));
+['pointerup', 'pointercancel'].forEach(t => cv.addEventListener(t, () => { release(); activePointer = null; }));
 
 function showToast(msg){
   const h = document.getElementById('hint');
@@ -1064,6 +1092,32 @@ document.getElementById('mNext').onclick = () => { level++; setup(); };
 document.getElementById('mRetry').onclick = () => setup();
 document.getElementById('btnRetry').onclick = () => setup();
 document.getElementById('prevLv').onclick = () => { if (level > 1){ level--; setup(); } };
+// 레벨 선택 화면: 챕터별 10칸, 별 기록 표시, 번호로 바로 이동
+function starsOf(lv){ const b = store.get('ss_best_' + lv, null); if (!b) return ''; return b.pct <= 22 ? '★★★' : b.pct <= 40 ? '★★' : '★'; }
+function openPicker(){
+  if (mode !== 'level') return;
+  const top = store.get('ss_level', 1), maxLv = Math.max(top, level) + 10;
+  const chapters = Math.ceil(maxLv / 10);
+  let html = '';
+  for (let c = 0; c < chapters; c++){
+    const first = c * 10 + 1, ch = CHAPTERS[chapterOf(first)], rd = roundOf(first);
+    html += `<div class="pkCh">${ch.icon} 챕터 ${c + 1} · ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</div><div class="pkGrid">`;
+    for (let lv = first; lv < first + 10; lv++){
+      html += `<button data-lv="${lv}" class="${lv === level ? 'cur' : ''} ${lv > top ? 'lock' : ''}">${lv}<small>${starsOf(lv)}</small></button>`;
+    }
+    html += '</div>';
+  }
+  const list = document.getElementById('pkList');
+  list.innerHTML = html;
+  document.getElementById('picker').classList.remove('hidden');
+  const cur = list.querySelector('.cur'); if (cur) cur.scrollIntoView({ block: 'center' });
+}
+function goLevel(lv){ lv = Math.max(1, Math.floor(+lv || 1)); level = lv; document.getElementById('picker').classList.add('hidden'); setup(); }
+document.getElementById('lvl').onclick = openPicker;
+document.getElementById('pkList').onclick = e => { const b = e.target.closest('button[data-lv]'); if (b) goLevel(b.dataset.lv); };
+document.getElementById('pkGo').onclick = () => { const v = document.getElementById('pkNum').value; if (v) goLevel(v); };
+document.getElementById('pkNum').onkeydown = e => { if (e.key === 'Enter') document.getElementById('pkGo').click(); };
+document.getElementById('pkClose').onclick = () => document.getElementById('picker').classList.add('hidden');
 document.getElementById('nextLv').onclick = () => { level++; setup(); };
 document.getElementById('mShare').onclick = async () => {
   const s = endInfo;
@@ -1645,6 +1699,13 @@ if (!store.get('momo_story_seen', false)) showStory();
 // 오프라인 실행용 서비스 워커. 한 번 열면 인터넷 없이도 실행됨
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load', () => {
+    // 새 버전이 설치되면, 선을 그리기 전 대기 화면일 때 조용히 새로고침
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloaded) return;
+      const tryReload = () => { if (phase === 'draw' && !drawing && pts.length === 0){ reloaded = true; location.reload(); } else setTimeout(tryReload, 1500); };
+      tryReload();
+    });
     navigator.serviceWorker.register('sw.js').then(reg => {
       reg.update();
       setInterval(() => { try { reg.update(); } catch (_){} }, 30 * 60 * 1000);

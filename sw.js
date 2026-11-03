@@ -1,13 +1,13 @@
 /* SAVE MOMO — 서비스 워커
    목표: (1) 한 번 열었으면 인터넷이 없어도 실행된다  (2) 인터넷이 있으면 최신본을 가져온다 */
-const CACHE = 'savemomo-v2';
+const CACHE = 'savemomo-v3';
 const FILES = [
   './', './index.html', './manifest.webmanifest', './lib/matter.min.js',
   './icon-192.png', './icon-512.png', './icon-mask-512.png', './apple-touch-icon.png', './favicon.png',
   './assets/momo_sit.png', './assets/momo_body.png', './assets/momo_happy.png', './assets/momo_surprised.png',
   './assets/momo_neutral.png', './assets/momo_angry.png', './assets/momo_sleepy.png', './assets/momo_heart.png'
 ];
-const NET_TIMEOUT = 2500; // 신호가 약할 때 무한정 기다리지 않음
+const NET_TIMEOUT = 4000; // 신호가 약할 때 무한정 기다리지 않음
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
@@ -42,7 +42,7 @@ self.addEventListener('fetch', e => {
     e.respondWith((async () => {
       try {
         const res = await Promise.race([
-          fetch(req),
+          fetch(req.url, { cache: 'no-cache' }), // 브라우저 HTTP 캐시를 건너뛰고 서버에 최신본 확인
           new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), NET_TIMEOUT))
         ]);
         if (res && res.ok){
