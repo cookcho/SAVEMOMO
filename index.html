@@ -139,7 +139,7 @@
   </div>
   <footer>
     <div><button id="btnRetry">↺ 다시</button><button id="btnStory">📖 이야기</button><button id="btnInstall" class="hidden">📲 설치</button></div>
-    <div><span id="best"></span><span id="ver">v2026.11.04f</span></div>
+    <div><span id="best"></span><span id="ver">v2026.11.04g</span></div>
   </footer>
 </div>
 <div id="picker" class="hidden">
@@ -278,6 +278,11 @@ function buildCarve(arch, R, r){
   }
   return { ops, info };
 }
+
+// ---------- 적·장애물 크기 (그림 배율 / 물리 반지름) ----------
+// 나중에 AI 이미지로 교체할 때 이 값만 맞추면 됨
+const VIS = { drone: 1.9, tank: 1.6, dock: 1.8, duck: 1.75, dog: 1.15, chute: 1.4, pin: 1.35 };
+const RAD = { drone: 8, tank: 14, pup: 12, bigdog: 24, balloon: [13, 17], rain: 4.5, jet: 4.2 };
 
 // ---------- 난이도 모델 ----------
 // 난이도 지수 D 하나로 모든 변수를 함께 움직임.
@@ -447,7 +452,7 @@ function genLevel(lv, seed, themeIdx){
   const free = (p, pad) => p.x > 15 && p.x < W - 15 && p.y > 15 && !S.some(o => inRect(p, o, pad)) && !dynRects.some(o => inRect(p, o, pad)) && !chainRects.some(o => inRect(p, o, pad));
   const place = (minD, y0, y1, gap = 80) => {
     for (let t = 0; t < 120; t++){
-      const p = { x: R(30, W - 30), y: R(y0, y1) };
+      const p = { x: R(42, W - 42), y: R(y0, y1) };
       if (dist(p, sp) < minD || !free(p, 24) || used.some(q => dist(q, p) < gap)) continue;
       used.push(p); return p;
     }
@@ -527,7 +532,7 @@ function genLevel(lv, seed, themeIdx){
   if (kinds.includes('rock')){
     const n = u > 45 ? 2 : 1;
     for (let i = 0; i < n; i++){
-      const rr = R(10, 14), interval = clamp(10000 * n / u, 480 / capS, 1500);
+      const rr = R(RAD.balloon[0], RAD.balloon[1]), interval = clamp(10000 * n / u, 480 / capS, 1500);
       if (r() < 0.5 && !L.cave && !(intro && intro.k === 'rock')){
         L.chutes.push({ type: 'top', x: clamp(px + R(-30, 30), 24, W - 24), y: -12, vx: 0, vy: 1, r: rr, interval, first: R(350, 750) });
       } else {
@@ -731,7 +736,7 @@ function addPoint(q){
   const last = pts[pts.length - 1];
   for (const pin of L.pins){
     if (pin.on) continue;
-    if (segPointDist(last, q, pin) < 12 && segFree(last, pin) >= 1){
+    if (segPointDist(last, q, pin) < 15 && segFree(last, pin) >= 1){
       pin.on = true;
       if (!pushPt({ x: pin.x, y: pin.y })) return false;
       return addPoint(q);
@@ -757,7 +762,7 @@ function beginAt(p0){
   if (!p){ showToast('물체 위에서는 시작할 수 없어요'); return false; }
   drawing = true; pts = [p];
   L.pins.forEach(pin => {
-    if (dist(pin, p) < 12){ pin.on = true; pts = [{ x: pin.x, y: pin.y }]; }
+    if (dist(pin, p) < 15){ pin.on = true; pts = [{ x: pin.x, y: pin.y }]; }
   });
   document.getElementById('hint').classList.add('hidden');
   return true;
@@ -917,7 +922,7 @@ function buildBaseGrid(){
   baseGrid = new Uint8Array(GW * GH);
   for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++){
     const c = { x: gx * CELL + CELL / 2, y: gy * CELL + CELL / 2 };
-    if (L.S.some(o => inRect(c, o, 6)) || L.hives.some(h => dist(c, h) < 20)) baseGrid[gy * GW + gx] = 1;
+    if (L.S.some(o => inRect(c, o, 6)) || L.hives.some(h => dist(c, h) < 32)) baseGrid[gy * GW + gx] = 1;
   }
 }
 function markCircle(g, x, y, r){
@@ -944,7 +949,7 @@ function computeFlow(){
   const P = linePoints();
   for (let i = 1; i < P.length; i++){
     const a = P[i - 1], b = P[i], n = Math.max(1, Math.ceil(dist(a, b) / 4));
-    for (let j = 0; j <= n; j++) markCircle(g, a.x + (b.x - a.x) * j / n, a.y + (b.y - a.y) * j / n, 11.5);
+    for (let j = 0; j <= n; j++) markCircle(g, a.x + (b.x - a.x) * j / n, a.y + (b.y - a.y) * j / n, 5.5 + RAD.drone);
   }
   const d = new Int16Array(GW * GH).fill(-1), q = new Int32Array(GW * GH);
   let qh = 0, qt = 0;
@@ -1037,13 +1042,13 @@ function step(){
   while (spawnQ.length && spawnQ[0].t <= simT){
     const q = spawnQ.shift();
     if (q.crawl){
-      const big = q.crawl.big, rr = big ? 21 : 10, x = q.crawl.side < 0 ? rr + 2 : W - rr - 2;
+      const big = q.crawl.big, rr = big ? RAD.bigdog : RAD.pup, x = q.crawl.side < 0 ? rr + 2 : W - rr - 2;
       const c = Bodies.circle(x, GY - rr - 1, rr, { label: 'crawl', density: big ? 0.014 : 0.0075, friction: 0.9, collisionFilter: { category: CAT_CRAWL, mask: CAT_DEF | CAT_CRAWL } });
       c.plugin = { hitT: -9999, ph: simRng() * 6, big, nextHop: simT + 500 + simRng() * 600 };
       addBody(c, crawlers);
     } else {
       const h = q.h, tank = h.kind === 'tank';
-      const bug = Bodies.circle(h.x + (simRng() - 0.5) * 10, h.y + (tank ? 34 : 27), tank ? 11 : 6, {
+      const bug = Bodies.circle(h.x + (simRng() - 0.5) * 10, h.y + (tank ? 48 : 40), tank ? RAD.tank : RAD.drone, {
         label: h.kind, frictionAir: tank ? 0.05 : 0.03, density: tank ? 0.012 : 0.003, restitution: tank ? 0.1 : 0.4,
         collisionFilter: { category: CAT_BUG, mask: CAT_DEF | CAT_BUG }
       });
@@ -1055,7 +1060,7 @@ function step(){
     cloudAcc[i] += STEP;
     while (cloudAcc[i] >= c.rate){
       cloudAcc[i] -= c.rate;
-      const d = Bodies.circle(c.x + (simRng() - 0.5) * (c.w - 20), 70, 3.5, {
+      const d = Bodies.circle(c.x + (simRng() - 0.5) * (c.w - 20), 70, RAD.rain, {
         label: 'drop', frictionAir: 0.01, density: 0.0008, collisionFilter: { category: CAT_DROP, mask: CAT_DEF }
       });
       d.plugin = { born: simT };
@@ -1080,7 +1085,7 @@ function step(){
       if (simT >= dk.next){ dk.burst = dk.size; dk.shotT = simT; }
     }
     if (dk.burst && simT >= dk.shotT){
-      const j = Bodies.circle(h.x + dk.dir.x * 18, h.y + dk.dir.y * 18, 3.4, {
+      const j = Bodies.circle(h.x + dk.dir.x * 30, h.y + dk.dir.y * 30, RAD.jet, {
         label: 'jet', frictionAir: 0, density: 0.0008, collisionFilter: { category: CAT_DROP, mask: CAT_DEF }
       });
       j.plugin = { born: simT };
@@ -1304,9 +1309,9 @@ function drawHive(h){
     const face = dir.x >= 0 ? 1 : -1, bob = Math.sin(t / 300) * 1.5;
     if (dk && phase === 'sim' && !dk.burst && dk.next - simT < 650){
       ctx.setLineDash([4, 5]); ctx.strokeStyle = 'rgba(77,171,247,.8)'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(h.x + dir.x * 18, h.y + dir.y * 18); ctx.lineTo(h.x + dir.x * 90, h.y + dir.y * 90); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(h.x + dir.x * 30, h.y + dir.y * 30); ctx.lineTo(h.x + dir.x * 110, h.y + dir.y * 110); ctx.stroke(); ctx.setLineDash([]);
     }
-    ctx.save(); ctx.translate(h.x, h.y + bob);
+    ctx.save(); ctx.translate(h.x, h.y + bob); ctx.scale(VIS.duck, VIS.duck);
     ctx.save(); ctx.rotate(Math.atan2(dir.y, dir.x));
     ctx.fillStyle = '#339af0'; rrect(2, -4, 18, 8, 3); ctx.fill(); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(4, 3, 5, 6);
     ctx.restore();
@@ -1322,7 +1327,7 @@ function drawHive(h){
   }
   if (h.kind === 'tank'){
     // 헤비 드론 격납고: 크고 노랑·검정 경고 줄무늬
-    ctx.save(); ctx.translate(h.x, h.y);
+    ctx.save(); ctx.translate(h.x, h.y); ctx.scale(VIS.dock * 0.85, VIS.dock * 0.85);
     ctx.fillStyle = '#343a40'; rrect(-26, -12, 52, 26, 6); ctx.fill();
     ctx.save(); rrect(-26, 6, 52, 8, 3); ctx.clip();
     for (let x = -30; x < 30; x += 10){ ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.moveTo(x, 14); ctx.lineTo(x + 5, 14); ctx.lineTo(x + 13, 6); ctx.lineTo(x + 8, 6); ctx.fill(); }
@@ -1331,7 +1336,7 @@ function drawHive(h){
     ctx.restore(); return;
   }
   // 드론 기지
-  ctx.save(); ctx.translate(h.x, h.y);
+  ctx.save(); ctx.translate(h.x, h.y); ctx.scale(VIS.dock, VIS.dock);
   ctx.fillStyle = '#495057'; rrect(-20, -8, 40, 18, 5); ctx.fill();
   ctx.fillStyle = '#343a40'; ctx.fillRect(-14, 6, 28, 5);
   ctx.strokeStyle = '#495057'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(12, -8); ctx.lineTo(16, -18); ctx.stroke();
@@ -1341,13 +1346,13 @@ function drawHive(h){
 }
 function drawChute(c){
   // 물풍선 발사대(파란 통)
-  ctx.fillStyle = '#4dabf7';
-  if (c.type === 'top'){ ctx.fillRect(c.x - 17, 0, 34, 16); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x - 13, 10, 26, 6); }
-  else { const x = c.x < 0 ? 0 : W - 22; /* 발사구는 화면 가장자리에 그림 */ ctx.fillRect(x, c.y - 17, 22, 34); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x < 0 ? 16 : W - 22, c.y - 13, 6, 26); }
+  ctx.fillStyle = '#4dabf7'; const S = VIS.chute;
+  if (c.type === 'top'){ ctx.fillRect(c.x - 17 * S, 0, 34 * S, 16 * S); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x - 13 * S, 10 * S, 26 * S, 6 * S); }
+  else { const x = c.x < 0 ? 0 : W - 22 * S; /* 발사구는 화면 가장자리에 그림 */ ctx.fillRect(x, c.y - 17 * S, 22 * S, 34 * S); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x < 0 ? 16 * S : W - 22 * S, c.y - 13 * S, 6 * S, 26 * S); }
   if (phase === 'draw'){
-    ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center';
-    if (c.type === 'top') ctx.fillText('🎈 ↓', c.x, 30);
-    else ctx.fillText(c.x < 0 ? '🎈 →' : '← 🎈', c.x < 0 ? 40 : W - 40, c.y + 4);
+    ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.font = '800 14px sans-serif'; ctx.textAlign = 'center';
+    if (c.type === 'top') ctx.fillText('🎈 ↓', c.x, 42);
+    else ctx.fillText(c.x < 0 ? '🎈 →' : '← 🎈', c.x < 0 ? 56 : W - 56, c.y + 5);
   }
 }
 function rrect(x, y, w, h, r){
@@ -1455,6 +1460,7 @@ function drawDyn(b){
   if (d.type === 'seesaw'){ ctx.fillStyle = '#3a3a40'; ctx.beginPath(); ctx.arc(d.x, d.y, 4, 0, 7); ctx.fill(); }
 }
 function drawPin(p){
+  ctx.save(); ctx.translate(p.x, p.y); ctx.scale(VIS.pin, VIS.pin); ctx.translate(-p.x, -p.y);
   ctx.fillStyle = p.on ? '#ffd166' : '#c9a54a';
   ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, 7); ctx.fill();
   ctx.strokeStyle = '#6b5418'; ctx.lineWidth = 2; ctx.stroke();
@@ -1463,6 +1469,7 @@ function drawPin(p){
     ctx.strokeStyle = 'rgba(255,209,102,.55)'; ctx.setLineDash([3, 4]); ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, 7); ctx.stroke(); ctx.setLineDash([]);
   }
+  ctx.restore();
 }
 // ---------- 모모 스프라이트 ----------
 const IMG = {};
@@ -1530,7 +1537,7 @@ function drawLine(){
 // 드론: 몸체 + 회전하는 프로펠러 4개 + 깜빡이는 불빛
 function drawTank(bg){
   const x = bg.position.x, y = bg.position.y, v = bg.velocity, tilt = clamp(v.x * 0.06, -0.3, 0.3);
-  ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(tilt); ctx.scale(VIS.tank, VIS.tank);
   const spin = Math.abs(Math.sin(simT / 22 + bg.plugin.ph));
   ctx.fillStyle = 'rgba(173,181,189,.8)';
   for (const px of [-14, 14]){ ctx.beginPath(); ctx.ellipse(px, -9, 9 * (0.4 + spin * 0.6), 2, 0, 0, 7); ctx.fill(); }
@@ -1545,7 +1552,9 @@ function drawTank(bg){
 function drawBug(bg){
   if (bg.label === 'tank') return drawTank(bg);
   const x = bg.position.x, y = bg.position.y, v = bg.velocity, tilt = clamp(v.x * 0.08, -0.4, 0.4);
-  ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(tilt); ctx.scale(VIS.drone, VIS.drone);
+  // 배경과 구분되도록 흰 테두리 그림자
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; rrect(-7, -5, 14, 10, 3); ctx.fill();
   ctx.strokeStyle = '#495057'; ctx.lineWidth = 1.6;
   ctx.beginPath(); ctx.moveTo(-8, -3); ctx.lineTo(8, -3); ctx.stroke();
   const spin = Math.abs(Math.sin(simT / 18 + bg.plugin.ph));
@@ -1558,7 +1567,7 @@ function drawBug(bg){
 }
 // 불독
 function drawCrawler(c){
-  const big = c.plugin.big, sc = c.circleRadius / 12;
+  const big = c.plugin.big, sc = c.circleRadius / 12 * VIS.dog;
   const x = c.position.x, y = c.position.y + 2 * sc, d = Math.sign(potBody.position.x - x) || 1, step = Math.sin(simT / (big ? 110 : 60) + c.plugin.ph);
   const body = big ? '#8d8577' : '#e8c39e', dark = big ? '#4a433b' : '#b07a4a', belly = big ? '#d9d2c5' : '#fff3e2';
   ctx.save(); ctx.translate(x, y); ctx.scale(d * sc, sc);
@@ -1589,8 +1598,8 @@ function drawRock(k){
 function drawWater(d){
   if (d.label === 'jet'){
     const v = d.velocity, m = Math.hypot(v.x, v.y) || 1;
-    ctx.strokeStyle = 'rgba(77,171,247,.9)'; ctx.lineWidth = 5; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(d.position.x, d.position.y); ctx.lineTo(d.position.x - v.x / m * 9, d.position.y - v.y / m * 9); ctx.stroke();
+    ctx.strokeStyle = 'rgba(77,171,247,.95)'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(d.position.x, d.position.y); ctx.lineTo(d.position.x - v.x / m * 13, d.position.y - v.y / m * 13); ctx.stroke();
     return;
   }
   ctx.fillStyle = d.label === 'splash' ? '#a5d8ff' : '#4dabf7';
