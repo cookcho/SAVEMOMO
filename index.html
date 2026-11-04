@@ -139,7 +139,7 @@
   </div>
   <footer>
     <div><button id="btnRetry">↺ 다시</button><button id="btnStory">📖 이야기</button><button id="btnInstall" class="hidden">📲 설치</button></div>
-    <div><span id="best"></span><span id="ver">v2026.11.04e</span></div>
+    <div><span id="best"></span><span id="ver">v2026.11.04f</span></div>
   </footer>
 </div>
 <div id="picker" class="hidden">
@@ -279,6 +279,19 @@ function buildCarve(arch, R, r){
   return { ops, info };
 }
 
+// ---------- 난이도 모델 ----------
+// 난이도 지수 D 하나로 모든 변수를 함께 움직임.
+//  · 큰 흐름: 레벨이 오를수록 증가(60레벨까지 빠르게, 이후 완만하게 계속)
+//  · 챕터 안 흐름: 10레벨 단위로 오르내림, 10번째는 보스(급상승), 다음 챕터 첫 판은 숨 고르기
+const CH_SHAPE = [-0.06, -0.03, 0, 0.02, 0.04, -0.02, 0.05, 0.07, 0.09, 0.16];
+function diffOf(lv){
+  const base = 0.12 + 0.88 * (1 - Math.exp(-lv / 30)) + 0.004 * Math.max(0, lv - 60);
+  return Math.max(0.05, base + CH_SHAPE[(lv - 1) % 10]);
+}
+const isBoss = lv => lv % 10 === 0;
+// 지형 난이도 단계(쉬움 → 매우 어려움). D가 오를수록 어려운 단계가 자주 나옴
+const ARCH_TIER = { plat: 0, ground: 0, pocket: 0, cliff: 1, shelf: 1, valley: 1, well: 1, cave: 1, stairs: 2, pillar: 2, bowl: 2, alcove: 2, hang: 3, seesaw: 3 };
+
 // ---------- 절차적 맵 생성기 ----------
 function genLevel(lv, seed, themeIdx){
   const r = rng(seed), R = (a, b) => a + r() * (b - a), pick = a => a[Math.floor(r() * a.length)];
@@ -291,7 +304,12 @@ function genLevel(lv, seed, themeIdx){
   const archIntro = ARCH_UNLOCK.find(([, l]) => l === lv && l > 1);
   const unlocked = ARCH_UNLOCK.filter(([, l]) => l <= lv).map(([a]) => a);
   const carvedOk = unlocked.filter(a => CARVED.includes(a)), otherOk = unlocked.filter(a => !CARVED.includes(a));
-  let arch = lv === 1 ? 'plat' : archIntro ? archIntro[0] : (carvedOk.length && r() < 0.35 ? pick(carvedOk) : pick(otherOk));
+  const D = diffOf(lv);
+  L.diff = D; L.boss = isBoss(lv) && lv >= 10;
+  // 단계 t의 가중치: D×3.2 근처 단계가 가장 자주. 보스는 해금된 가장 어려운 단계 쪽으로
+  const target = Math.min(L.boss ? 3.0 : 2.4, 3.2 * D + (L.boss ? 0.6 : 0)); // 후반에도 여러 단계가 섞이게 상한
+  const wPick = list => { const ws = list.map(a => Math.exp(-((ARCH_TIER[a] - target) ** 2) / 1.2) * (CARVED.includes(a) ? 1.3 : 1)); let t = r() * ws.reduce((x, y) => x + y, 0); for (let i = 0; i < list.length; i++){ t -= ws[i]; if (t <= 0) return list[i]; } return list[list.length - 1]; };
+  let arch = lv === 1 ? 'plat' : archIntro ? archIntro[0] : wPick(unlocked);
   if (intro && (intro.k === 'crawl' || intro.k === 'bigdog')) arch = 'ground';
   L.archIntro = archIntro ? arch : null;
   let px, top, hw;
@@ -386,7 +404,7 @@ function genLevel(lv, seed, themeIdx){
   // 위협 종류 수: 소개 레벨은 1종, 이후 레벨대에 따라 2~3종
   const kinds = [];
   if (intro && pool.includes(intro.k)) kinds.push(intro.k);
-  const nT = (intro || archIntro || lv < 8) ? 1 : lv < 15 ? 2 : lv < 31 ? (r() < 0.5 ? 2 : 3) : lv < 46 ? 3 : (r() < 0.5 ? 3 : 4);
+  const nT = (intro || archIntro || lv < 6) ? 1 : D < 0.45 ? (r() < 0.6 ? 1 : 2) : D < 0.65 ? 2 : D < 0.82 ? (r() < 0.5 ? 2 : 3) : D < 0.95 ? 3 : (r() < 0.5 ? 3 : 4);
   const pickPool = archIntro ? pool.filter(k => k !== 'wind') : pool;
   for (let g = 0; kinds.length < Math.min(nT, pool.length) && g < 60; g++){ const k = pick(pickPool); if (!kinds.includes(k)) kinds.push(k); }
   if (arch === 'alcove' && !kinds.includes('bee') && !kinds.includes('tank')){ const i = kinds.findIndex(k => k !== intro?.k); if (i >= 0 && kinds.length >= nT) kinds[i] = 'bee'; else kinds.push('bee'); }
@@ -403,19 +421,21 @@ function genLevel(lv, seed, themeIdx){
   const modIntro = MODS.find(m => m.lv === lv) || null;
   let mods = [];
   if (modIntro) mods = [modIntro.k];
-  else if (lv >= 40){
-    const nm = lv >= 50 ? (r() < 0.5 ? 2 : 1) : (r() < 0.6 ? 1 : 0);
+  else if (lv >= 38 || (L.boss && lv >= 31)){
+    let nm = D > 0.92 ? (r() < 0.5 ? 2 : 1) : (r() < 0.6 ? 1 : 0);
+    if (L.boss) nm = Math.max(1, nm);
     const avail = MODS.map(m => m.k);
     while (mods.length < nm){ const k = pick(avail); if (!mods.includes(k)) mods.push(k); }
   }
   // 흔들리는 지형(시소·매달린 발판)에 무거운 잉크는 너무 가혹 → 제외
   if ((arch === 'hang' || arch === 'seesaw') && mods.includes('heavy') && !modIntro) mods = mods.filter(k => k !== 'heavy');
   L.mods = mods; L.modIntro = modIntro;
-  const capS = lv <= 30 ? 1 : Math.min(2.2, 1 + (lv - 30) / 35); // 30레벨 이후 위협 상한이 점점 커짐
+  const capS = Math.min(2.4, 1 + Math.max(0, D - 0.68) * 2.6); // D가 높아지면 위협 상한(드론 수 등)도 커짐
   L.capS = capS;
   // 30레벨까지 레벨당 +3, 이후 +1.5 (상한이 커지는 속도와 맞춤)
-  let B = 10 + 3.0 * (Math.min(lv, 30) - 1) + 1.5 * Math.max(0, lv - 30);
-  if ((intro || archIntro || modIntro) && lv > 1) B *= 0.8;
+  let B = 8 + 100 * Math.pow(D, 1.15); // 위협 예산
+  if (L.boss) B *= 1.1;
+  if ((intro || archIntro || modIntro) && lv > 1) B *= 0.85;
   B *= 1 - 0.08 * mods.length;
   B /= ARCH_W[arch];
   if (kinds.includes('wind')) B *= 0.8;
@@ -535,7 +555,7 @@ function genLevel(lv, seed, themeIdx){
     if (free(cp, 12)){ used.push(cp); L.pins.push(cp); }
   }
   // 31레벨부터는 어려운 대신 핀(풀이 도구)을 꼭 줌
-  if (has('pin') && ((intro && intro.k === 'pin') || lv >= 31 || r() < 0.6)){
+  if (has('pin') && ((intro && intro.k === 'pin') || lv >= 31 || r() < 0.75 - 0.35 * D)){
     const n = lv >= 45 ? 2 : 1 + (r() < 0.35 ? 1 : 0);
     for (let i = 0; i < n; i++){
       for (let t = 0; t < 80; t++){
@@ -577,8 +597,11 @@ function genLevel(lv, seed, themeIdx){
       L.zones.push(z); break;
     }
   }
-  L.ink = lv <= 26 ? Math.max(380, 740 - lv * 14) : Math.max(240, 380 - (lv - 26) * 4);
-  L.speed = lv <= 30 ? Math.min(3.2, 2.0 + lv * 0.04) : Math.min(4.2, 3.2 + (lv - 30) * 0.025);
+  // 잉크: D가 오를수록 짧아짐(덮개 하나 ≈ 230px). 파낸 지형은 입구만 막으면 돼서 더 짧게
+  L.ink = Math.round(clamp(620 - 380 * D, 210, 620) * (L.carve ? 0.85 : 1));
+  L.speed = clamp(2.0 + 1.9 * D, 2.0, 4.2);
+  L.force = clamp(0.75 + 0.85 * D + (L.boss ? 0.1 : 0), 0.75, 1.8); // 적이 선을 밀어내는 힘 배율
+  L.diff10 = clamp(Math.round(D / 1.15 * 9) + 1, 1, 10);
   return L;
 }
 
@@ -646,7 +669,7 @@ function setup(){
   document.getElementById('modalWrap').classList.add('hidden');
   document.getElementById('shareBox').classList.add('hidden');
   const ch = CHAPTERS[L.theme], rd = mode === 'level' ? roundOf(level) : 0;
-  const chips = [`<span class="chip">${ch.icon} ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</span>`, `<span class="chip${L.archIntro ? ' new' : ''}">${ARCH_NAME[L.arch]}</span>`];
+  const chips = [`<span class="chip" style="background:${L.boss ? '#7a1f1f' : '#22332a'}">${L.boss ? '🔥 보스 · ' : ''}난이도 ${'▮'.repeat(Math.ceil(L.diff10 / 2))}${'▯'.repeat(5 - Math.ceil(L.diff10 / 2))} ${L.diff10}</span>`, `<span class="chip">${ch.icon} ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</span>`, `<span class="chip${L.archIntro ? ' new' : ''}">${ARCH_NAME[L.arch]}</span>`];
   L.mods.forEach(k => { const m = MODS.find(x => x.k === k); chips.push(`<span class="chip${L.modIntro && L.modIntro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   L.kinds.forEach(k => { const m = MECH.find(x => x.k === k); chips.push(`<span class="chip${L.intro && L.intro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   if (L.pins.length){ const m = MECH[1]; chips.push(`<span class="chip${L.intro && L.intro.k === 'pin' ? ' new' : ''}">${m.icon} 핀 ${L.pins.length}</span>`); }
@@ -861,8 +884,8 @@ function handle(a, b, name){
   if (b.parent.label === 'line'){
     const big = a.label === 'tank' || (a.label === 'crawl' && a.plugin && a.plugin.big);
     const k = name === 'collisionStart'
-      ? ({ bee: 0.0035, tank: 0.009, balloon: 0.008, crawl: big ? 0.009 : 0.0035 })[a.label]
-      : (big ? 0.0005 : 0);
+      ? ({ bee: 0.0030, tank: 0.0075, balloon: 0.0067, crawl: big ? 0.0075 : 0.0030 })[a.label] * L.force
+      : (big ? 0.00042 * L.force : 0);
     // 선이 여러 조각이라 한 번 부딪혀도 충돌이 여러 개 생김 → 적 하나당 충격은 0.12초에 한 번, 미는 힘은 프레임당 한 번
     const P = a.plugin || {};
     const okHit = name === 'collisionStart' ? simT - (P.pushT ?? -1e9) >= 120 : P.pushStep !== simT;
@@ -1103,7 +1126,7 @@ function step(){
         const tank = bug.label === 'tank';
         const fd = s === 0 ? (bug.plugin.fd = flowDir(bug)) : bug.plugin.fd;
         // 헤비 드론은 길이 막히면(직진 모드) 추력을 올려 선을 밀어붙임
-        const acc = tank ? (fd ? 0.0010 : 0.0018) * (1 + L.capS * 0.15) : 0.0012 * L.speed / 2.2 * (fd ? 1 : 1.6);
+        const acc = tank ? (fd ? 0.0010 : 0.0018) * (0.6 + L.force * 0.5) : 0.0012 * L.speed / 2.2 * (fd ? 1 : 1 + 0.5 * L.force);
         bug.plugin.ram = tank && !fd;
         let ux = dx / m, uy = dy / m;
         if (fd){ ux = fd.x; uy = fd.y; }
