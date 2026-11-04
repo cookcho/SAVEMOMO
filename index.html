@@ -391,7 +391,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.05n</span>
+  <span id="ver">v2026.11.05o</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -925,11 +925,18 @@ function setup(){
   engine = Engine.create();
   engine.gravity.y = 1;
   engine.positionIterations = 12; engine.velocityIterations = 8;
+  // 화면 가장자리에 붙은 땅·블록은 바깥으로 40만큼 더 넓힘 → 양옆 넓힌 화면에서도 보이는 그대로 부딪히고, 선도 그 위엔 못 그림
   statics = L.S.map(o => {
+    let x = o.x, w = o.w;
+    if (o.shape !== 'circle' && Math.abs(o.a || 0) < 0.01){
+      let x0 = o.x - o.w / 2, x1 = o.x + o.w / 2;
+      if (x0 <= 1) x0 -= 40; if (x1 >= W - 1) x1 += 40;
+      x = (x0 + x1) / 2; w = x1 - x0;
+    }
     const b = o.shape === 'circle'
       ? Bodies.circle(o.x, o.y, o.r, { isStatic: true, friction: 0.8, label: o.kind })
-      : Bodies.rectangle(o.x, o.y, o.w, o.h, { isStatic: true, angle: o.a, friction: 0.8, label: o.kind });
-    b.plugin = { w: o.w, h: o.h, r: o.r };
+      : Bodies.rectangle(x, o.y, w, o.h, { isStatic: true, angle: o.a, friction: 0.8, label: o.kind });
+    b.plugin = { w, h: o.h, r: o.r };
     return b;
   });
   // 움직이는 지형(시소·매달린 발판)
@@ -954,7 +961,7 @@ function setup(){
   potBody = Body.create({ parts: [torso, sproutPart], friction: 0.9, label: 'cat' });
   Body.setInertia(potBody, Infinity); // 고양이는 넘어지지 않고 미끄러지기만 함
   potOff = { foot: top - potBody.position.y };
-  const edgeWalls = [-15, W + 15].map(x => Bodies.rectangle(x, H / 2 - 200, 30, H + 400, { isStatic: true, label: 'edge', collisionFilter: { category: 16, mask: CAT_DEF } }));
+  const edgeWalls = [-55, W + 55].map(x => Bodies.rectangle(x, H / 2 - 200, 30, H + 400, { isStatic: true, label: 'edge', collisionFilter: { category: 16, mask: CAT_DEF } }));
   Composite.add(engine.world, [...statics, ...dynBodies, ...dynCons, potBody, ...edgeWalls]);
   Events.on(engine, 'collisionStart', onCollide);
   Events.on(engine, 'collisionActive', onCollide);
@@ -1010,11 +1017,11 @@ function updateInk(){
 }
 
 // ---------- 선 그리기 ----------
-function toWorld(e){ const r = cv.getBoundingClientRect(); return { x: clamp((e.clientX - r.left - cv.clientLeft) / scale - XP, 3, W - 3), y: (e.clientY - r.top - cv.clientTop) / scale }; }
+function toWorld(e){ const r = cv.getBoundingClientRect(); return { x: clamp((e.clientX - r.left - cv.clientLeft) / scale - XP, 3 - XP, W + XP - 3), y: (e.clientY - r.top - cv.clientTop) / scale }; }
 // 선 두께(11px)만큼 물체와 겹치지 않게 가장자리 6px 안쪽은 그릴 수 없음
 const EDGE = 6, PROBES = [[0, 0], [EDGE, 0], [-EDGE, 0], [0, EDGE], [0, -EDGE], [4.2, 4.2], [-4.2, 4.2], [4.2, -4.2], [-4.2, -4.2]];
 function blocked(p){
-  if (p.x < 2 || p.x > W - 2 || p.y < 2 || p.y > H - 2) return true;
+  if (p.x < 2 - XP || p.x > W + XP - 2 || p.y < 2 || p.y > H - 2) return true; // 양옆으로 넓힌 화면 끝까지 그릴 수 있음
   if (L.zones && L.zones.some(z => inRect(p, z, 0))) return true;
   const bs = [...statics, ...dynBodies, potBody];
   return PROBES.some(([ox, oy]) => Query.point(bs, { x: p.x + ox, y: p.y + oy }).length > 0);
@@ -1532,7 +1539,7 @@ function step(){
   if (flashT > 0) flashT -= STEP;
   hp = Math.max(0, hp);
   if (hp <= 0) return finish(false, lastWet ? '모모가 흠뻑 젖었어요' : '모모가 다쳤어요');
-  if (potBody.position.y > H + 60 || potBody.position.x < -60 || potBody.position.x > W + 60) return finish(false, '모모가 떨어졌어요');
+  if (potBody.position.y > H + 60 || potBody.position.x < -90 || potBody.position.x > W + 90) return finish(false, '모모가 떨어졌어요');
   prevPotSpeed = Body.getSpeed(potBody);
   if (simT >= simDur) return finish(true);
 }
