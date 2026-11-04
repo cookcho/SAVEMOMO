@@ -391,7 +391,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.05t</span>
+  <span id="ver">v2026.11.05v</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -452,7 +452,7 @@ const MECH = [
   { k: 'pin',   lv: 2, name: '고정 핀', icon: '📌', desc: '선이 핀을 지나가면 그 자리에 고정돼요' },
   { k: 'rain',  lv: 3, name: '빗물', icon: '🌧️', desc: '비구름이 몰려왔어요. 위를 막아 주세요' },
   { k: 'rock',  lv: 4, name: '물풍선', icon: '🎈', desc: '날아온 물풍선은 부딪히면 터지며 물이 튀어요' },
-  { k: 'wind',  lv: 5, name: '드라이어 돌풍', icon: '💨', desc: '집사의 드라이어가 덜덜 떨면 곧 돌풍! 띠 안의 선·빗물·드론을 확 밀어내요' },
+  { k: 'wind',  lv: 5, name: '돌풍', icon: '💨', desc: '바람이 잦아들었다가 확 몰아쳐요. 띠가 깜빡이면 곧 돌풍! 띠 안의 선·빗물·드론을 세게 밀어요' },
   { k: 'wasp',  lv: 6, name: '물총 오리', icon: '🦆', desc: '집사의 비밀 병기! 점선이 보이면 곧 물줄기를 쏴요' },
   { k: 'crawl', lv: 7, name: '강아지', icon: '🐶', desc: '옆집 강아지들이 놀자고 달려와요. 깡충 뛰어 낮은 벽은 넘어요' },
   { k: 'bigdog', lv: 33, name: '큰 개', icon: '🐕', desc: '덩치 큰 옆집 개! 느리지만 선을 통째로 밀어내요' },
@@ -594,6 +594,21 @@ const isBoss = lv => lv % 10 === 0;
 const ARCH_TIER = { plat: 0, ground: 0, pocket: 0, cliff: 1, shelf: 1, valley: 1, well: 1, cave: 1, stairs: 2, pillar: 2, bowl: 2, alcove: 2, hang: 3, seesaw: 3 };
 
 // ---------- 절차적 맵 생성기 ----------
+// 물풍선이 실제로 모모 근처(target)까지 가는지 미리 날려 봄: 지형에 먼저 부딪히면 실패
+function balloonReaches(S, c, target){
+  const eng = Engine.create(); eng.gravity.y = 1;
+  const st = S.map(o => o.shape === 'circle' ? Bodies.circle(o.x, o.y, o.r, { isStatic: true }) : Bodies.rectangle(o.x, o.y, o.w, o.h, { isStatic: true, angle: o.a || 0 }));
+  const b = Bodies.circle(c.x, c.y, c.r, { density: 0.008, friction: 0.3, restitution: 0.25 });
+  Composite.add(eng.world, [...st, b]); Body.setVelocity(b, { x: c.vx, y: c.vy });
+  let hit = false; Events.on(eng, 'collisionStart', () => { hit = true; });
+  for (let i = 0; i < 260 && !hit; i++){
+    for (let k = 0; k < SUB; k++) Engine.update(eng, STEP / SUB);
+    capV(b, 9);
+    if (dist(b.position, target) < c.r + 34) return true;
+    if (b.position.y > H + 30) break;
+  }
+  return false;
+}
 // 지형 고르기(레벨 번호·시드만으로 정해짐). avoid에 든 지형은 확률을 크게 낮춤 → 같은 지형이 연달아 나오지 않게
 function archBase(lv, seed, avoid = []){
   const r2 = rng((seed ^ 0x5bd1e995) >>> 0);
@@ -840,23 +855,39 @@ function genLevel(lv, seed, themeIdx){
   }
   if (kinds.includes('rock')){
     const n = u > 45 ? 2 : 1;
+    // 파낸 지형: 물풍선은 굴 입구 바로 위에서 떨어뜨림(땅에 맞고 터지는 의미 없는 발사 방지)
+    const ci = L.carveInfo, holes = !L.carve ? null : ci.arch === 'alcove' ? (ci.extra ? [ci.extra] : []) : [{ x: ci.shaftX, w: ci.shaftW }, ...(ci.extra ? [ci.extra] : [])];
     for (let i = 0; i < n; i++){
       const rr = R(RAD.balloon[0], RAD.balloon[1]), interval = clamp(10000 * n / u, 480 / capS, 1500);
-      // 물풍선만 있는 레벨은 첫 발사대를 모모 바로 위에 둠(옆 발사대는 지형에 막혀 그냥 버텨지는 경우가 있음)
+      const base = { r: rr, interval, first: R(350, 750) };
+      if (holes){
+        const hs = holes.filter(h => h.w > rr * 2 + 8);
+        if (!hs.length) continue;
+        const h = hs[i % hs.length], c = { type: 'top', x: h.x + R(-1, 1) * Math.max(0, h.w / 2 - rr - 5), y: -12, vx: 0, vy: 1, ...base };
+        if (balloonReaches(S, c, sp)) L.chutes.push(c);
+        continue;
+      }
+      // 물풍선만 있는 레벨은 첫 발사대를 모모 바로 위에 둠
       const onlyRock = i === 0 && !kinds.some(k => ['bee', 'wasp', 'crawl', 'tank', 'bigdog', 'rain'].includes(k));
-      if ((onlyRock || r() < 0.5) && !L.cave && !(intro && intro.k === 'rock')){
-        L.chutes.push({ type: 'top', x: clamp(px + R(-30, 30), 24, W - 24), y: -12, vx: 0, vy: 1, r: rr, interval, first: R(350, 750) });
-      } else {
+      const top = () => ({ type: 'top', x: clamp(px + R(-30, 30), 24, W - 24), y: -12, vx: 0, vy: 1, ...base });
+      if ((onlyRock || r() < 0.5) && !L.cave && !(intro && intro.k === 'rock')){ L.chutes.push(top()); continue; }
+      // 옆 발사대: 실제로 날려 보고 모모 근처까지 가는 궤도만 씀(지형에 막히면 다시 고르고, 끝내 안 되면 위에서 떨어뜨림)
+      let ok = null;
+      for (let t2 = 0; t2 < 6 && !ok; t2++){
         const fromLeft = L.cave ? !L.cave.left : r() < 0.5;
-        let y = L.carve ? R(110, L.carveInfo.ys - 40) : R(Math.max(120, sp.y - 230), sp.y - 50);
-        for (let t = 0; t < 20 && !free({ x: fromLeft ? 20 : W - 20, y }, 20); t++) y = L.carve ? R(110, L.carveInfo.ys - 40) : R(120, sp.y - 40);
+        let y = R(Math.max(120, sp.y - 230), sp.y - 50);
+        for (let t = 0; t < 20 && !free({ x: fromLeft ? 20 : W - 20, y }, 20); t++) y = R(120, sp.y - 40);
         const vx = (fromLeft ? 1 : -1) * R(3.2, 4.2), x0 = fromLeft ? -40 : W + 40;
         const t = Math.abs(sp.x - x0) / Math.abs(vx), gstep = 0.278;
         const vy = clamp((sp.y - 6 - y - 0.5 * gstep * t * t) / t, -8, 2);
-        L.chutes.push({ type: 'side', x: x0, y, vx, vy, r: rr, interval, first: R(350, 750) });
+        const c = { type: 'side', x: x0, y, vx, vy, ...base };
+        if (balloonReaches(S, c, sp)) ok = c;
       }
+      if (ok) L.chutes.push(ok); else if (!L.cave) L.chutes.push(top());
     }
+    if (!L.chutes.length) kinds.splice(kinds.indexOf('rock'), 1);
   }
+
 
   // 3) 고정 핀 (도우미 요소)
   if (L.carve && has('pin')){
@@ -1705,14 +1736,14 @@ document.getElementById('mHome').onclick = showTitle;
 function poly(vs){ ctx.beginPath(); ctx.moveTo(vs[0].x, vs[0].y); for (let i = 1; i < vs.length; i++) ctx.lineTo(vs[i].x, vs[i].y); ctx.closePath(); }
 function lerpColor(a, b, t){ return a.map((v, i) => Math.round(v + (b[i] - v) * t)); }
 const now = () => phase === 'draw' ? performance.now() : simT;
-// 드라이어 돌풍: 2.2초 주기 — 덜덜(예열 0.5초, 약함) → 돌풍(0.9초, 아주 셈) → 잔잔(0.8초)
+// 돌풍: 2.2초 주기 — 예고(0.5초, 약함, 띠가 깜빡임) → 돌풍(0.9초, 아주 셈) → 잔잔(0.8초)
 const GUST_T = 2200;
 function gustPhase(w, t){ const u = ((t + w.ph) % GUST_T + GUST_T) % GUST_T; return u < 500 ? ['warm', u / 500] : u < 1400 ? ['blast', (u - 500) / 900] : ['calm', (u - 1400) / 800]; }
 function gustK(w, t){ const [ph, k] = gustPhase(w, t); return ph === 'blast' ? 2.6 * Math.sin(Math.min(1, k * 1.4) * Math.PI / 2) * (k > 0.8 ? (1 - k) / 0.2 : 1) + 0.25 : 0.25; }
 function drawWind(w){
   const t = phase === 'sim' ? simT : now(), [ph, pk] = gustPhase(w, t), g = gustK(w, t), up = w.dir > 0 ? 0 : W, cy = (w.y0 + w.y1) / 2;
   // 따뜻한 바람 띠: 돌풍일 때 더 진하게
-  ctx.fillStyle = `rgba(255,236,210,${0.16 + g * 0.09})`; ctx.fillRect(-XP, w.y0, W + 2 * XP, w.y1 - w.y0);
+  ctx.fillStyle = `rgba(255,255,255,${0.12 + g * 0.08 + (ph === 'warm' && Math.floor(t / 120) % 2 === 0 ? 0.12 : 0)})`; ctx.fillRect(-XP, w.y0, W + 2 * XP, w.y1 - w.y0);
   ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 6]); ctx.lineDashOffset = -t * 0.05 * w.dir;
   for (const yy of [w.y0, w.y1]){ ctx.beginPath(); ctx.moveTo(-XP, yy); ctx.lineTo(W + XP, yy); ctx.stroke(); } ctx.setLineDash([]);
   ctx.strokeStyle = `rgba(255,255,255,${0.35 + Math.min(0.5, g * 0.2)})`; ctx.lineCap = 'round';
@@ -1727,16 +1758,16 @@ function drawWind(w){
       if (g > 1 && j % 2 === 0){ ctx.save(); ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.strokeStyle = 'rgba(120,170,220,.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x - 8 * w.dir, y + 5, 3 + (i % 3), 0, 7); ctx.fill(); ctx.stroke(); ctx.restore(); }
     }
   }
-  // 드라이어(바람이 나오는 쪽 화면 끝)
-  const shake = ph === 'warm' ? Math.sin(t / 18) * 2.2 * pk : ph === 'blast' ? Math.sin(t / 25) * 1 : 0;
-  ctx.save(); ctx.translate(up + (w.dir > 0 ? 12 - XP * 0.5 : -12 + XP * 0.5), cy + shake); ctx.scale(w.dir * 1.35, 1.35);
-  ctx.lineJoin = 'round'; ctx.strokeStyle = '#23304d'; ctx.lineWidth = 2.5;
-  ctx.fillStyle = '#c94f7c'; rrect(-8, 6, 11, 26, 4); ctx.fill(); ctx.stroke(); // 손잡이
-  ctx.fillStyle = '#ff8fb1'; ctx.beginPath(); ctx.ellipse(-4, 0, 17, 14, 0, 0, 7); ctx.fill(); ctx.stroke(); // 몸통
-  ctx.fillStyle = '#ffd3e0'; rrect(10, -8, 22, 16, 4); ctx.fill(); ctx.stroke(); // 바람 나오는 곳
-  ctx.fillStyle = '#23304d'; for (const yy of [-4, 0, 4]) ctx.fillRect(30, yy - 1, 3, 2);
-  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(-9, -6, 5, 3, -0.5, 0, 7); ctx.fill();
-  if (ph === 'warm'){ ctx.fillStyle = '#ff2d2d'; ctx.font = '900 16px sans-serif'; ctx.textAlign = 'center'; ctx.scale(w.dir, 1); ctx.fillText('!', 0, -18); }
+  // 바람이 들어오는 쪽 끝의 바람 표시: 예고 때 깜빡이며 떨리고 "!"가 뜸
+  const shake = ph === 'warm' ? Math.sin(t / 18) * 2 * pk : 0, blink = ph === 'warm' && Math.floor(t / 120) % 2 === 0;
+  ctx.save(); ctx.translate(up + (w.dir > 0 ? 18 - XP * 0.5 : -18 + XP * 0.5) + shake, cy); ctx.scale(w.dir, 1);
+  ctx.fillStyle = blink ? '#ffcf3a' : 'rgba(255,255,255,.92)'; ctx.strokeStyle = '#23304d'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(0, 0, 15, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = '#3ea8f2'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-9, -5); ctx.lineTo(4, -5); ctx.arc(4, -8, 3, Math.PI / 2, -Math.PI * 0.9, true); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-9, 1); ctx.lineTo(8, 1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-9, 6); ctx.lineTo(2, 6); ctx.arc(2, 9, 3, -Math.PI / 2, Math.PI * 0.9); ctx.stroke();
+  if (ph === 'warm'){ ctx.scale(w.dir, 1); ctx.fillStyle = '#ff2d2d'; ctx.font = '900 16px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('!', 0, -19); }
   ctx.restore();
 }
 let pops = [];
