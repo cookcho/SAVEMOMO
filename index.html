@@ -391,7 +391,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v1.0.1</span>
+  <span id="ver">v1.0.2</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -1566,7 +1566,10 @@ function step(){
       const inB = y => y > w.y0 && y < w.y1;
       if (s === 0){ const gp = gustPhase(w, simT)[0]; if (gp !== w._ph){ if (gp === 'blast') AU.sfx('gust'); if (gp === 'warm') AU.sfx('rev'); w._ph = gp; } }
       const gk = gustK(w, simT), push = (b, k) => { if (inB(b.position.y)) Body.applyForce(b, b.position, { x: b.mass * k * w.dir * w.str * gk, y: 0 }); };
-      drops.forEach(d => { if (d.label !== 'jet') push(d, 0.0007); }); bugs.forEach(b => push(b, 0.0004)); rocks.forEach(k => push(k, 0.0002));
+      // 빗물·물줄기·드론·물풍선 모두 밀림(돌풍 때 확실히 휘도록). 물풍선은 발사구를 나온 뒤부터
+      drops.forEach(d => push(d, d.label === 'jet' ? 0.0011 : 0.0007));
+      bugs.forEach(b => push(b, b.label === 'tank' ? 0.0007 : b.label === 'wasp' ? 0.0010 : 0.0013));
+      rocks.forEach(k => { if (!k.plugin.side || k.plugin.out || (k.position.x > -4 && k.position.x < W + 4)) push(k, 0.0010); });
       if (lineBody){
         const parts = lineBody.parts.length > 1 ? lineBody.parts.slice(1) : [lineBody];
         for (const p of parts) if (inB(p.position.y)) Body.applyForce(lineBody, p.position, { x: p.mass * 0.0005 * w.dir * w.str * gk * (act.tough ? 0.5 : 1), y: 0 });
