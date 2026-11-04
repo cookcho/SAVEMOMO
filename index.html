@@ -88,11 +88,12 @@
   #chips{display:flex;gap:5px;flex-wrap:nowrap;overflow-x:auto;margin-top:6px;height:24px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   #chips::-webkit-scrollbar{display:none}
   .chip{flex:none;white-space:nowrap;font-size:12px;background:rgba(255,255,255,.88);color:var(--navy);padding:3px 9px 2px;border-radius:12px;border:2px solid rgba(35,48,77,.12);line-height:15px}
+  .dbar{display:inline-flex;gap:2px;vertical-align:1px;margin:0 2px}.dbar i{width:5px;height:10px;border-radius:2px;background:rgba(35,48,77,.18)}.dbar i.on{background:currentColor}
   .chip.new{background:var(--yellow);border-color:var(--yellowD)}
   .chip.boss{background:var(--red);border-color:var(--redD);color:#fff}
 
-  #stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;padding:6px 0 8px}
-  canvas{touch-action:none;border-radius:18px;display:block;border:4px solid #fff;box-shadow:0 6px 0 rgba(35,48,77,.22),0 10px 24px rgba(35,48,77,.18)}
+  #stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;padding:4px 0 6px}
+  canvas{touch-action:none;border-radius:16px;display:block;border:3px solid #fff;box-shadow:0 6px 0 rgba(35,48,77,.22),0 10px 24px rgba(35,48,77,.18)}
   #stage.danger::after{content:'';position:absolute;inset:6px 8px 8px;border-radius:18px;pointer-events:none;box-shadow:inset 0 0 0 4px rgba(255,60,60,.7);animation:dpulse .5s ease-in-out infinite alternate}
   @keyframes dpulse{from{opacity:.35}to{opacity:1}}
   #hint{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.95);color:var(--navy);border:3px solid var(--navy);box-shadow:0 4px 0 rgba(35,48,77,.25);padding:8px 14px 7px;border-radius:16px;font-size:14px;text-align:center;pointer-events:none;max-width:86%;width:max-content;line-height:1.45;word-break:keep-all}
@@ -390,7 +391,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.05k</span>
+  <span id="ver">v2026.11.05m</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -901,7 +902,7 @@ let phase, pts, inkUsed, drawing, simT, hp, bugs, drops, rocks, crawlers, spawnQ
 let finger = null, fingerBlocked = false, blockToastShown = false, toastTimer = 0;
 
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-let scale = 1, dpr = 1;
+let scale = 1, dpr = 1, XP = 0; // XP: 양옆으로 넓힌 배경 폭(게임 단위)
 const TH = () => CHAPTERS[L.theme];
 
 function curKey(){ return mode === 'daily' ? 'ss_daily_' + todayKey() : 'ss_best_' + level; }
@@ -959,7 +960,7 @@ function setup(){
   document.getElementById('modalWrap').classList.add('hidden');
   document.getElementById('shareBox').classList.add('hidden');
   const ch = CHAPTERS[L.theme], rd = mode === 'level' ? roundOf(level) : 0;
-  const chips = [`<span class="chip${L.boss ? ' boss' : ''}">${L.boss ? '🔥 보스 · ' : ''}난이도 ${'▮'.repeat(Math.ceil(L.diff10 / 2))}${'▯'.repeat(5 - Math.ceil(L.diff10 / 2))} ${L.diff10}</span>`, `<span class="chip">${ch.icon} ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</span>`, `<span class="chip${L.archIntro ? ' new' : ''}">${ARCH_NAME[L.arch]}</span>`];
+  const chips = [`<span class="chip${L.boss ? ' boss' : ''}">${L.boss ? '🔥 보스 · ' : ''}난이도 <span class="dbar">${[0, 1, 2, 3, 4].map(i => `<i class="${i < Math.ceil(L.diff10 / 2) ? 'on' : ''}"></i>`).join('')}</span> ${L.diff10}</span>`, `<span class="chip">${ch.icon} ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</span>`, `<span class="chip${L.archIntro ? ' new' : ''}">${ARCH_NAME[L.arch]}</span>`];
   L.mods.forEach(k => { const m = MODS.find(x => x.k === k); chips.push(`<span class="chip${L.modIntro && L.modIntro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   L.kinds.forEach(k => { const m = MECH.find(x => x.k === k); chips.push(`<span class="chip${L.intro && L.intro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   if (L.pins.length){ const m = MECH[1]; chips.push(`<span class="chip${L.intro && L.intro.k === 'pin' ? ' new' : ''}">${m.icon} 핀 ${L.pins.length}</span>`); }
@@ -995,7 +996,7 @@ function updateInk(){
 }
 
 // ---------- 선 그리기 ----------
-function toWorld(e){ const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left - cv.clientLeft) / scale, y: (e.clientY - r.top - cv.clientTop) / scale }; }
+function toWorld(e){ const r = cv.getBoundingClientRect(); return { x: clamp((e.clientX - r.left - cv.clientLeft) / scale - XP, 3, W - 3), y: (e.clientY - r.top - cv.clientTop) / scale }; }
 // 선 두께(11px)만큼 물체와 겹치지 않게 가장자리 6px 안쪽은 그릴 수 없음
 const EDGE = 6, PROBES = [[0, 0], [EDGE, 0], [-EDGE, 0], [0, EDGE], [0, -EDGE], [4.2, 4.2], [-4.2, 4.2], [4.2, -4.2], [-4.2, -4.2]];
 function blocked(p){
@@ -1781,11 +1782,20 @@ function drawWood(b){
   ctx.strokeStyle = '#6b4423'; ctx.lineWidth = 1.5; rrect(-w / 2, -h / 2, w, h, 3); ctx.stroke();
   ctx.restore();
 }
+// 화면 가장자리에 붙은 블록은 옆으로 넓힌 배경까지 이어 그림(그림만, 물리는 그대로)
+function edgeExt(b){
+  if (!XP || !b.plugin.w || Math.abs(b.angle) > 0.01) return b;
+  let x0 = b.bounds.min.x, x1 = b.bounds.max.x;
+  if (x0 > 1 && x1 < W - 1) return b;
+  if (x0 <= 1) x0 = -XP - 2; if (x1 >= W - 1) x1 = W + XP + 2;
+  return { position: { x: (x0 + x1) / 2, y: b.position.y }, angle: 0, vertices: b.vertices, plugin: { ...b.plugin, w: x1 - x0 } };
+}
 function drawStatic(b){
   const th = TH(), k = b.label;
   if (k === 'tile') return; // 파낸 지형은 배경에 미리 그림
   if (k === 'ground'){
-    const v = b.vertices, x0 = Math.min(...v.map(p => p.x)), x1 = Math.max(...v.map(p => p.x));
+    const v = b.vertices; let x0 = Math.min(...v.map(p => p.x)), x1 = Math.max(...v.map(p => p.x));
+    if (x0 <= 1) x0 = -XP; if (x1 >= W - 1) x1 = W + XP; // 화면 양옆 빈 곳까지 바닥을 이어 그림
     ctx.fillStyle = texFill(ctx, th.ground); ctx.fillRect(x0, GY, x1 - x0, 40);
     ctx.save(); ctx.beginPath(); ctx.rect(x0, GY, x1 - x0, 40); ctx.clip();
     const bg = th.bg;
@@ -1825,13 +1835,13 @@ function drawStatic(b){
     ctx.restore(); return;
   }
   if (k === 'pillar' || k === 'post'){
-    drawStone(b, k === 'pillar');
+    drawStone(edgeExt(b), k === 'pillar');
     ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = 1.5;
     const v = b.vertices, x0 = v[0].x, x1 = v[1].x;
     for (let y = v[0].y + 20; y < GY; y += 20){ ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); }
     return;
   }
-  drawStone(b, ['plat', 'shelf', 'cliff', 'stair', 'cave'].includes(k));
+  drawStone(edgeExt(b), ['plat', 'shelf', 'cliff', 'stair', 'cave'].includes(k));
 }
 function drawDyn(b){
   const d = b.plugin.d;
@@ -2434,15 +2444,15 @@ function setTimerUI(left){
 let bgCanvas = null, bgKey = '';
 function buildBackdrop(){
   const th = TH(), c = document.createElement('canvas'), k = 2;
-  c.width = W * k; c.height = H * k;
-  const g = c.getContext('2d'); g.scale(k, k);
+  c.width = (W + 2 * XP) * k; c.height = H * k;
+  const g = c.getContext('2d'); g.scale(k, k); g.translate(XP, 0);
   const r = rng(L.seed + 99), R = (a, b) => a + r() * (b - a);
   const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, th.sky[0]); sky.addColorStop(1, th.sky[1]);
-  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  g.fillStyle = sky; g.fillRect(-XP, 0, W + 2 * XP, H);
   const cloud = (x, y, s2, a) => { g.fillStyle = `rgba(255,255,255,${a})`; [[0, 0, 18], [16, -6, 14], [30, 2, 16], [14, 6, 14]].forEach(([dx, dy, rr]) => { g.beginPath(); g.arc(x + dx * s2, y + dy * s2, rr * s2, 0, 7); g.fill(); }); };
   const bg = th.bg;
   // 그림 배경은 살짝 옅게 덮어서 적·선·지형이 더 또렷하게 보이게 함(밤 골목은 그대로)
-  if (ok(BGIMG[bg])){ g.drawImage(BGIMG[bg], 0, 0, W, H); if (bg !== 'alley'){ g.fillStyle = 'rgba(255,255,255,.2)'; g.fillRect(0, 0, W, H); } }
+  if (ok(BGIMG[bg])){ const dw = W + 2 * XP, dh = H * dw / W; g.drawImage(BGIMG[bg], -XP, H - dh, dw, dh); if (bg !== 'alley'){ g.fillStyle = 'rgba(255,255,255,.2)'; g.fillRect(-XP, 0, dw, H); } }
   else if (bg === 'living'){
     g.strokeStyle = 'rgba(160,120,80,.10)'; g.lineWidth = 6;
     for (let x = 12; x < W; x += 28){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 430); g.stroke(); }
@@ -2521,15 +2531,15 @@ function buildBackdrop(){
   return c;
 }
 function drawCarve(g, th){
-  const lay = document.createElement('canvas'); lay.width = W * 2; lay.height = H * 2;
-  const q = lay.getContext('2d'); q.scale(2, 2);
+  const lay = document.createElement('canvas'); lay.width = (W + 2 * XP) * 2; lay.height = H * 2;
+  const q = lay.getContext('2d'); q.scale(2, 2); q.translate(XP, 0);
   const shape = o => { q.beginPath(); if (o.t === 'rect') q.rect(o.x0, o.y0, o.x1 - o.x0, o.y1 - o.y0); else q.ellipse(o.cx, o.cy, o.rx, o.ry, 0, 0, 7); };
   const gf = texFill(q, th.ground);
   for (const o of L.carve){ q.globalCompositeOperation = o.op === 'add' ? 'source-over' : 'destination-out'; q.fillStyle = gf; shape(o); q.fill(); }
   // 흙 무늬(벽돌)와 굴 안쪽 테두리는 흙 위에만
   q.globalCompositeOperation = 'source-atop';
   q.strokeStyle = 'rgba(0,0,0,.10)'; q.lineWidth = 1.2;
-  for (let y = 0; y < H; y += 14){ q.beginPath(); q.moveTo(0, y); q.lineTo(W, y); q.stroke(); for (let x = (y / 14) % 2 * 14; x < W; x += 28){ q.beginPath(); q.moveTo(x, y); q.lineTo(x, y + 14); q.stroke(); } }
+  for (let y = 0; y < H; y += 14){ q.beginPath(); q.moveTo(-XP, y); q.lineTo(W + XP, y); q.stroke(); for (let x = (y / 14) % 2 * 14 - 56; x < W + XP; x += 28){ q.beginPath(); q.moveTo(x, y); q.lineTo(x, y + 14); q.stroke(); } }
   q.strokeStyle = 'rgba(60,30,15,.55)'; q.lineWidth = 6;
   for (const o of L.carve) if (o.op === 'cut'){ shape(o); q.stroke(); }
   // 파낸 뒤 다시 채운 바닥(평평한 굴 바닥)은 테두리 없이 다시 칠함
@@ -2548,25 +2558,25 @@ function drawCarve(g, th){
   q.globalCompositeOperation = 'source-over';
   const cols = Math.ceil(W / TILE);
   q.fillStyle = th.grass;
-  for (let x = 0; x < W; x += 2){
+  for (let x = -XP; x < W + XP; x += 2){
     for (let y = 2; y < H; y += 2){
       if (solidAt(L.carve, x, y) && !solidAt(L.carve, x, y - 3)){ if (y <= L.carveInfo.ys + 4) q.fillRect(x, y, 2.2, 6); break; }
     }
   }
   // 땅속 굴 안쪽(지표 아래)은 어두운 흙벽으로 — 배경 풍경이 비치지 않게
-  g.save(); g.beginPath(); g.rect(0, L.carveInfo.ys + 2, W, H); g.clip();
-  g.fillStyle = th.ground; g.fillRect(0, 0, W, H);
-  g.fillStyle = 'rgba(20,10,5,.55)'; g.fillRect(0, 0, W, H);
+  g.save(); g.beginPath(); g.rect(-XP, L.carveInfo.ys + 2, W + 2 * XP, H); g.clip();
+  g.fillStyle = th.ground; g.fillRect(-XP, 0, W + 2 * XP, H);
+  g.fillStyle = 'rgba(20,10,5,.55)'; g.fillRect(-XP, 0, W + 2 * XP, H);
   g.strokeStyle = 'rgba(0,0,0,.12)'; g.lineWidth = 1;
-  for (let y = 0; y < H; y += 14){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  for (let y = 0; y < H; y += 14){ g.beginPath(); g.moveTo(-XP, y); g.lineTo(W + XP, y); g.stroke(); }
   g.restore();
-  g.drawImage(lay, 0, 0, W, H);
+  g.drawImage(lay, -XP, 0, W + 2 * XP, H);
 }
 function render(){
   const th = TH();
-  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
-  if (bgKey !== L.seed + ':' + L.theme){ bgCanvas = buildBackdrop(); bgKey = L.seed + ':' + L.theme; }
-  ctx.drawImage(bgCanvas, 0, 0, W, H);
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, XP * scale * dpr, 0);
+  if (bgKey !== L.seed + ':' + L.theme + ':' + XP){ bgCanvas = buildBackdrop(); bgKey = L.seed + ':' + L.theme + ':' + XP; }
+  ctx.drawImage(bgCanvas, -XP, 0, W + 2 * XP, H);
   // 금지 구역
   (L.zones || []).forEach(z => {
     ctx.save(); ctx.beginPath(); ctx.rect(z.x - z.w / 2, z.y - z.h / 2, z.w, z.h); ctx.clip();
@@ -2605,12 +2615,14 @@ function render(){
 // ---------- 루프 ----------
 function resize(){
   const st = document.getElementById('stage');
-  const w = st.clientWidth - 24, h = st.clientHeight - 30;
+  const w = st.clientWidth - 10, h = st.clientHeight - 18; // 흰 테두리(3px)만 남기고 가로를 꽉 채움
   const ns = Math.min(w / W, h / H), nd = window.devicePixelRatio || 1;
-  if (ns === scale && nd === dpr && cv.width) return; // 크기 그대로면 다시 만들지 않음
-  scale = ns; dpr = nd;
-  cv.style.width = W * scale + 'px'; cv.style.height = H * scale + 'px';
-  cv.width = Math.round(W * scale * dpr); cv.height = Math.round(H * scale * dpr);
+  // 세로가 모자라 양옆이 남으면, 놀이 영역(360)은 그대로 두고 양옆을 배경·바닥으로 채움(한쪽 최대 36)
+  const nx = Math.max(0, Math.min(36, Math.floor((w / ns - W) / 2)));
+  if (ns === scale && nd === dpr && nx === XP && cv.width) return; // 크기 그대로면 다시 만들지 않음
+  scale = ns; dpr = nd; XP = nx;
+  cv.style.width = (W + 2 * XP) * scale + 'px'; cv.style.height = H * scale + 'px';
+  cv.width = Math.round((W + 2 * XP) * scale * dpr); cv.height = Math.round(H * scale * dpr);
 }
 window.addEventListener('resize', resize);
 if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(document.getElementById('stage'));
