@@ -321,7 +321,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.04k</span>
+  <span id="ver">v2026.11.04l</span>
 </div>
 
 <div id="picker" class="hidden">
@@ -1613,8 +1613,8 @@ function drawChute(c){
   // 물풍선 발사대(파란 통)
   ctx.fillStyle = '#4dabf7'; const S = VIS.chute;
   if (sprOk('launcher')){
-    if (c.type === 'top') drawSpr('launcher', c.x, 22, 54, 54);
-    else drawSpr('launcher', c.x < 0 ? 22 : W - 22, c.y, 54, 54, c.x < 0 ? -Math.PI / 2 : Math.PI / 2);
+    if (c.type === 'top') drawSpr('launcher', c.x, 26, 62, 62);
+    else drawSpr('launcher', c.x < 0 ? 26 : W - 26, c.y, 62, 62, c.x < 0 ? -Math.PI / 2 : Math.PI / 2);
   }
   else if (c.type === 'top'){ ctx.fillRect(c.x - 17 * S, 0, 34 * S, 16 * S); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x - 13 * S, 10 * S, 26 * S, 6 * S); }
   else { const x = c.x < 0 ? 0 : W - 22 * S; /* 발사구는 화면 가장자리에 그림 */ ctx.fillRect(x, c.y - 17 * S, 22 * S, 34 * S); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x < 0 ? 16 * S : W - 22 * S, c.y - 13 * S, 6 * S, 26 * S); }
@@ -1686,7 +1686,7 @@ function drawStatic(b){
     ctx.strokeStyle = th.grass; ctx.lineWidth = 12; ctx.beginPath(); ctx.arc(b.position.x, b.position.y, r - 5, 0, 7); ctx.stroke();
     ctx.restore(); return;
   }
-  if (k === 'boulder' && sprOk('boulder')){ drawSpr('boulder', b.position.x, b.position.y, b.circleRadius * 2.1, b.circleRadius * 2.1, b.angle); return; }
+  if (k === 'boulder' && sprOk('boulder')){ drawSpr('boulder', b.position.x, b.position.y, b.circleRadius * 2.06, b.circleRadius * 2.06, b.angle); return; }
   if (k === 'boulder'){
     const r = b.circleRadius;
     ctx.fillStyle = '#8a8278'; ctx.beginPath(); ctx.arc(b.position.x, b.position.y, r, 0, 7); ctx.fill();
@@ -1945,7 +1945,7 @@ function drawCrawler(c){
 // 물풍선
 function drawRock(k){
   const r = k.circleRadius, col = BALLOON[k.plugin.col || 0], sn = BALLOON_SPR[k.plugin.col || 0];
-  if (sprOk(sn)){ drawSpr(sn, k.position.x, k.position.y + r * 0.15, r * 2.4, r * 2.4 * 1.25, clamp(k.velocity.x * 0.05, -0.3, 0.3)); return; }
+  if (sprOk(sn)){ drawSpr(sn, k.position.x, k.position.y + r * 0.08, r * 2.75, r * 2.75, clamp(k.velocity.x * 0.05, -0.3, 0.3)); return; }
   ctx.save(); ctx.translate(k.position.x, k.position.y); ctx.rotate(clamp(k.velocity.x * 0.05, -0.3, 0.3));
   ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(0, 0, r, r * 1.12, 0, 0, 7); ctx.fill();
   ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.ellipse(-r * 0.35, -r * 0.4, r * 0.25, r * 0.4, -0.5, 0, 7); ctx.fill();
