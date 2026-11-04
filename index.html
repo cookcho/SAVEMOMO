@@ -234,13 +234,59 @@
   .playBtn:active{animation:none}
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
   .playLv{margin-top:-10px;z-index:2;background:#fff;color:var(--navy);border:3px solid var(--navy);border-radius:14px;padding:5px 14px 3px;font-size:17px;box-shadow:0 3px 0 rgba(35,48,77,.25);pointer-events:none}
-  .tMenu{display:flex;gap:12px;margin-top:18px}
-  .cbtn.tile{flex-direction:column;width:82px;height:80px;padding:6px 0 0;border-radius:20px;font-size:14px;gap:5px}
+  .tMenu{display:flex;gap:9px;margin-top:18px}
+  .cbtn.tile{flex-direction:column;width:74px;height:78px;padding:6px 0 0;border-radius:20px;font-size:14px;gap:5px}
   .cbtn.tile svg{width:34px;height:34px}
   .cbtn.tile .badge{position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;border-radius:11px;background:var(--red);border:2.5px solid #fff;font-size:12px;line-height:20px;text-shadow:none;box-shadow:0 2px 0 rgba(0,0,0,.2)}
   .cbtn.tile .badge.ok{background:var(--green)}
   #ver{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom) + 4px);font-size:11px;color:rgba(35,48,77,.45)}
   #btnInstall{position:absolute;left:12px;bottom:calc(env(safe-area-inset-bottom) + 4px);font-size:12px;padding:6px 10px;border-radius:12px;border-width:2.5px;box-shadow:0 3px 0 var(--d)}
+
+  /* ---------- 꾸미기 겹쳐 그리기(시작 화면·결과 창) ---------- */
+  .momoBox{position:relative;display:inline-block}
+  .momoBox>img{display:block;height:100%}
+  .momoBox .acc{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;line-height:1;pointer-events:none}
+  .momoBox .acc img{width:100%;height:auto;display:block}
+  .hMomo img{height:100%}
+  .mImgBox{height:92px;margin-top:2px;animation:bob 2s ease-in-out infinite}
+  /* ---------- 게임 중 아이템 버튼 ---------- */
+  #itemBar{display:flex;gap:5px;margin:0 0 3px 2px;flex:none}
+  .ib{position:relative;width:38px;height:38px;border-radius:50%;border:2.5px solid #c9d6e6;background:#fff;box-shadow:0 3px 0 #c9d6e6;font-size:18px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;transition:transform .08s}
+  .ib:active{transform:translateY(3px);box-shadow:0 1px 0 #c9d6e6}
+  .ib.on{border-color:var(--yellowD);background:#fff3c4;box-shadow:0 4px 0 var(--yellowD),0 0 0 4px rgba(255,207,58,.45)}
+  .ib.empty{opacity:.55}
+  .ib b{position:absolute;right:-6px;top:-7px;min-width:18px;height:18px;border-radius:9px;line-height:18px!important;font-size:11px!important;background:var(--navy);color:#fff;font-size:12px;font-weight:400;line-height:20px;border:2px solid #fff}
+  .ib.empty b{background:var(--green)}
+  .ib.on::after{content:'✓';position:absolute;left:-6px;top:-7px;width:18px;height:18px;border-radius:9px;line-height:18px;background:var(--green);color:#fff;font-size:12px;line-height:20px;border:2px solid #fff}
+  /* ---------- 상점 ---------- */
+  #shop{position:fixed;inset:0;z-index:32;background:rgba(20,32,60,.55);display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  .shopTabs{display:flex;gap:6px;padding:0 12px 8px}
+  .shopTabs button{flex:1;border:3px solid #c9d6e6;background:#fff;color:var(--navy);border-radius:14px;padding:9px 0 7px;font-size:16px;cursor:pointer;box-shadow:0 3px 0 #c9d6e6}
+  .shopTabs button.on{background:var(--yellow);border-color:var(--yellowD);box-shadow:0 3px 0 var(--yellowD)}
+  .wallet{display:flex;gap:6px;align-items:center;padding:0 14px 10px;font-size:13px;color:var(--navy)}
+  .wallet .pill{font-size:16px;padding:3px 12px 2px 4px;border-width:2px}
+  .wallet .pill .pi{width:24px;height:24px;font-size:14px}
+  .shopGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .scardI{background:#fff;border:3px solid #c9d6e6;border-radius:18px;padding:10px 8px 10px;text-align:center;box-shadow:0 4px 0 #c9d6e6;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .scardI.eq{border-color:var(--greenD);box-shadow:0 4px 0 var(--greenD)}
+  .scardI .pv{height:74px;display:flex;align-items:center;justify-content:center;font-size:44px}
+  .scardI .pv svg{width:120px;height:60px}
+  .scardI .pv .momoBox{height:74px}
+  .scardI h4{margin:0;font-weight:400;font-size:16px}
+  .scardI p{margin:0;font-size:12px;color:#7a8aa6;min-height:16px;word-break:keep-all}
+  .scardI .cbtn{width:100%;font-size:15px;padding:8px 0;margin-top:4px}
+  .scardI .cbtn.dis{filter:grayscale(.8);opacity:.6}
+  /* ---------- 챕터 문 ---------- */
+  #gate{position:fixed;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;background:rgba(20,32,60,.6)}
+  .gcard{width:min(320px,86vw);background:var(--cream);border:4px solid var(--navy);border-radius:26px;padding:22px 18px 18px;text-align:center;box-shadow:0 8px 0 rgba(35,48,77,.35);animation:popIn .35s cubic-bezier(.2,1.6,.4,1)}
+  .gcard .lock{font-size:54px;line-height:1;animation:shake 1.2s ease-in-out infinite}
+  .gcard h3{margin:8px 0 6px;font-weight:400;font-size:22px}
+  .gcard p{margin:0 0 6px;font-size:15px;line-height:1.5;word-break:keep-all}
+  .gbar{height:18px;border-radius:9px;background:#e3ebf3;border:2.5px solid var(--navy);overflow:hidden;margin:10px 0 4px}
+  .gbar i{display:block;height:100%;background:linear-gradient(90deg,#ffd84a,#ffb02e)}
+  .gcard .btns{margin-top:14px}
+  .pkCh .lockTag{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .pkGrid button.gate{background:#8d9cb1;border-color:#6b7a90;box-shadow:0 4px 0 #6b7a90;color:#dfe6ef;text-shadow:none}
   @media (max-height:640px){.tHero{height:26vh}.playBtn{width:104px;height:104px}.tMenu{margin-top:12px}.cbtn.tile{height:70px}}
 </style>
 </head>
@@ -255,8 +301,9 @@
     <div id="hud">
       <div class="ink" id="inkBox">
         <div class="inkIcon"><svg viewBox="0 0 32 32"><g transform="rotate(45 16 16)"><rect x="12" y="2" width="8" height="20" rx="1.5" fill="#ffb02e" stroke="#23304d" stroke-width="2"/><rect x="12" y="2" width="8" height="4" fill="#ff7a8a" stroke="#23304d" stroke-width="2"/><path d="M12 22h8l-4 8z" fill="#ffe0b0" stroke="#23304d" stroke-width="2" stroke-linejoin="round"/><path d="M14.6 27.2 16 30l1.4-2.8z" fill="#23304d"/></g></svg></div>
-        <div class="inkTrack"><div class="inkClip"><div class="inkfill" id="inkFill"></div></div><i class="mk" style="left:60%"></i><i class="mk" style="left:78%"></i><span id="inkTxt">100%</span>
+        <div class="inkTrack"><div class="inkClip"><div class="inkfill" id="inkFill"></div></div><i class="mk" id="mk2" style="left:60%"></i><i class="mk" id="mk3" style="left:78%"></i><span id="inkTxt">100%</span>
           <b class="stb" id="stb1" style="left:9%">★</b><b class="stb" id="stb2" style="left:60%">★</b><b class="stb" id="stb3" style="left:78%">★</b></div>
+        <div id="itemBar"></div>
       </div>
       <div id="timer" class="hidden"><span id="tNum"></span><div id="tBar"><div id="tFill"></div></div></div>
     </div>
@@ -268,7 +315,7 @@
     <div id="modalWrap" class="modalWrap hidden">
       <div class="modal">
         <div class="mRibbon" id="mTitle">성공!</div>
-        <img id="mImg" class="mImg" src="assets/momo_heart.png" alt="">
+        <div class="momoBox mImgBox"><img id="mImg" src="assets/momo_heart.png" alt=""><i class="acc" data-acc-img="mImg"></i></div>
         <div class="stars" id="mStars"></div>
         <div id="mReason" class="hidden"></div>
         <div class="mStats"><div><small>잉크 사용</small><b id="mInk"></b></div><div><small>모모 체력</small><b id="mHp"></b></div><div><small>점수</small><b id="mScore"></b></div></div>
@@ -301,7 +348,7 @@
   </div>
   <div class="tHero" id="tHero">
     <div class="hFloor"></div>
-    <img class="hMomo" src="assets/momo_surprised.png" alt="">
+    <div class="hMomo momoBox"><img src="assets/momo_surprised.png" alt=""><i class="acc" data-head="1"></i></div>
     <i class="hSweat"></i>
     <svg class="hInk" viewBox="0 0 220 200"><path d="M22 196 C 10 40, 210 40, 198 196"/></svg>
     <div class="hSpr hPen" data-spr="pencil"></div>
@@ -319,12 +366,31 @@
   <div class="tMenu">
     <button class="cbtn tile yellow" id="tLevels"><svg viewBox="0 0 24 24"><g fill="#fff"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></g></svg><span>레벨</span></button>
     <button class="cbtn tile pink" id="tabDaily"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3" fill="#fff"/><rect x="3" y="5" width="18" height="5" rx="2" fill="#ffd3de"/><rect x="7" y="2.5" width="2.6" height="5" rx="1.3" fill="#fff"/><rect x="14.4" y="2.5" width="2.6" height="5" rx="1.3" fill="#fff"/><path d="m12 11.8 1.4 2.8 3.1.5-2.2 2.2.5 3.1-2.8-1.5-2.8 1.5.5-3.1-2.2-2.2 3.1-.5z" fill="#ff6f91"/></svg><span>오늘의 도전</span><b class="badge hidden" id="dailyBadge">!</b></button>
+    <button class="cbtn tile orange" id="tShop"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1.2 12a1.5 1.5 0 0 1-1.5 1.4H7.7a1.5 1.5 0 0 1-1.5-1.4z" fill="#fff"/><path d="M8.5 10V7a3.5 3.5 0 0 1 7 0v3" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="m12 12.4 1.1 2.2 2.4.4-1.7 1.7.4 2.4-2.2-1.2-2.2 1.2.4-2.4-1.7-1.7 2.4-.4z" fill="#ff9a3c"/></svg><span>상점</span></button>
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.04q</span>
+  <span id="ver">v2026.11.05a</span>
 </div>
 
+<div id="shop" class="hidden">
+  <div class="pk">
+    <div class="pkTop"><h3>상점</h3><button id="shopClose" class="cbtn sq red" aria-label="닫기" style="width:44px;height:44px"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/></svg></button></div>
+    <div class="wallet"><div class="pill"><span class="pi">★</span><b id="shopWallet" style="font-weight:400">0</b></div><span id="shopEarned"></span></div>
+    <div class="shopTabs"><button data-tab="item" class="on">아이템</button><button data-tab="pen">펜 꾸미기</button><button data-tab="acc">모모 꾸미기</button></div>
+    <div class="pkList"><div class="shopGrid" id="shopGrid"></div></div>
+  </div>
+</div>
+<div id="gate" class="hidden">
+  <div class="gcard">
+    <div class="lock">🔒</div>
+    <h3 id="gTitle">챕터 2 · 마당</h3>
+    <p id="gText"></p>
+    <div class="gbar"><i id="gFill"></i></div>
+    <p id="gNum" style="font-size:13px;color:#7a8aa6"></p>
+    <div class="btns"><button class="cbtn green big" id="gPick">별 모으러 가기</button><button class="cbtn white" id="gClose">닫기</button></div>
+  </div>
+</div>
 <div id="picker" class="hidden">
   <div class="pk">
     <div class="pkTop"><h3>레벨 선택</h3><input id="pkNum" type="number" inputmode="numeric" min="1" placeholder="번호"><button id="pkGo" class="cbtn green" style="height:44px">이동</button><button id="pkClose" class="cbtn sq red" aria-label="닫기" style="width:44px;height:44px"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/></svg></button></div>
@@ -844,7 +910,7 @@ function setup(){
   Events.on(engine, 'collisionStart', onCollide);
   Events.on(engine, 'collisionActive', onCollide);
 
-  phase = 'draw'; pts = []; inkUsed = 0; drawing = false; simT = 0; hp = 100;
+  phase = 'draw'; pts = []; inkUsed = 0; drawing = false; simT = 0; hp = 100; act = {}; simDur = SIM_MS;
   if (activePointer !== null){ try { cv.releasePointerCapture(activePointer); } catch (_){} activePointer = null; }
   bugs = []; drops = []; rocks = []; crawlers = []; flashT = 0; lineBody = null; toRemove = new Set();
   cloudAcc = L.clouds.map(() => 0);
@@ -876,17 +942,20 @@ function setup(){
   hint.classList.remove('hidden');
   const b = store.get(curKey(), null);
   document.getElementById('best').innerHTML = mode === 'daily' ? (b ? `최고 ${b.score}점` : String(todayKey()).slice(4, 6) + '월 ' + +String(todayKey()).slice(6) + '일 도전') : b ? `<span class="gs">${starsOfPct(b.pct)}</span> 최고 ${b.score}점` : '첫 도전';
-  updateInk();
+  updateInk(); renderItemBar();
   resize();
   if (typeof maybeChapterCard === 'function' && store.get('momo_story_seen', false)) maybeChapterCard();
 }
 
 function updateInk(){
-  const left = 1 - inkUsed / L.ink;
+  const cap = inkCap(), left = 1 - inkUsed / cap;
   document.getElementById('inkFill').style.width = (left * 100) + '%';
+  // 별 기준선: 기본 잉크의 22%·40% 사용 지점 (긴 펜을 켜면 기준선이 오른쪽으로 감)
+  const p3 = 1 - 0.22 * L.ink / cap, p2 = 1 - 0.40 * L.ink / cap;
+  [['stb3', 'mk3', p3], ['stb2', 'mk2', p2]].forEach(([a, b, v]) => { document.getElementById(a).style.left = document.getElementById(b).style.left = (v * 100) + '%'; });
   document.getElementById('inkTxt').textContent = `${Math.round(left * 100)}%`;
-  document.getElementById('stb3').classList.toggle('off', left < 0.78);
-  document.getElementById('stb2').classList.toggle('off', left < 0.60);
+  document.getElementById('stb3').classList.toggle('off', left < p3 - 0.001);
+  document.getElementById('stb2').classList.toggle('off', left < p2 - 0.001);
 }
 
 // ---------- 선 그리기 ----------
@@ -909,10 +978,10 @@ function segFree(a, b){
 function pushPt(q){
   const last = pts[pts.length - 1], d = dist(q, last);
   if (d < 0.5) return true;
-  if (inkUsed + d >= L.ink){
-    const f = (L.ink - inkUsed) / d;
+  if (inkUsed + d >= inkCap()){
+    const f = (inkCap() - inkUsed) / d;
     pts.push({ x: last.x + (q.x - last.x) * f, y: last.y + (q.y - last.y) * f });
-    inkUsed = L.ink; updateInk(); endStroke(); return false;
+    inkUsed = inkCap(); updateInk(); endStroke(); return false;
   }
   pts.push(q); inkUsed += d; updateInk(); return true;
 }
@@ -1035,7 +1104,7 @@ function endStroke(){
 }
 
 function startSim(){
-  phase = 'sim'; simT = 0;
+  phase = 'sim'; simT = 0; useItems();
   if (tut) showToast('선은 물리 법칙대로 떨어져요 · 7초만 버티면 성공!');
   simRng = rng(L.seed + 7);
   spawnQ = [];
@@ -1069,7 +1138,7 @@ function handle(a, b, name){
     else if (WATER.includes(b.label)){ if (!toRemove.has(b)){ ouch(b.label === 'drop' ? 7 : b.label === 'jet' ? 6 : 4, true); toRemove.add(b); } }
     else if (b.label === 'balloon'){ if (!b.plugin.hit){ b.plugin.hit = true; ouch(18, true); } }
   }
-  if (name === 'collisionStart' && a.label === 'jet' && b.parent.label === 'line') jetPush.push({ x: a.position.x, y: a.position.y, vx: a.velocity.x, vy: a.velocity.y, k: 0.004 });
+  if (name === 'collisionStart' && a.label === 'jet' && b.parent.label === 'line') jetPush.push({ x: a.position.x, y: a.position.y, vx: a.velocity.x, vy: a.velocity.y, k: 0.004 * (act.tough ? 0.5 : 1) });
   // 적이 선에 부딪히면 날아오던 방향으로 선을 튕겨냄(적마다 세기 다름). 무거운 적은 붙어 있는 동안 계속 밂
   if (b.parent.label === 'line'){
     const big = a.label === 'tank' || (a.label === 'crawl' && a.plugin && a.plugin.big);
@@ -1085,7 +1154,7 @@ function handle(a, b, name){
       if (name === 'collisionStart') P.pushT = simT; else P.pushStep = simT;
       let vx = a.velocity.x, vy = a.velocity.y;
       if (Math.hypot(vx, vy) < 0.3){ vx = a.position.x - b.position.x; vy = a.position.y - b.position.y; vx = -vx; vy = -vy; }
-      jetPush.push({ x: a.position.x, y: a.position.y, vx, vy, k: k * kk });
+      jetPush.push({ x: a.position.x, y: a.position.y, vx, vy, k: k * kk * (act.tough ? 0.5 : 1) });
     }
   }
   if (name === 'collisionStart' && WATER.includes(a.label) && b.parent !== potBody) toRemove.add(a);
@@ -1410,7 +1479,7 @@ function step(){
   if (hp <= 0) return finish(false, lastWet ? '모모가 흠뻑 젖었어요' : '모모가 다쳤어요');
   if (potBody.position.y > H + 60 || potBody.position.x < -60 || potBody.position.x > W + 60) return finish(false, '모모가 떨어졌어요');
   prevPotSpeed = Body.getSpeed(potBody);
-  if (simT >= SIM_MS) return finish(true);
+  if (simT >= simDur) return finish(true);
 }
 
 // ---------- 종료 ----------
@@ -1418,7 +1487,7 @@ function finish(win, reason, delay = 450){
   phase = 'end';
   const pct = Math.round(inkUsed / L.ink * 100);
   const stars = pct <= 22 ? 3 : pct <= 40 ? 2 : 1;
-  const score = win ? Math.round((1 - inkUsed / L.ink) * 700 + hp * 3) : 0;
+  const score = win ? Math.round(Math.max(0, 1 - inkUsed / L.ink) * 700 + hp * 3) : 0;
   endInfo = { win, pct, stars, score, hp: Math.round(hp), reason };
   let best = store.get(curKey(), null), newBest = false;
   if (win && (!best || score > best.score)){ best = { score, pct }; store.set(curKey(), best); newBest = true; }
@@ -1428,6 +1497,7 @@ function finish(win, reason, delay = 450){
     const mt = document.getElementById('mTitle');
     mt.textContent = win ? (newBest && best && !tut ? '최고 기록!' : '성공!') : '앗, 실패!'; mt.classList.toggle('fail', !win);
     document.getElementById('mImg').src = win ? 'assets/momo_heart.png' : 'assets/momo_angry.png';
+    refreshAccs();
     const rs = document.getElementById('mReason'); rs.textContent = win ? '' : reason; rs.classList.toggle('hidden', win);
     const tip = document.getElementById('mTip');
     const tipText = tut ? (win ? '잉크를 적게 쓸수록 ⭐이 늘어나요. 22% 이하면 ⭐⭐⭐!' : '틈이 있으면 드론이 돌아서 들어와요. 빈틈없이 감싸 보세요!')
@@ -1446,7 +1516,7 @@ function finish(win, reason, delay = 450){
   }, delay);
 }
 
-document.getElementById('mNext').onclick = () => { level++; setup(); };
+document.getElementById('mNext').onclick = () => tryLevel(level + 1);
 document.getElementById('mRetry').onclick = () => setup();
 document.getElementById('btnRetry').onclick = () => setup();
 document.getElementById('prevLv').onclick = () => { if (level > 1){ level--; setup(); } };
@@ -1460,9 +1530,10 @@ function openPicker(){
   let html = '';
   for (let c = 0; c < chapters; c++){
     const first = c * 10 + 1, ch = CHAPTERS[chapterOf(first)], rd = roundOf(first);
-    html += `<div class="pkCh"><span>${ch.icon} 챕터 ${c + 1} · ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</span></div><div class="pkGrid">`;
+    const gl = !canPlay(first);
+    html += `<div class="pkCh"><span>${ch.icon} 챕터 ${c + 1} · ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</span>${gl ? `<span class="lockTag">🔒 별 ${gateFor(first)}개</span>` : ''}</div><div class="pkGrid">`;
     for (let lv = first; lv < first + 10; lv++){
-      html += `<button data-lv="${lv}" class="${lv === level ? 'cur' : ''} ${lv > top ? 'lock' : ''} ${lv % 10 === 0 ? 'boss' : ''}">${lv}<small>${starsOf(lv) || (lv % 10 === 0 ? '🔥' : '')}</small></button>`;
+      html += `<button data-lv="${lv}" class="${lv === level ? 'cur' : ''} ${gl ? 'gate' : lv > top ? 'lock' : ''} ${lv % 10 === 0 && !gl ? 'boss' : ''}">${lv}<small>${starsOf(lv) || (lv % 10 === 0 ? '🔥' : '')}</small></button>`;
     }
     html += '</div>';
   }
@@ -1471,13 +1542,13 @@ function openPicker(){
   document.getElementById('picker').classList.remove('hidden');
   const cur = list.querySelector('.cur'); if (cur) cur.scrollIntoView({ block: 'center' });
 }
-function goLevel(lv){ lv = Math.max(1, Math.floor(+lv || 1)); level = lv; document.getElementById('picker').classList.add('hidden'); hideTitle(); if (!store.get('momo_story_seen', false)) store.set('momo_story_seen', true); setup(); }
+function goLevel(lv){ if (mode !== 'level') mode = 'level'; if (!store.get('momo_story_seen', false)) store.set('momo_story_seen', true); if (tryLevel(lv)) document.getElementById('picker').classList.add('hidden'); }
 document.getElementById('lvlBtn').onclick = openPicker;
 document.getElementById('pkList').onclick = e => { const b = e.target.closest('button[data-lv]'); if (b) goLevel(b.dataset.lv); };
 document.getElementById('pkGo').onclick = () => { const v = document.getElementById('pkNum').value; if (v) goLevel(v); };
 document.getElementById('pkNum').onkeydown = e => { if (e.key === 'Enter') document.getElementById('pkGo').click(); };
 document.getElementById('pkClose').onclick = () => document.getElementById('picker').classList.add('hidden');
-document.getElementById('nextLv').onclick = () => { level++; setup(); };
+document.getElementById('nextLv').onclick = () => tryLevel(level + 1);
 document.getElementById('mShare').onclick = async () => {
   const s = endInfo;
   const txt = `🐱 SAVE MOMO ${curLabel()} ${'⭐'.repeat(s.stars)}\n잉크 ${s.pct}% · ${s.score}점`;
@@ -1500,17 +1571,17 @@ function totalStars(){
 }
 function refreshTitle(){
   const top = store.get('ss_level', 1);
-  document.getElementById('tStars').textContent = totalStars();
+  document.getElementById('tStars').textContent = walletStars();
   document.getElementById('tTop').textContent = 'Lv.' + top;
   document.getElementById('tPlayLv').textContent = 'Lv.' + top + (top === 1 ? ' 시작' : ' 이어하기');
   const done = !!store.get('ss_daily_' + todayKey(), null), bd = document.getElementById('dailyBadge');
   bd.textContent = done ? '✓' : '!'; bd.classList.toggle('ok', done); bd.classList.remove('hidden');
 }
-function showTitle(){ refreshTitle(); heroSprites(); document.getElementById('title').classList.remove('hidden'); if (phase === 'sim') setup(); }
+function showTitle(){ refreshTitle(); heroSprites(); refreshAccs(); document.getElementById('title').classList.remove('hidden'); if (phase === 'sim') setup(); }
 function hideTitle(){ document.getElementById('title').classList.add('hidden'); }
 document.getElementById('tPlay').onclick = () => {
-  hideTitle();
-  if (!store.get('momo_story_seen', false)) showStory(); else setMode('level');
+  if (!store.get('momo_story_seen', false)){ hideTitle(); showStory(); return; }
+  mode = 'level'; tryLevel(store.get('ss_level', 1));
 };
 document.getElementById('tabDaily').onclick = () => { hideTitle(); setMode('daily'); };
 document.getElementById('tLevels').onclick = () => { if (mode !== 'level') setMode('level'); openPicker(); };
@@ -1522,6 +1593,7 @@ document.getElementById('mHome').onclick = showTitle;
   for (let i = 0; i < 14; i++){ const s = 10 + (i * 37) % 34; h += `<i class="bub" style="--x:${(i * 71) % 96}%;--s:${s}px;--d:${9 + (i * 13) % 9}s;--dl:-${(i * 1.7).toFixed(1)}s"></i>`; }
   sky.innerHTML = h;
 })();
+
 
 // ---------- 렌더링 ----------
 function poly(vs){ ctx.beginPath(); ctx.moveTo(vs[0].x, vs[0].y); for (let i = 1; i < vs.length; i++) ctx.lineTo(vs[i].x, vs[i].y); ctx.closePath(); }
@@ -1797,6 +1869,183 @@ const FALLBACK = {
 };
 const sprTag = (n, emoji) => sprOk(n) ? `<img src="${SPR[n].src}" alt="">` : (FALLBACK[n] || `<span>${emoji}</span>`);
 function heroSprites(){ document.querySelectorAll('[data-spr]').forEach(el => { el.innerHTML = sprOk(el.dataset.spr) ? `<img src="${SPR[el.dataset.spr].src}" alt="">` : FALLBACK[el.dataset.spr] || ''; }); }
+
+// ---------- 별 · 상점 · 아이템 · 챕터 문 ----------
+// 모은 별 = 레벨별 최고 기록의 별 + 오늘의 도전 기록의 별. 상점에서 써도 "모은 별"은 줄지 않음(챕터 문은 모은 별로 열림)
+const GATE_PER_CH = 12; // 챕터 하나마다 별 12개씩 더 필요 (레벨당 평균 1.2개)
+const ITEMS = [
+  { k: 'ink', name: '긴 펜', icon: '🖊️', price: 3, desc: '이번 판 잉크 +25%' },
+  { k: 'tough', name: '튼튼 펜', icon: '🛡️', price: 3, desc: '이번 판 선이 밀리는 힘 절반' },
+  { k: 'sand', name: '모래시계', icon: '⏳', price: 4, desc: '이번 판 버틸 시간 1초 줄이기' },
+];
+const PENS = [
+  { k: 'navy', name: '기본 펜', price: 0 },
+  { k: 'red', name: '빨강 펜', price: 5, c: '#ff5a5a' },
+  { k: 'green', name: '초록 펜', price: 5, c: '#35c46a' },
+  { k: 'purple', name: '보라 펜', price: 5, c: '#9b6cf0' },
+  { k: 'white', name: '분필 펜', price: 8, c: '#ffffff' },
+  { k: 'rainbow', name: '무지개 펜', price: 15 },
+  { k: 'gold', name: '황금 펜', price: 20, c: '#ffc93c' },
+];
+const ACCS = [
+  { k: 'none', name: '안 꾸미기', price: 0 },
+  { k: 'flower', name: '꽃 핀', price: 6, e: '🌸', pos: 'ear' },
+  { k: 'ribbon', name: '리본', price: 8, e: '🎀', pos: 'ear' },
+  { k: 'cap', name: '야구 모자', price: 8, e: '🧢', pos: 'hat' },
+  { k: 'sunglasses', name: '선글라스', price: 10, e: '🕶️', pos: 'eyes' },
+  { k: 'goggles', name: '물안경', price: 10, e: '🥽', pos: 'eyes' },
+  { k: 'tophat', name: '실크해트', price: 12, e: '🎩', pos: 'hat' },
+  { k: 'crown', name: '왕관', price: 15, e: '👑', pos: 'hat' },
+];
+// 모모 그림 안에서 꾸미기 자리 [가로 중심, 세로 중심, 너비] (그림 크기 대비 비율). full = 앉은 모모, head = 얼굴만 있는 그림
+const ACC_POS = {
+  full: { hat: [0.5, 0.07, 0.62], ear: [0.8, 0.1, 0.3], eyes: [0.5, 0.43, 0.66] },
+  head: { hat: [0.5, 0.08, 0.66], ear: [0.82, 0.12, 0.32], eyes: [0.5, 0.56, 0.7] },
+};
+ACCS.forEach(a => { if (a.e) SPR['acc_' + a.k] = loadImg(`assets/sprites/acc_${a.k}.png`, () => { refreshAccs(); }); });
+const starN = p => p <= 22 ? 3 : p <= 40 ? 2 : 1;
+function earnedStars(){
+  let n = 0;
+  try {
+    for (let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('ss_best_') || k.startsWith('ss_daily_'))){ const b = store.get(k, null); if (b && b.pct != null) n += starN(b.pct); }
+    }
+  } catch (_){}
+  return n;
+}
+const walletStars = () => earnedStars() - store.get('momo_spent', 0);
+// 업데이트 전에 이미 간 레벨까지는 문 없이 그대로
+if (store.get('momo_gate_base', null) === null) store.set('momo_gate_base', store.get('ss_level', 1));
+function gateFor(lv){ return lv <= store.get('momo_gate_base', 0) ? 0 : Math.floor((lv - 1) / 10) * GATE_PER_CH; }
+const canPlay = lv => earnedStars() >= gateFor(lv);
+function tryLevel(lv){
+  lv = Math.max(1, Math.floor(+lv || 1));
+  if (mode === 'level' && !canPlay(lv)){ showGate(lv); return false; }
+  level = lv; hideTitle(); setup(); return true;
+}
+function showGate(lv){
+  const need = gateFor(lv), have = earnedStars(), c = Math.floor((lv - 1) / 10), ch = CHAPTERS[c % CHAPTERS.length];
+  document.getElementById('gTitle').textContent = `챕터 ${c + 1} · ${ch.name}`;
+  document.getElementById('gText').innerHTML = `이 챕터는 <b>별 ${need}개</b>를 모아야 열려요.<br>지난 레벨을 잉크를 아껴 다시 깨면 별이 늘어나요.`;
+  document.getElementById('gFill').style.width = Math.min(100, have / need * 100) + '%';
+  document.getElementById('gNum').textContent = `지금 모은 별 ${have} / ${need}`;
+  document.getElementById('gate').classList.remove('hidden');
+}
+document.getElementById('gClose').onclick = () => document.getElementById('gate').classList.add('hidden');
+document.getElementById('gPick').onclick = () => { document.getElementById('gate').classList.add('hidden'); if (mode !== 'level'){ mode = 'level'; } openPicker(); };
+
+// 보유 아이템·꾸미기
+const inv = store.get('momo_inv', { ink: 1, tough: 1, sand: 1 }); // 처음엔 하나씩 선물
+const saveInv = () => store.set('momo_inv', inv);
+let act = {}; // 이번 판에 켠 아이템
+const owned = (key, def) => store.get(key, def);
+const penNow = () => PENS.find(p => p.k === store.get('momo_pen', 'navy')) || PENS[0];
+const accNow = () => ACCS.find(a => a.k === store.get('momo_acc', 'none')) || ACCS[0];
+const inkCap = () => L.ink * (act.ink ? 1.25 : 1);
+let simDur = SIM_MS;
+
+function renderItemBar(){
+  const bar = document.getElementById('itemBar');
+  if (phase !== 'draw' || tut){ bar.innerHTML = ''; return; }
+  bar.innerHTML = ITEMS.map(it => {
+    const n = inv[it.k] || 0, on = !!act[it.k];
+    return `<button class="ib ${on ? 'on' : ''} ${n ? '' : 'empty'}" data-k="${it.k}" aria-label="${it.name}">${it.icon}<b>${n || '+'}</b></button>`;
+  }).join('');
+}
+document.getElementById('itemBar').onclick = e => {
+  const b = e.target.closest('.ib'); if (!b) return;
+  const k = b.dataset.k, it = ITEMS.find(x => x.k === k);
+  if (!(inv[k] > 0)){ openShop('item'); return; }
+  if (pts.length){ showToast('아이템은 선을 긋기 전에 켜야 해요'); return; }
+  act[k] = !act[k];
+  showToast(act[k] ? `${it.icon} ${it.name} 켬 · ${it.desc}` : `${it.name} 끔`);
+  renderItemBar(); updateInk();
+};
+// 시뮬레이션이 시작되면 켠 아이템을 씀
+function useItems(){
+  for (const k of Object.keys(act)) if (act[k] && inv[k] > 0) inv[k]--;
+  saveInv();
+  simDur = act.sand ? SIM_MS - 1000 : SIM_MS;
+  document.getElementById('itemBar').innerHTML = '';
+}
+
+// 상점
+let shopTab = 'item';
+function penSwatch(p, w = 120, h = 60){
+  const d = `M10 ${h - 14} C ${w * 0.3} 6, ${w * 0.6} ${h}, ${w - 10} 14`;
+  const out = p.k === 'white' ? '#23304d' : '#23304d';
+  if (p.k === 'navy') return `<svg viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="#1e2a4a" stroke-width="11" stroke-linecap="round"/></svg>`;
+  const fill = p.k === 'rainbow' ? 'url(#rb)' : p.c;
+  return `<svg viewBox="0 0 ${w} ${h}"><defs><linearGradient id="rb" x1="0" x2="1"><stop offset="0" stop-color="#ff5a5a"/><stop offset=".25" stop-color="#ffc93c"/><stop offset=".5" stop-color="#35c46a"/><stop offset=".75" stop-color="#3ea8f2"/><stop offset="1" stop-color="#9b6cf0"/></linearGradient></defs><path d="${d}" fill="none" stroke="${out}" stroke-width="13" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${fill}" stroke-width="8" stroke-linecap="round"/>${p.k === 'gold' ? `<path d="${d}" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2" stroke-linecap="round" transform="translate(0,-1.5)"/>` : ''}</svg>`;
+}
+function accHTML(a, head){
+  if (!a || !a.e) return '';
+  const [x, y, w] = ACC_POS[head ? 'head' : 'full'][a.pos];
+  const inner = sprOk('acc_' + a.k) ? `<img src="${SPR['acc_' + a.k].src}" alt="">` : a.e;
+  return `<i class="acc" style="left:${x * 100}%;top:${y * 100}%;width:${w * 100}%;font-size:var(--accfs)">${inner}</i>`;
+}
+// 그림 높이에 맞춰 이모지 크기를 정함
+function fitAcc(box){
+  const im = box.querySelector('img'); if (!im) return;
+  const set = () => { box.style.setProperty('--accfs', (im.clientWidth * 0.5) + 'px'); box.querySelectorAll('.acc').forEach(a => { if (!a.querySelector('img')) a.style.fontSize = (im.clientWidth * parseFloat(a.style.width) / 100 * 0.85) + 'px'; }); };
+  if (im.complete) set(); else im.onload = set;
+}
+function refreshAccs(){
+  document.querySelectorAll('.momoBox').forEach(box => {
+    const slot = box.querySelector('.acc[data-head], .acc[data-acc-img]');
+    if (!slot) return;
+    const head = slot.hasAttribute('data-head') || (box.querySelector('img').src.includes('angry'));
+    const html = accHTML(accNow(), head);
+    const keep = slot.getAttribute('data-head') !== null ? 'data-head="1"' : `data-acc-img="${slot.getAttribute('data-acc-img')}"`;
+    slot.outerHTML = html ? html.replace('<i class="acc"', `<i class="acc" ${keep}`) : `<i class="acc" ${keep}></i>`;
+    fitAcc(box);
+  });
+}
+function openShop(tab){ if (tab) shopTab = tab; renderShop(); document.getElementById('shop').classList.remove('hidden'); }
+function renderShop(){
+  const w = walletStars();
+  document.getElementById('shopWallet').textContent = w;
+  document.getElementById('shopEarned').textContent = `쓸 수 있는 별 · 지금까지 모은 별 ${earnedStars()}개`;
+  document.querySelectorAll('.shopTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === shopTab));
+  let h = '';
+  if (shopTab === 'item'){
+    h = ITEMS.map(it => `<div class="scardI"><div class="pv">${it.icon}</div><h4>${it.name}</h4><p>${it.desc}</p><p>가진 개수 <b style="font-weight:400;color:var(--navy)">${inv[it.k] || 0}</b></p>
+      <button class="cbtn ${w >= it.price ? 'green' : 'green dis'}" data-buy="item:${it.k}">★ ${it.price} 사기</button></div>`).join('')
+      + `<div class="scardI" style="justify-content:center"><p style="font-size:13px;color:var(--navy)">게임 화면 아래 아이템 버튼을 눌러 켜요.<br>선을 긋기 전에만 켤 수 있고, 그 판이 시작되면 하나 써요.</p></div>`;
+  } else {
+    const isPen = shopTab === 'pen', list = isPen ? PENS : ACCS, own = owned(isPen ? 'momo_pens' : 'momo_accs', [isPen ? 'navy' : 'none']), cur = isPen ? penNow().k : accNow().k;
+    h = list.map(x => {
+      const has = own.includes(x.k), eq = cur === x.k;
+      const pv = isPen ? penSwatch(x) : `<div class="momoBox"><img src="assets/momo_sit.png" alt="">${accHTML(x, false)}</div>`;
+      const btn = eq ? `<button class="cbtn white" disabled>쓰는 중</button>` : has ? `<button class="cbtn blue" data-eq="${shopTab}:${x.k}">쓰기</button>` : `<button class="cbtn ${w >= x.price ? 'green' : 'green dis'}" data-buy="${shopTab}:${x.k}">★ ${x.price} 사기</button>`;
+      return `<div class="scardI ${eq ? 'eq' : ''}"><div class="pv">${pv}</div><h4>${x.name}</h4>${btn}</div>`;
+    }).join('');
+  }
+  const g = document.getElementById('shopGrid'); g.innerHTML = h;
+  g.querySelectorAll('.momoBox').forEach(fitAcc);
+}
+document.querySelector('.shopTabs').onclick = e => { const b = e.target.closest('button'); if (b){ shopTab = b.dataset.tab; renderShop(); } };
+document.getElementById('shopGrid').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.buy){
+    const [tab, k] = b.dataset.buy.split(':');
+    const x = (tab === 'item' ? ITEMS : tab === 'pen' ? PENS : ACCS).find(o => o.k === k);
+    if (walletStars() < x.price){ b.textContent = `별이 ${x.price - walletStars()}개 모자라요`; setTimeout(renderShop, 1300); return; }
+    store.set('momo_spent', store.get('momo_spent', 0) + x.price);
+    if (tab === 'item'){ inv[k] = (inv[k] || 0) + 1; saveInv(); }
+    else {
+      const key = tab === 'pen' ? 'momo_pens' : 'momo_accs', own = owned(key, [tab === 'pen' ? 'navy' : 'none']);
+      own.push(k); store.set(key, own); store.set(tab === 'pen' ? 'momo_pen' : 'momo_acc', k);
+    }
+  } else if (b.dataset.eq){
+    const [tab, k] = b.dataset.eq.split(':'); store.set(tab === 'pen' ? 'momo_pen' : 'momo_acc', k);
+  }
+  renderShop(); refreshAccs(); refreshTitle(); renderItemBar();
+};
+document.getElementById('shopClose').onclick = () => { document.getElementById('shop').classList.add('hidden'); refreshAccs(); refreshTitle(); renderItemBar(); };
+document.getElementById('tShop').onclick = () => openShop();
+
 function catFace(){
   if (phase === 'draw') return 'sleepy';
   if (phase === 'end') return endInfo && endInfo.win ? 'heart' : 'angry';
@@ -1825,6 +2074,7 @@ function drawCat(){
     ctx.fillStyle = '#8a7f78';
     potBody.parts.slice(1).forEach(p => { poly(p.vertices); ctx.fill(); });
   }
+  drawAcc(x, foot);
   const hd = sproutPart.position;
   if (flashT > 0){ ctx.fillStyle = lastWet ? `rgba(77,171,247,${flashT / 450})` : `rgba(255,60,60,${flashT / 500})`; ctx.beginPath(); ctx.arc(hd.x, hd.y + 8, 30, 0, 7); ctx.fill(); }
   if (phase === 'draw'){
@@ -1836,6 +2086,15 @@ function drawCat(){
     ctx.fillStyle = hp > 50 ? '#4caf50' : hp > 25 ? '#e0b23a' : '#e05a3a';
     ctx.fillRect(hd.x - 22, hd.y - 40, 44 * Math.max(0, hp) / 100, 6);
   }
+}
+// 모모 꾸미기(캔버스)
+function drawAcc(x, foot){
+  const a = accNow(); if (!a.e || !ok(IMG.sit)) return;
+  const w = IMG.sit.naturalWidth * CAT_H / IMG.sit.naturalHeight, [fx, fy, fw] = ACC_POS.full[a.pos];
+  const cx = x - w / 2 + fx * w, cy = foot - CAT_H + fy * CAT_H, sz = fw * w;
+  if (sprOk('acc_' + a.k)){ const im = SPR['acc_' + a.k], h = sz * im.naturalHeight / im.naturalWidth; ctx.drawImage(im, cx - sz / 2, cy - h / 2, sz, h); return; }
+  ctx.save(); ctx.font = `${Math.round(sz * 0.85)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; // 색 이모지도 채우기 색의 투명도를 따라감
+  ctx.fillText(a.e, cx, cy); ctx.restore();
 }
 function drawLine(){
   let P = pts;
@@ -1850,10 +2109,20 @@ function drawLine(){
     ctx.fillStyle = 'rgba(224,60,60,.85)'; ctx.beginPath(); ctx.arc(finger.x, finger.y, 7, 0, 7); ctx.fill();
   }
   if (P.length < 2) return;
-  ctx.strokeStyle = TH().ink; ctx.lineWidth = 11; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.beginPath(); ctx.moveTo(P[0].x, P[0].y);
-  for (let i = 1; i < P.length; i++) ctx.lineTo(P[i].x, P[i].y);
-  ctx.stroke();
+  const pen = penNow(), path = () => { ctx.beginPath(); ctx.moveTo(P[0].x, P[0].y); for (let i = 1; i < P.length; i++) ctx.lineTo(P[i].x, P[i].y); };
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (pen.k === 'navy'){ ctx.strokeStyle = TH().ink; ctx.lineWidth = 11; path(); ctx.stroke(); return; }
+  // 꾸민 펜: 굵기(11)는 그대로, 테두리 + 안쪽 색. 밤 배경에서는 밝은 테두리
+  ctx.strokeStyle = TH().bg === 'alley' ? '#f1e9c9' : '#23304d'; ctx.lineWidth = 11; path(); ctx.stroke();
+  if (pen.k === 'rainbow'){
+    ctx.lineWidth = 6.5; let acc = 0;
+    for (let i = 1; i < P.length; i++){
+      acc += dist(P[i - 1], P[i]);
+      ctx.strokeStyle = `hsl(${(acc * 1.6) % 360},90%,60%)`;
+      ctx.beginPath(); ctx.moveTo(P[i - 1].x, P[i - 1].y); ctx.lineTo(P[i].x, P[i].y); ctx.stroke();
+    }
+  } else { ctx.strokeStyle = pen.c; ctx.lineWidth = 6.5; path(); ctx.stroke(); }
+  if (pen.k === 'gold'){ ctx.save(); ctx.translate(-0.8, -1.2); ctx.strokeStyle = 'rgba(255,255,255,.65)'; ctx.lineWidth = 1.8; path(); ctx.stroke(); ctx.restore(); }
 }
 // 드론: 몸체 + 회전하는 프로펠러 4개 + 깜빡이는 불빛
 // 돌진 연출: 물러날 때 빨간 '!' + 떨림, 돌진할 때 빨간 잔상
@@ -1996,7 +2265,7 @@ function setTimerUI(left){
   const sec = Math.ceil(left);
   const cls = left <= 3 ? 'danger' : left <= 5 ? 'warn' : '';
   document.getElementById('tNum').innerHTML = Math.floor(left) + '<small>.' + Math.floor((left % 1) * 10) + '</small>';
-  document.getElementById('tFill').style.width = (left / (SIM_MS / 1000) * 100) + '%';
+  document.getElementById('tFill').style.width = (left / (simDur / 1000) * 100) + '%';
   if (sec !== lastSec){
     lastSec = sec;
     el.className = cls; void el.offsetWidth; el.className = cls + ' tick';
@@ -2169,7 +2438,7 @@ function render(){
   L.pins.forEach(drawPin);
   if (tut && phase === 'draw' && !drawing && pts.length === 0) drawGuide();
   bugs.forEach(drawBug);
-  if (phase === 'sim') setTimerUI(Math.max(0, (SIM_MS - simT) / 1000));
+  if (phase === 'sim') setTimerUI(Math.max(0, (simDur - simT) / 1000));
   else if (phase === 'end') setTimerUI(-1);
 }
 
