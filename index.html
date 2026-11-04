@@ -250,7 +250,7 @@
   /* ---------- 꾸미기 겹쳐 그리기(시작 화면·결과 창) ---------- */
   .momoBox{position:relative;display:inline-block}
   .momoBox>img{display:block;height:100%}
-  .momoBox .acc{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;line-height:1;pointer-events:none}
+  .momoBox .acc{position:absolute;display:block;line-height:0;pointer-events:none}
   .momoBox .acc img{width:100%;height:auto;display:block}
   .hMomo.momoBox{position:absolute}
   .hMomo img{height:100%}
@@ -291,7 +291,12 @@
   .gbar{height:18px;border-radius:9px;background:#e3ebf3;border:2.5px solid var(--navy);overflow:hidden;margin:10px 0 4px}
   .gbar i{display:block;height:100%;background:linear-gradient(90deg,#ffd84a,#ffb02e)}
   .gcard .btns{margin-top:14px}
-  .setRow{display:flex;justify-content:space-between;align-items:center;font-size:18px;padding:8px 4px}
+  .setRow{display:flex;justify-content:space-between;align-items:center;font-size:16px;padding:6px 2px 4px}
+  .setHd{text-align:left;font-size:15px;color:#7a8aa6;margin:4px 0 2px}
+  .seg{display:flex;gap:4px;background:#e3ebf3;border-radius:14px;padding:4px;margin-bottom:4px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--navy);font-size:15px;padding:8px 0 6px;border-radius:10px;cursor:pointer}
+  .seg button.on{background:#fff;box-shadow:0 2px 0 #c9d6e6;color:var(--blueD)}
+  .seg button[data-v="0"].on{color:var(--pinkD)}
   .tg{width:58px;height:32px;border-radius:16px;border:3px solid #c9d6e6;background:#e3ebf3;position:relative;cursor:pointer;padding:0;transition:background .15s}
   .tg i{position:absolute;left:2px;top:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 0 rgba(0,0,0,.15);transition:left .15s}
   .tg.on{background:var(--green);border-color:var(--greenD)}.tg.on i{left:28px}
@@ -385,7 +390,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.05i</span>
+  <span id="ver">v2026.11.05k</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -399,9 +404,13 @@
 <div id="reset" class="hidden">
   <div class="gcard">
     <h3 style="margin-top:0">설정</h3>
-    <div class="setRow"><span>🎵 배경음악</span><button class="tg" id="tgMusic" aria-label="배경음악"><i></i></button></div>
-    <div class="setRow"><span>🔔 효과음</span><button class="tg" id="tgSfx" aria-label="효과음"><i></i></button></div>
+    <div class="setHd">🔊 소리</div>
+    <div class="setRow"><span>배경음악</span></div>
+    <div class="seg" id="segMusic"><button data-v="0">끄기</button><button data-v="1">작게</button><button data-v="2">보통</button><button data-v="3">크게</button></div>
+    <div class="setRow"><span>효과음</span></div>
+    <div class="seg" id="segSfx"><button data-v="0">끄기</button><button data-v="1">작게</button><button data-v="2">보통</button><button data-v="3">크게</button></div>
     <div class="setSep"></div>
+    <div class="setHd">📁 기록</div>
     <p style="font-size:13px;color:#7a8aa6;margin:0 0 8px">레벨 기록, 별, 아이템, 꾸미기를 모두 지우고<br>1레벨 이야기부터 다시 시작해요.</p>
     <div class="btns" style="margin-top:6px"><button class="cbtn red" id="rDo">처음부터 다시 하기</button><button class="cbtn white" id="rClose">닫기</button></div>
   </div>
@@ -1936,10 +1945,32 @@ const ACCS = [
   { k: 'crown', name: '왕관', price: 15, e: '👑', pos: 'hat' },
 ];
 // 모모 그림 안에서 꾸미기 자리 [가로 중심, 세로 중심, 너비] (그림 크기 대비 비율). full = 앉은 모모, head = 얼굴만 있는 그림
-const ACC_POS = {
-  full: { hat: [0.5, 0.07, 0.62], ear: [0.8, 0.1, 0.3], eyes: [0.5, 0.43, 0.66] },
-  head: { hat: [0.5, 0.08, 0.66], ear: [0.82, 0.12, 0.32], eyes: [0.5, 0.56, 0.7] },
+// 꾸미기 그림: 게임 그림체(남색 테두리 + 단색)로 직접 그린 SVG. assets/sprites/acc_<이름>.png 가 있으면 그 그림 사용
+// vb = 그림 비율, an = 그림 안의 기준점(비율), full/head = 모모 그림(앉은 모습/얼굴만) 안에서 기준점이 놓일 자리 [x, y, 너비, 기울기°]
+const N = '#23304d';
+const ACC_ART = {
+  flower: { vb: [100, 100], an: [0.5, 0.5], full: [0.77, 0.17, 0.27, 12], head: [0.75, 0.18, 0.27, 12],
+    svg: `${[0, 72, 144, 216, 288].map(a => `<circle cx="${50 + 21 * Math.cos((a - 90) * Math.PI / 180)}" cy="${50 + 21 * Math.sin((a - 90) * Math.PI / 180)}" r="17" fill="#ffb3cf" stroke="${N}" stroke-width="5"/>`).join('')}<circle cx="50" cy="50" r="12" fill="#ffd84a" stroke="${N}" stroke-width="5"/><circle cx="45" cy="45" r="4" fill="#fff"/>` },
+  ribbon: { vb: [100, 80], an: [0.5, 0.5], full: [0.74, 0.15, 0.36, 14], head: [0.73, 0.17, 0.36, 14],
+    svg: `<path d="M47 46 L34 74 L44 71 L50 54 Z M53 46 L66 74 L56 71 L50 54 Z" fill="#e23d5c" stroke="${N}" stroke-width="5" stroke-linejoin="round"/><path d="M50 40 C36 18 8 14 8 34 C8 56 36 60 50 40 Z M50 40 C64 18 92 14 92 34 C92 56 64 60 50 40 Z" fill="#ff5a7a" stroke="${N}" stroke-width="5" stroke-linejoin="round"/><circle cx="24" cy="32" r="4" fill="#fff"/><circle cx="76" cy="32" r="4" fill="#fff"/><circle cx="32" cy="45" r="3" fill="#fff"/><circle cx="68" cy="45" r="3" fill="#fff"/><rect x="41" y="31" width="18" height="18" rx="6" fill="#e23d5c" stroke="${N}" stroke-width="5"/>` },
+  cap: { vb: [100, 80], an: [0.5, 0.74], full: [0.5, 0.23, 0.66, 0], head: [0.46, 0.31, 0.7, 0],
+    svg: `<path d="M12 60 C12 14 88 14 88 60 Z" fill="#3ea8f2" stroke="${N}" stroke-width="5" stroke-linejoin="round"/><path d="M50 18 L50 58 M30 24 C26 36 26 48 28 58 M70 24 C74 36 74 48 72 58" fill="none" stroke="#1c6fb5" stroke-width="3"/><circle cx="50" cy="17" r="5" fill="#1c6fb5" stroke="${N}" stroke-width="4"/><path d="M8 60 Q50 50 92 60 Q94 74 50 74 Q6 74 8 60 Z" fill="#2b86cf" stroke="${N}" stroke-width="5" stroke-linejoin="round"/><path d="M50 32 l3 6 6 1 -4.5 4 1 6 -5.5 -3 -5.5 3 1 -6 -4.5 -4 6 -1z" fill="#ffd84a"/><path d="M26 30 Q32 22 42 21" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".7"/>` },
+  sunglasses: { vb: [100, 40], an: [0.5, 0.5], full: [0.5, 0.405, 0.66, 0], head: [0.445, 0.52, 0.78, 0],
+    svg: `<path d="M38 18 Q50 12 62 18" fill="none" stroke="${N}" stroke-width="5"/><rect x="5" y="6" width="38" height="28" rx="12" fill="#2b2f45" stroke="${N}" stroke-width="5"/><rect x="57" y="6" width="38" height="28" rx="12" fill="#2b2f45" stroke="${N}" stroke-width="5"/><path d="M13 14 L22 14 M65 14 L74 14" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".8"/>` },
+  goggles: { vb: [100, 44], an: [0.5, 0.5], full: [0.5, 0.405, 0.84, 0], head: [0.445, 0.52, 0.94, 0],
+    svg: `<rect x="1" y="16" width="98" height="12" rx="5" fill="#3ea8f2" stroke="${N}" stroke-width="4"/><circle cx="30" cy="22" r="17" fill="#cfefff" stroke="${N}" stroke-width="5"/><circle cx="70" cy="22" r="17" fill="#cfefff" stroke="${N}" stroke-width="5"/><circle cx="30" cy="22" r="12" fill="none" stroke="#fff" stroke-width="3"/><circle cx="70" cy="22" r="12" fill="none" stroke="#fff" stroke-width="3"/><path d="M23 16 L28 13 M63 16 L68 13" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M45 22 Q50 17 55 22" fill="none" stroke="${N}" stroke-width="5"/>` },
+  tophat: { vb: [100, 100], an: [0.5, 0.86], full: [0.52, 0.16, 0.42, -8], head: [0.47, 0.2, 0.44, -8],
+    svg: `<path d="M30 16 L70 16 L67 80 L33 80 Z" fill="#3b3f58" stroke="${N}" stroke-width="5" stroke-linejoin="round"/><rect x="32" y="62" width="36" height="12" fill="#e23d5c" stroke="${N}" stroke-width="4"/><ellipse cx="50" cy="84" rx="40" ry="9" fill="#3b3f58" stroke="${N}" stroke-width="5"/><ellipse cx="50" cy="16" rx="20" ry="5" fill="#4a4f6c" stroke="${N}" stroke-width="4"/><path d="M38 26 L38 56" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".35"/>` },
+  crown: { vb: [100, 72], an: [0.5, 0.86], full: [0.5, 0.15, 0.46, -6], head: [0.46, 0.18, 0.48, -6],
+    svg: `<path d="M12 62 L10 22 L30 40 L50 12 L70 40 L90 22 L88 62 Z" fill="#ffcf3a" stroke="${N}" stroke-width="5" stroke-linejoin="round"/><rect x="11" y="50" width="78" height="14" rx="4" fill="#ffb02e" stroke="${N}" stroke-width="5"/><circle cx="30" cy="57" r="4" fill="#ff5a7a"/><circle cx="50" cy="57" r="5" fill="#3ea8f2"/><circle cx="70" cy="57" r="4" fill="#4fd65e"/><circle cx="10" cy="20" r="5" fill="#fff3b0" stroke="${N}" stroke-width="4"/><circle cx="50" cy="10" r="5" fill="#fff3b0" stroke="${N}" stroke-width="4"/><circle cx="90" cy="20" r="5" fill="#fff3b0" stroke="${N}" stroke-width="4"/><path d="M22 30 L24 46" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".6"/>` },
 };
+const ACC_IMG = {};
+for (const [k, a] of Object.entries(ACC_ART)){
+  const src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${a.vb[0]} ${a.vb[1]}" width="${a.vb[0] * 4}" height="${a.vb[1] * 4}">${a.svg}</svg>`);
+  ACC_IMG[k] = loadImg(src, () => { refreshAccs(); });
+}
+// 그릴 그림: AI 그림이 있으면 그것, 없으면 SVG
+const accImg = k => sprOk('acc_' + k) ? SPR['acc_' + k] : ACC_IMG[k];
 ACCS.forEach(a => { if (a.e) SPR['acc_' + a.k] = loadImg(`assets/sprites/acc_${a.k}.png`, () => { refreshAccs(); }); });
 const starN = p => p <= 22 ? 3 : p <= 40 ? 2 : 1;
 function earnedStars(){
@@ -2025,10 +2056,9 @@ function penSwatch(p, w = 120, h = 60){
   return `<svg viewBox="0 0 ${w} ${h}"><defs><linearGradient id="rb" x1="0" x2="1"><stop offset="0" stop-color="#ff5a5a"/><stop offset=".25" stop-color="#ffc93c"/><stop offset=".5" stop-color="#35c46a"/><stop offset=".75" stop-color="#3ea8f2"/><stop offset="1" stop-color="#9b6cf0"/></linearGradient></defs><path d="${d}" fill="none" stroke="${out}" stroke-width="13" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${fill}" stroke-width="8" stroke-linecap="round"/>${p.k === 'gold' ? `<path d="${d}" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2" stroke-linecap="round" transform="translate(0,-1.5)"/>` : ''}</svg>`;
 }
 function accHTML(a, head){
-  if (!a || !a.e) return '';
-  const [x, y, w] = ACC_POS[head ? 'head' : 'full'][a.pos];
-  const inner = sprOk('acc_' + a.k) ? `<img src="${SPR['acc_' + a.k].src}" alt="">` : a.e;
-  return `<i class="acc" style="left:${x * 100}%;top:${y * 100}%;width:${w * 100}%;font-size:var(--accfs)">${inner}</i>`;
+  if (!a || !ACC_ART[a.k]) return '';
+  const d = ACC_ART[a.k], [x, y, w, rot] = d[head ? 'head' : 'full'], im = accImg(a.k);
+  return `<i class="acc" style="left:${x * 100}%;top:${y * 100}%;width:${w * 100}%;transform:translate(${-d.an[0] * 100}%,${-d.an[1] * 100}%) rotate(${rot}deg);transform-origin:${d.an[0] * 100}% ${d.an[1] * 100}%"><img src="${im.src}" alt=""></i>`;
 }
 // 그림 높이에 맞춰 이모지 크기를 정함
 function fitAcc(box){
@@ -2101,16 +2131,20 @@ document.addEventListener('click', e => {
   AU.sfx(['pkClose', 'shopClose', 'gClose', 'rClose', 'sSkip'].includes(b.id) ? 'back' : 'click');
 }, true);
 // 기록 초기화: 이 게임이 저장한 것(ss_*, momo_*)만 지움(소리 설정은 남김)
-const syncToggles = () => { document.getElementById('tgMusic').classList.toggle('on', AU.musicOn); document.getElementById('tgSfx').classList.toggle('on', AU.sfxOn); };
+const syncToggles = () => {
+  document.querySelectorAll('#segMusic button').forEach(b => b.classList.toggle('on', +b.dataset.v === AU.musicVol));
+  document.querySelectorAll('#segSfx button').forEach(b => b.classList.toggle('on', +b.dataset.v === AU.sfxVol));
+};
 document.getElementById('tSet').onclick = () => { syncToggles(); const r = document.getElementById('rDo'); r.textContent = '처음부터 다시 하기'; r.dataset.armed = ''; document.getElementById('reset').classList.remove('hidden'); };
-document.getElementById('tgMusic').onclick = () => { AU.setMusic(!AU.musicOn); syncToggles(); };
-document.getElementById('tgSfx').onclick = () => { AU.setSfx(!AU.sfxOn); syncToggles(); };
+document.getElementById('segMusic').onclick = e => { const b = e.target.closest('button'); if (b){ AU.setMusicVol(+b.dataset.v); syncToggles(); } };
+// 효과음 크기를 바꾸면 그 크기로 한 번 들려 줌
+document.getElementById('segSfx').onclick = e => { const b = e.target.closest('button'); if (b){ AU.setSfxVol(+b.dataset.v); syncToggles(); setTimeout(() => AU.sfx('star', { i: 1 }), 60); } };
 document.getElementById('rClose').onclick = () => document.getElementById('reset').classList.add('hidden');
 document.getElementById('rDo').onclick = e => {
   const r = e.currentTarget;
   if (!r.dataset.armed){ r.dataset.armed = '1'; r.textContent = '한 번 더 누르면 모두 지워져요'; return; }
   try {
-    const ks = []; for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k && (k.startsWith('ss_') || k.startsWith('momo_')) && k !== 'momo_music' && k !== 'momo_sfx') ks.push(k); }
+    const ks = []; for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k && (k.startsWith('ss_') || k.startsWith('momo_')) && !k.startsWith('momo_music') && !k.startsWith('momo_sfx')) ks.push(k); }
     ks.forEach(k => localStorage.removeItem(k));
   } catch (_){}
   location.reload();
@@ -2160,12 +2194,12 @@ function drawCat(){
 }
 // 모모 꾸미기(캔버스)
 function drawAcc(x, foot){
-  const a = accNow(); if (!a.e || !ok(IMG.sit)) return;
-  const w = IMG.sit.naturalWidth * CAT_H / IMG.sit.naturalHeight, [fx, fy, fw] = ACC_POS.full[a.pos];
-  const cx = x - w / 2 + fx * w, cy = foot - CAT_H + fy * CAT_H, sz = fw * w;
-  if (sprOk('acc_' + a.k)){ const im = SPR['acc_' + a.k], h = sz * im.naturalHeight / im.naturalWidth; ctx.drawImage(im, cx - sz / 2, cy - h / 2, sz, h); return; }
-  ctx.save(); ctx.font = `${Math.round(sz * 0.85)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; // 색 이모지도 채우기 색의 투명도를 따라감
-  ctx.fillText(a.e, cx, cy); ctx.restore();
+  const a = accNow(); if (!ACC_ART[a.k] || !ok(IMG.sit)) return;
+  const d = ACC_ART[a.k], im = accImg(a.k); if (!ok(im)) return;
+  const w = IMG.sit.naturalWidth * CAT_H / IMG.sit.naturalHeight, [fx, fy, fw, rot] = d.full;
+  const pw = fw * w, ph = pw * d.vb[1] / d.vb[0];
+  ctx.save(); ctx.translate(x - w / 2 + fx * w, foot - CAT_H + fy * CAT_H); ctx.rotate(rot * Math.PI / 180);
+  ctx.drawImage(im, -d.an[0] * pw, -d.an[1] * ph, pw, ph); ctx.restore();
 }
 function drawLine(){
   let P = pts;

@@ -6,7 +6,9 @@ const AU = (() => {
   const st = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (_){ return d; } };
   const sv = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_){} };
   let ctx = null, comp, musicBus, sfxBus, noiseBuf, amb = null;
-  let musicOn = st('momo_music', true), sfxOn = st('momo_sfx', true);
+  // 소리 크기 0=끄기 1=작게 2=보통 3=크게 (예전 켜기/끄기 설정은 보통/끄기로 옮김)
+  const VOLK = [0, 0.45, 1, 1.6];
+  let musicV = st('momo_music_v', st('momo_music', true) === false ? 0 : 2), sfxV = st('momo_sfx_v', st('momo_sfx', true) === false ? 0 : 2);
   const SFX_VOL = 1.0;
   // 음악 크기: 시작 화면은 크게, 게임 중에는 효과음이 잘 들리게 작게
   const musicLevel = () => !song ? 0.3 : song.name === 'title' ? 0.5 : state === 'sim' ? 0.17 : 0.24;
@@ -17,7 +19,7 @@ const AU = (() => {
     ctx = new AC();
     comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 4; comp.connect(ctx.destination);
     musicBus = ctx.createGain(); musicBus.gain.value = 0; musicBus.connect(comp);
-    sfxBus = ctx.createGain(); sfxBus.gain.value = sfxOn ? SFX_VOL : 0; sfxBus.connect(comp);
+    sfxBus = ctx.createGain(); sfxBus.gain.value = SFX_VOL * VOLK[sfxV]; sfxBus.connect(comp);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
     const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     setInterval(tickScheduler, 25);
@@ -124,7 +126,7 @@ const AU = (() => {
 
   // ---------- 순차 재생기(앞당겨 예약) ----------
   let song = null, pendingSong = null, nextT = 0, step = 0, state = 'draw';
-  function applyMusicLevel(){ if (ctx) musicBus.gain.setTargetAtTime(musicOn ? musicLevel() : 0, now(), 0.25); }
+  function applyMusicLevel(){ if (ctx) musicBus.gain.setTargetAtTime(musicLevel() * VOLK[musicV], now(), 0.25); }
   function play(theme, st2 = 'draw'){
     if (!ctx){ pendingSong = { theme, state: st2 }; return; }
     state = st2; applyMusicLevel();
@@ -139,7 +141,7 @@ const AU = (() => {
     if (!ctx || !song || ctx.state !== 'running') return;
     const th = song.th, sd = 60 / th.bpm / 4;
     while (nextT < now() + 0.12){
-      if (musicOn) scheduleStep(th, step, nextT, sd);
+      if (musicV > 0) scheduleStep(th, step, nextT, sd);
       nextT += sd * (step % 2 ? 0.92 : 1.08); // 살짝 흔들리는 박(스윙)
       step++;
     }
@@ -243,22 +245,22 @@ const AU = (() => {
     lock: () => { tone({ type: 'triangle', f: 180, f2: 120, d: 0.15, v: 0.3 }); noise({ d: 0.06, v: 0.12, f: 1500, q: 2 }); },
     item: () => { tone({ f: 784, d: 0.1, v: 0.14 }); tone({ f: 1175, t: now() + 0.07, d: 0.18, v: 0.12 }); },
   };
-  function sfx(name, o){ if (!sfxOn || !ctx || ctx.state !== 'running' || !SFX[name]) return; try { SFX[name](o); } catch (_){} }
+  function sfx(name, o){ if (!sfxV || !ctx || ctx.state !== 'running' || !SFX[name]) return; try { SFX[name](o); } catch (_){} }
 
   // 선 긋는 소리: 연필이 사각사각(손가락 속도에 따라 커짐)
   let scratch = null;
   function drawing(speed){
-    if (!ctx || ctx.state !== 'running' || !sfxOn){ return; }
+    if (!ctx || ctx.state !== 'running' || !sfxV){ return; }
     if (!scratch){ const s = ctx.createBufferSource(), fl = ctx.createBiquadFilter(), g = ctx.createGain(); s.buffer = noiseBuf; s.loop = true; fl.type = 'bandpass'; fl.frequency.value = 3200; fl.Q.value = 1.2; g.gain.value = 0; s.connect(fl); fl.connect(g); g.connect(sfxBus); s.start(); scratch = { s, g, fl }; }
     const t = now(), v = Math.min(0.09, speed * 0.012);
     scratch.g.gain.setTargetAtTime(v, t, 0.03); scratch.fl.frequency.setTargetAtTime(2600 + Math.min(2000, speed * 200), t, 0.05);
   }
   function drawingStop(){ if (scratch) scratch.g.gain.setTargetAtTime(0, now(), 0.05); }
 
-  function setMusic(v){ musicOn = v; sv('momo_music', v); applyMusicLevel(); }
-  function setSfx(v){ sfxOn = v; sv('momo_sfx', v); if (ctx){ sfxBus.gain.setTargetAtTime(v ? SFX_VOL : 0, now(), 0.05); } }
+  function setMusicVol(n){ musicV = n; sv('momo_music_v', n); applyMusicLevel(); }
+  function setSfxVol(n){ sfxV = n; sv('momo_sfx_v', n); if (ctx) sfxBus.gain.setTargetAtTime(SFX_VOL * VOLK[n], now(), 0.05); if (!n) drawingStop(); }
   // 결과 창 같은 순간에 음악을 잠깐 낮춤
-  function duck(sec = 1.2, to = 0.35){ if (!ctx || !musicOn) return; const t = now(); musicBus.gain.cancelScheduledValues(t); musicBus.gain.setTargetAtTime(musicLevel() * to, t, 0.05); musicBus.gain.setTargetAtTime(musicLevel(), t + sec, 0.4); }
+  function duck(sec = 1.2, to = 0.35){ if (!ctx || !musicV) return; const t = now(), m = musicLevel() * VOLK[musicV]; musicBus.gain.cancelScheduledValues(t); musicBus.gain.setTargetAtTime(m * to, t, 0.05); musicBus.gain.setTargetAtTime(m, t + sec, 0.4); }
   const ready = () => !!ctx && ctx.state === 'running';
-  return { ready, _dbg: () => ({ ctx, comp }), play, setState, stop, sfx, update, drawing, drawingStop, setMusic, setSfx, duck, get musicOn(){ return musicOn; }, get sfxOn(){ return sfxOn; } };
+  return { ready, _dbg: () => ({ ctx, comp }), play, setState, stop, sfx, update, drawing, drawingStop, setMusicVol, setSfxVol, duck, get musicVol(){ return musicV; }, get sfxVol(){ return sfxV; } };
 })();
