@@ -321,7 +321,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.04j</span>
+  <span id="ver">v2026.11.04k</span>
 </div>
 
 <div id="picker" class="hidden">
@@ -1892,9 +1892,9 @@ function drawBug(bg){
   drawRush(bg, bg.label === 'tank' ? RAD.tank * VIS.tank * 0.8 : RAD.drone * VIS.drone * 0.8);
   const sn = bg.label === 'tank' ? 'drone_heavy' : 'drone';
   if (sprOk(sn)){
-    const big = bg.label === 'tank', sz = big ? 58 : 36, x = bg.position.x + (bg.plugin.atk === 'back' ? Math.sin(simT / 14) * 1.8 : 0);
+    const big = bg.label === 'tank', sz = big ? 66 : 44, x = bg.position.x + (bg.plugin.atk === 'back' ? Math.sin(simT / 14) * 1.8 : 0);
     drawSpr(sn, x, bg.position.y + Math.sin(simT / 90 + bg.plugin.ph) * 1.2, sz, sz, clamp(bg.velocity.x * 0.07, -0.35, 0.35));
-    if (bg.plugin.ram){ ctx.strokeStyle = 'rgba(255,80,80,.6)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(bg.position.x, bg.position.y, 30 + Math.sin(simT / 60) * 3, 0, 7); ctx.stroke(); }
+    if (bg.plugin.ram){ ctx.strokeStyle = 'rgba(255,80,80,.6)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(bg.position.x, bg.position.y, 34 + Math.sin(simT / 60) * 3, 0, 7); ctx.stroke(); }
     return;
   }
   if (bg.label === 'tank') return drawTank(bg);
@@ -1917,7 +1917,7 @@ function drawCrawler(c){
   drawRush(c, c.circleRadius * VIS.dog);
   const sn = c.plugin.big ? 'big_dog' : 'puppy';
   if (sprOk(sn)){
-    const r = c.circleRadius, sz = c.plugin.big ? 104 : 56, d = Math.sign(potBody.position.x - c.position.x) || 1;
+    const r = c.circleRadius, sz = c.plugin.big ? 104 : 62, d = Math.sign(potBody.position.x - c.position.x) || 1;
     const run = Math.sin(simT / (c.plugin.big ? 110 : 60) + c.plugin.ph), sq = 1 + run * 0.035;
     ctx.save(); ctx.translate(c.position.x, c.position.y + r + 2); ctx.scale(d / sq, sq); ctx.rotate(run * 0.05);
     ctx.drawImage(SPR[sn], -sz / 2, -sz, sz, sz); ctx.restore();
