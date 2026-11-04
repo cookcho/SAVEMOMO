@@ -139,7 +139,7 @@
   </div>
   <footer>
     <div><button id="btnRetry">↺ 다시</button><button id="btnStory">📖 이야기</button><button id="btnInstall" class="hidden">📲 설치</button></div>
-    <div><span id="best"></span><span id="ver">v2026.11.04h</span></div>
+    <div><span id="best"></span><span id="ver">v2026.11.04i</span></div>
   </footer>
 </div>
 <div id="picker" class="hidden">
@@ -159,7 +159,7 @@
 
 <script>
 const {Engine, Bodies, Body, Composite, Events, Query, Constraint} = Matter;
-const W = 360, H = 640, GY = H - 40, SIM_MS = 8000, STEP = 1000 / 60, SUB = 2;
+const W = 360, H = 640, GY = H - 40, SIM_MS = 7000, TC = SIM_MS / 8000 /* 8초 기준 위협량을 7초에 압축 */, STEP = 1000 / 60, SUB = 2;
 const CAT_DEF = 1, CAT_BUG = 2, CAT_DROP = 4, CAT_CRAWL = 8;
 
 // ---------- 요소 정의: 레벨이 오르면 하나씩 처음 등장 ----------
@@ -689,7 +689,7 @@ function setup(){
     ? `<b>NEW 지형 · ${ARCH_NAME[L.archIntro]}</b><br>${ARCH_DESC[L.archIntro]}`
     : L.modIntro && mode === 'level'
     ? `<b>NEW 규칙 · ${L.modIntro.icon} ${L.modIntro.name}</b><br>${L.modIntro.desc}`
-    : '한 번에 선을 그어 모모를 지키세요 · 8초';
+    : '한 번에 선을 그어 모모를 지키세요 · 7초';
   hint.classList.remove('hidden');
   const b = store.get(curKey(), null);
   document.getElementById('best').textContent = b ? `최고 ${b.score}점 · 잉크 ${b.pct}%` : '첫 도전';
@@ -851,15 +851,15 @@ function endStroke(){
 
 function startSim(){
   phase = 'sim'; simT = 0;
-  if (tut) showToast('선은 물리 법칙대로 떨어져요 · 8초만 버티면 성공!');
+  if (tut) showToast('선은 물리 법칙대로 떨어져요 · 7초만 버티면 성공!');
   simRng = rng(L.seed + 7);
   spawnQ = [];
   L.hives.filter(h => h.kind === 'bee' || h.kind === 'tank').forEach(h => { for (let i = 0; i < h.n; i++) spawnQ.push({ t: (h.kind === 'tank' ? 250 + i * 650 : 100 + i * 110) + simRng() * 50, h }); });
-  ducks = L.hives.filter(h => h.kind === 'wasp').map((h, i) => ({ h, next: 600 + i * 400 + simRng() * 300, burst: 0, shotT: 0, dir: { x: 0, y: 1 }, size: h.burst, gap: h.gap }));
+  ducks = L.hives.filter(h => h.kind === 'wasp').map((h, i) => ({ h, next: (600 + i * 400 + simRng() * 300) * TC, burst: 0, shotT: 0, dir: { x: 0, y: 1 }, size: h.burst, gap: h.gap * TC }));
   popQ = new Set();
-  L.crawl.forEach(c => spawnQ.push({ t: c.t, crawl: c }));
+  L.crawl.forEach(c => spawnQ.push({ t: c.t * TC, crawl: c }));
   spawnQ.sort((a, b) => a.t - b.t);
-  chuteT = L.chutes.map(c => c.first);
+  chuteT = L.chutes.map(c => c.first * TC);
   pops = [];
   buildBaseGrid(); flow = null; flowStep = 0; prevPotSpeed = 0; lastHitT = -9999; lastImpactT = -9999;
 }
@@ -1060,8 +1060,8 @@ function step(){
   }
   L.clouds.forEach((c, i) => {
     cloudAcc[i] += STEP;
-    while (cloudAcc[i] >= c.rate){
-      cloudAcc[i] -= c.rate;
+    while (cloudAcc[i] >= c.rate * TC){
+      cloudAcc[i] -= c.rate * TC;
       const d = Bodies.circle(c.x + (simRng() - 0.5) * (c.w - 20), 70, RAD.rain, {
         label: 'drop', frictionAir: 0.01, density: 0.0008, collisionFilter: { category: CAT_DROP, mask: CAT_DEF }
       });
@@ -1072,7 +1072,7 @@ function step(){
   });
   L.chutes.forEach((c, i) => {
     if (simT >= chuteT[i]){
-      chuteT[i] += c.interval;
+      chuteT[i] += c.interval * TC;
       const k = Bodies.circle(c.x, c.y, c.r, { label: 'balloon', density: 0.008, friction: 0.3, restitution: 0.25, collisionFilter: { category: 32, mask: 0xFFFFFFFF & ~16 } });
       k.plugin = { hit: false, col: Math.floor(simRng() * 4) };
       Body.setVelocity(k, { x: c.vx, y: c.vy });
@@ -1094,7 +1094,7 @@ function step(){
       Body.setVelocity(j, { x: dk.dir.x * 7, y: dk.dir.y * 7 });
       addBody(j, drops);
       dk.burst--; dk.shotT = simT + 55;
-      if (!dk.burst) dk.next = simT + dk.gap + simRng() * 300;
+      if (!dk.burst) dk.next = simT + dk.gap + simRng() * 300 * TC;
     }
   }
   for (const c of crawlers){
@@ -1903,7 +1903,7 @@ const STORY = [
   { art: '<img src="assets/momo_sleepy.png" class="big bob" alt=""><div class="zz">z z</div>', text: '햇살 좋은 오후,<br>낮잠이 세상에서 제일 좋은 고양이 <b>모모</b>.' },
   { art: '<div class="row"><span>🛸</span><span>🦆</span><span>🎈</span><span>🐶</span></div>', text: '그런데 오늘은 <b>목욕하는 날!</b><br>집사는 물 드론, 물총 오리, 물풍선을 꺼냈고<br>옆집 불독까지 놀자고 달려와요.' },
   { art: '<img src="assets/momo_surprised.png" class="big shake" alt="">', text: '물이라면 질색인 모모를<br>도와줄 수 있는 건 당신의 <b>펜 한 자루</b>뿐!' },
-  { art: '<div class="pen">✏️</div><img src="assets/momo_sit.png" class="big" alt="">', text: '<b>선을 딱 한 번</b> 그어 벽을 만들고<br><b>8초</b> 동안 모모를 지켜 주세요.' },
+  { art: '<div class="pen">✏️</div><img src="assets/momo_sit.png" class="big" alt="">', text: '<b>선을 딱 한 번</b> 그어 벽을 만들고<br><b>7초</b> 동안 모모를 지켜 주세요.' },
 ];
 let storyIdx = 0, cards = STORY;
 function renderStory(){
