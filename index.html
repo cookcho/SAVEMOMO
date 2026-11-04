@@ -164,6 +164,7 @@
   #title{position:fixed;inset:0;z-index:20;overflow:hidden;display:flex;flex-direction:column;align-items:center;padding:calc(env(safe-area-inset-top) + 10px) 14px calc(env(safe-area-inset-bottom) + 26px);box-sizing:border-box;
     background:linear-gradient(180deg,#5bbcff 0%,#9fdcff 52%,#d7f1ff 78%,#bfe3f6 100%)}
   #title.bgimg{background-size:cover;background-position:center bottom}
+  #title.bgimg .tCloud{display:none}
   .tSky{position:absolute;inset:0;pointer-events:none;overflow:hidden}
   .tCloud{position:absolute;width:120px;height:40px;background:#fff;border-radius:40px;opacity:.85;animation:cloudMove linear infinite}
   .tCloud::before,.tCloud::after{content:'';position:absolute;background:#fff;border-radius:50%}
@@ -321,7 +322,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.04n</span>
+  <span id="ver">v2026.11.04o</span>
 </div>
 
 <div id="picker" class="hidden">
