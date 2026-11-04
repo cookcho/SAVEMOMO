@@ -321,7 +321,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.04l</span>
+  <span id="ver">v2026.11.04m</span>
 </div>
 
 <div id="picker" class="hidden">
@@ -1543,7 +1543,7 @@ function drawWind(w){
 let pops = [];
 const BALLOON = ['#ff6b8b', '#4dabf7', '#ffd43b', '#69db7c'];
 function drawCloud(c){
-  if (sprOk('rain_cloud')){ const w = c.w + 30; drawSpr('rain_cloud', c.x, 46, w, w * 0.5); return; }
+  if (sprOk('rain_cloud')){ const im = SPR.rain_cloud, w = c.w + 24, h = w * im.naturalHeight / im.naturalWidth; drawSpr('rain_cloud', c.x, 88 - h / 2, w, h); return; }
   ctx.fillStyle = '#7d8896';
   const n = Math.max(3, Math.round(c.w / 30));
   for (let i = 0; i < n; i++){
@@ -1569,7 +1569,7 @@ function drawHive(h){
       const ang = Math.atan2(dir.y, dir.x);
       drawSpr('duck', h.x, h.y + bob, 62, 62, 0, face);
       ctx.save(); ctx.translate(h.x + dir.x * 8, h.y + bob + 6 + dir.y * 8); ctx.rotate(ang); if (face < 0) ctx.scale(1, -1);
-      if (sprOk('water_gun')) ctx.drawImage(SPR.water_gun, -6, -11, 44, 22);
+      if (sprOk('water_gun')){ const g = SPR.water_gun, gh = 44 * g.naturalHeight / g.naturalWidth; ctx.drawImage(g, -8, -gh * 0.47, 44, gh); }
       else { ctx.fillStyle = '#339af0'; rrect(0, -6, 30, 12, 4); ctx.fill(); ctx.strokeStyle = '#1c6fb5'; ctx.lineWidth = 2; ctx.stroke(); }
       ctx.restore();
       return;
