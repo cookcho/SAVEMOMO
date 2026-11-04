@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#16221b">
+<meta name="theme-color" content="#6cc4ff">
+<meta name="color-scheme" content="only light">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,7 +16,7 @@
 <script src="lib/matter.min.js"></script>
 <style>
   @font-face{font-family:'Jua';src:url(fonts/jua-sub.woff2) format('woff2');font-display:swap}
-  :root{
+  :root{color-scheme:only light;
     --navy:#23304d;--navy2:#3b4a6b;
     --green:#4fd65e;--greenD:#25993a;--blue:#3ea8f2;--blueD:#1c6fb5;--yellow:#ffcf3a;--yellowD:#d18f00;
     --pink:#ff6f91;--pinkD:#c63f62;--purple:#a77af2;--purpleD:#6c44bd;--orange:#ff9a3c;--orangeD:#cc6410;--red:#ff5a5a;--redD:#c22f3a;
@@ -217,8 +218,9 @@
   @keyframes droneC{0%,26%{transform:translate(0,-50px)}38%{transform:translate(0,30px)}44%{transform:translate(0,4px) rotate(8deg)}70%{transform:translate(-6px,0)}78%{transform:translate(0,32px)}84%{transform:translate(0,4px) rotate(-8deg)}100%{transform:translate(0,-50px)}}
   .rot{transform-box:fill-box;transform-origin:center;animation:rotor .12s linear infinite}
   @keyframes rotor{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.25)}}
-  .hDog{width:24%;aspect-ratio:1.15;right:-10%;bottom:0;animation:dogRun 6s ease-in-out infinite}
-  @keyframes dogRun{0%,40%{transform:translateX(70px)}48%{transform:translateX(0) translateY(0)}52%{transform:translateX(-14px) translateY(-26px)}56%{transform:translateX(-20px) translateY(0)}60%{transform:translateX(6px)}74%{transform:translateX(-6px) translateY(-16px)}78%{transform:translateX(0)}92%{transform:translateX(0)}100%{transform:translateX(70px)}}
+  .hDog{width:24%;aspect-ratio:1.15;left:-8%;bottom:0;animation:dogRun 6s ease-in-out infinite}
+  /* 강아지는 왼쪽에서 모모 쪽으로 달려와 선에 부딪혀 튕기고, 다시 왼쪽으로 돌아감 */
+  @keyframes dogRun{0%,40%{transform:translateX(-80px)}48%{transform:translateX(0) translateY(0)}52%{transform:translateX(14px) translateY(-26px)}56%{transform:translateX(20px) translateY(0)}60%{transform:translateX(-6px)}74%{transform:translateX(6px) translateY(-16px)}78%{transform:translateX(0)}92%{transform:translateX(0)}100%{transform:translateX(-80px)}}
   .hDrop{position:absolute;width:9px;height:13px;background:#4dabf7;border:2px solid var(--navy);border-radius:50% 50% 50% 50%/60% 60% 40% 40%;top:-10%;animation:dropFall 6s ease-in infinite}
   .hDrop.d1{left:33%;animation-delay:.2s}.hDrop.d2{left:52%;animation-delay:.9s}.hDrop.d3{left:64%;animation-delay:1.5s}
   @keyframes dropFall{0%,22%{transform:translateY(0);opacity:0}24%{opacity:1}40%{transform:translateY(70px);opacity:1}42%{transform:translateY(72px) scale(1.8,.4);opacity:.6}44%,100%{transform:translateY(72px) scale(2.4,.2);opacity:0}}
@@ -247,6 +249,7 @@
   .momoBox>img{display:block;height:100%}
   .momoBox .acc{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;line-height:1;pointer-events:none}
   .momoBox .acc img{width:100%;height:auto;display:block}
+  .hMomo.momoBox{position:absolute}
   .hMomo img{height:100%}
   .mImgBox{height:92px;margin-top:2px;animation:bob 2s ease-in-out infinite}
   /* ---------- 게임 중 아이템 버튼 ---------- */
@@ -370,7 +373,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.05b</span>
+  <span id="ver">v2026.11.05c</span>
 </div>
 
 <div id="shop" class="hidden">
