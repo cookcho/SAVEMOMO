@@ -7,22 +7,31 @@ const AU = (() => {
   const sv = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_){} };
   let ctx = null, comp, musicBus, sfxBus, noiseBuf, amb = null;
   let musicOn = st('momo_music', true), sfxOn = st('momo_sfx', true);
-  const MUSIC_VOL = 0.55, SFX_VOL = 0.85;
+  const SFX_VOL = 1.0;
+  // 음악 크기: 시작 화면은 크게, 게임 중에는 효과음이 잘 들리게 작게
+  const musicLevel = () => !song ? 0.3 : song.name === 'title' ? 0.5 : state === 'sim' ? 0.17 : 0.24;
 
   function init(){
     if (ctx) return true;
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
     ctx = new AC();
     comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 4; comp.connect(ctx.destination);
-    musicBus = ctx.createGain(); musicBus.gain.value = musicOn ? MUSIC_VOL : 0; musicBus.connect(comp);
+    musicBus = ctx.createGain(); musicBus.gain.value = 0; musicBus.connect(comp);
     sfxBus = ctx.createGain(); sfxBus.gain.value = sfxOn ? SFX_VOL : 0; sfxBus.connect(comp);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
     const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     setInterval(tickScheduler, 25);
     return true;
   }
-  const unlock = () => { if (init() && ctx.state !== 'running') ctx.resume(); if (pendingSong) { const s = pendingSong; pendingSong = null; play(s.theme, s.state); } };
-  ['pointerdown', 'keydown', 'touchstart'].forEach(e => addEventListener(e, unlock, { capture: true, passive: true }));
+  const listeners = [];
+  const unlock = () => {
+    if (!init()) return;
+    if (pendingSong){ const s = pendingSong; pendingSong = null; play(s.theme, s.state); }
+    if (ctx.state !== 'running') ctx.resume().then(onRunning).catch(() => {}); else onRunning();
+  };
+  function onRunning(){ applyMusicLevel(); if (typeof window.onAudioReady === 'function') window.onAudioReady(); }
+  // 안드로이드는 손가락을 뗄 때(pointerup·touchend·click)가 '사용자 동작'으로 인정됨 → 모두 걸어 둠
+  ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'].forEach(e => addEventListener(e, unlock, { capture: true, passive: true }));
   // 화면을 벗어나면 소리를 멈춤
   document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else ctx.resume(); });
 
@@ -115,15 +124,16 @@ const AU = (() => {
 
   // ---------- 순차 재생기(앞당겨 예약) ----------
   let song = null, pendingSong = null, nextT = 0, step = 0, state = 'draw';
+  function applyMusicLevel(){ if (ctx) musicBus.gain.setTargetAtTime(musicOn ? musicLevel() : 0, now(), 0.25); }
   function play(theme, st2 = 'draw'){
     if (!ctx){ pendingSong = { theme, state: st2 }; return; }
-    state = st2;
+    state = st2; applyMusicLevel();
     if (song && song.name === theme) return;
     const th = THEMES[theme] || THEMES.living;
-    song = { name: theme, th, mel: compose(th) }; step = 0; nextT = now() + 0.08;
+    song = { name: theme, th, mel: compose(th) }; step = 0; nextT = now() + 0.08; applyMusicLevel();
     setAmbience(th.rain ? 'rain' : null);
   }
-  function setState(s){ state = s; }
+  function setState(s){ state = s; applyMusicLevel(); }
   function stop(){ song = null; }
   function tickScheduler(){
     if (!ctx || !song || ctx.state !== 'running') return;
@@ -245,9 +255,10 @@ const AU = (() => {
   }
   function drawingStop(){ if (scratch) scratch.g.gain.setTargetAtTime(0, now(), 0.05); }
 
-  function setMusic(v){ musicOn = v; sv('momo_music', v); if (ctx) musicBus.gain.setTargetAtTime(v ? MUSIC_VOL : 0, now(), 0.1); }
+  function setMusic(v){ musicOn = v; sv('momo_music', v); applyMusicLevel(); }
   function setSfx(v){ sfxOn = v; sv('momo_sfx', v); if (ctx){ sfxBus.gain.setTargetAtTime(v ? SFX_VOL : 0, now(), 0.05); } }
   // 결과 창 같은 순간에 음악을 잠깐 낮춤
-  function duck(sec = 1.2, to = 0.35){ if (!ctx || !musicOn) return; const t = now(); musicBus.gain.cancelScheduledValues(t); musicBus.gain.setTargetAtTime(MUSIC_VOL * to, t, 0.05); musicBus.gain.setTargetAtTime(MUSIC_VOL, t + sec, 0.4); }
-  return { _dbg: () => ({ ctx, comp }), play, setState, stop, sfx, update, drawing, drawingStop, setMusic, setSfx, duck, get musicOn(){ return musicOn; }, get sfxOn(){ return sfxOn; } };
+  function duck(sec = 1.2, to = 0.35){ if (!ctx || !musicOn) return; const t = now(); musicBus.gain.cancelScheduledValues(t); musicBus.gain.setTargetAtTime(musicLevel() * to, t, 0.05); musicBus.gain.setTargetAtTime(musicLevel(), t + sec, 0.4); }
+  const ready = () => !!ctx && ctx.state === 'running';
+  return { ready, _dbg: () => ({ ctx, comp }), play, setState, stop, sfx, update, drawing, drawingStop, setMusic, setSfx, duck, get musicOn(){ return musicOn; }, get sfxOn(){ return sfxOn; } };
 })();
