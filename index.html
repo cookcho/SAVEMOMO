@@ -391,7 +391,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.05m</span>
+  <span id="ver">v2026.11.05n</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -908,6 +908,18 @@ const TH = () => CHAPTERS[L.theme];
 function curKey(){ return mode === 'daily' ? 'ss_daily_' + todayKey() : 'ss_best_' + level; }
 function curLabel(){ return mode === 'daily' ? String(todayKey()).slice(4, 6) + '/' + String(todayKey()).slice(6) : 'Lv.' + level; }
 
+function chuteMouth(c){
+  const eng = Engine.create(); eng.gravity.y = 1;
+  const b = Bodies.circle(c.x, c.y, c.r, { density: 0.008, friction: 0.3, restitution: 0.25 });
+  Composite.add(eng.world, b); Body.setVelocity(b, { x: c.vx, y: c.vy });
+  const left = c.x < 0, mx = left ? 34 : W - 34;
+  for (let i = 0; i < 300; i++){
+    for (let k = 0; k < SUB; k++) Engine.update(eng, STEP / SUB);
+    capV(b, 9);
+    if (left ? b.position.x >= mx : b.position.x <= mx) return { x: b.position.x, y: b.position.y, vx: b.velocity.x, vy: b.velocity.y };
+  }
+  return { x: mx, y: c.y, vx: c.vx, vy: c.vy };
+}
 function setup(){
   L = mode === 'daily' ? genLevel(18, todayKey(), todayKey() % CHAPTERS.length) : genLevel(level, level * 7919 + 101, chapterOf(level));
   engine = Engine.create();
@@ -921,6 +933,8 @@ function setup(){
     return b;
   });
   // 움직이는 지형(시소·매달린 발판)
+  // 옆 발사대: 물풍선이 실제로 화면에 들어오는 지점(발사구)과 그때의 방향을 미리 계산 → 발사대를 그 자리·방향에 그림
+  L.chutes.forEach(c => { if (c.type === 'side' && !c.mouth) c.mouth = chuteMouth(c); });
   dynBodies = []; const dynCons = [];
   L.D.forEach(d => {
     const b = Bodies.rectangle(d.x, d.y, d.w, d.h, { label: d.type, density: d.type === 'seesaw' ? 0.002 : 0.003, friction: 0.9, frictionAir: 0.02 });
@@ -1368,7 +1382,7 @@ function step(){
     if (simT >= chuteT[i]){
       chuteT[i] += c.interval * TC;
       const k = Bodies.circle(c.x, c.y, c.r, { label: 'balloon', density: 0.008, friction: 0.3, restitution: 0.25, collisionFilter: { category: 32, mask: 0xFFFFFFFF & ~16 } });
-      k.plugin = { hit: false, col: Math.floor(simRng() * 4) };
+      k.plugin = { hit: false, col: Math.floor(simRng() * 4), side: c.type === 'side' ? (c.x < 0 ? -1 : 1) : 0, mx: c.mouth ? c.mouth.x : 0 };
       Body.setVelocity(k, { x: c.vx, y: c.vy });
       addBody(k, rocks);
     }
@@ -1735,14 +1749,15 @@ function drawChute(c){
   ctx.fillStyle = '#4dabf7'; const S = VIS.chute;
   if (sprOk('launcher')){
     if (c.type === 'top') drawSpr('launcher', c.x, 26, 62, 62);
-    else drawSpr('launcher', c.x < 0 ? 26 : W - 26, c.y, 62, 62, c.x < 0 ? -Math.PI / 2 : Math.PI / 2);
+    else { const m = c.mouth, vm = Math.hypot(m.vx, m.vy) || 1, ux = m.vx / vm, uy = m.vy / vm; // 발사구(그림 아래쪽)를 물풍선이 나오는 자리·방향에 맞춤
+      drawSpr('launcher', m.x - ux * 22, m.y - uy * 22, 62, 62, Math.atan2(uy, ux) - Math.PI / 2); }
   }
   else if (c.type === 'top'){ ctx.fillRect(c.x - 17 * S, 0, 34 * S, 16 * S); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x - 13 * S, 10 * S, 26 * S, 6 * S); }
   else { const x = c.x < 0 ? 0 : W - 22 * S; /* 발사구는 화면 가장자리에 그림 */ ctx.fillRect(x, c.y - 17 * S, 22 * S, 34 * S); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x < 0 ? 16 * S : W - 22 * S, c.y - 13 * S, 6 * S, 26 * S); }
   if (phase === 'draw'){
     ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.font = '800 14px sans-serif'; ctx.textAlign = 'center';
     if (c.type === 'top') ctx.fillText('🎈 ↓', c.x, 42);
-    else ctx.fillText(c.x < 0 ? '🎈 →' : '← 🎈', c.x < 0 ? 56 : W - 56, c.y + 5);
+    else { const m = c.mouth || { x: c.x < 0 ? 56 : W - 56, y: c.y }; ctx.fillText(c.x < 0 ? '🎈 →' : '← 🎈', m.x + (c.x < 0 ? 26 : -26), m.y - 22); }
   }
 }
 function rrect(x, y, w, h, r){
@@ -2329,6 +2344,8 @@ function drawCrawler(c){
 }
 // 물풍선
 function drawRock(k){
+  const P = k.plugin;
+  if (P.side && !P.out){ if (P.side < 0 ? k.position.x >= P.mx - 4 : k.position.x <= P.mx + 4) P.out = true; else return; }
   const r = k.circleRadius, col = BALLOON[k.plugin.col || 0], sn = BALLOON_SPR[k.plugin.col || 0];
   if (sprOk(sn)){ drawSpr(sn, k.position.x, k.position.y + r * 0.08, r * 2.75, r * 2.75, clamp(k.velocity.x * 0.05, -0.3, 0.3)); return; }
   ctx.save(); ctx.translate(k.position.x, k.position.y); ctx.rotate(clamp(k.velocity.x * 0.05, -0.3, 0.3));
