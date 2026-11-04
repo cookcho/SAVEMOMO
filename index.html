@@ -370,7 +370,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.05a</span>
+  <span id="ver">v2026.11.05b</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -914,7 +914,7 @@ function setup(){
   if (activePointer !== null){ try { cv.releasePointerCapture(activePointer); } catch (_){} activePointer = null; }
   bugs = []; drops = []; rocks = []; crawlers = []; flashT = 0; lineBody = null; toRemove = new Set();
   cloudAcc = L.clouds.map(() => 0);
-  finger = null; fingerBlocked = false; flow = null; pops = []; jetPush = [];
+  finger = null; fingerBlocked = false; flow = null; pops = []; jetPush = []; fx = [];
 
   document.getElementById('lvl').textContent = mode === 'daily' ? '오늘의 도전' : curLabel();
   document.getElementById('prevLv').style.visibility = mode === 'level' ? 'visible' : 'hidden';
@@ -1151,7 +1151,8 @@ function handle(a, b, name){
     const kk = P.atk === 'charge' ? 1.6 : 1;
     const okHit = name === 'collisionStart' ? simT - (P.pushT ?? -1e9) >= 120 : P.pushStep !== simT;
     if (k && okHit){
-      if (name === 'collisionStart') P.pushT = simT; else P.pushStep = simT;
+      if (name === 'collisionStart'){ P.pushT = simT; if (a.label !== 'balloon') fxHit((a.position.x + b.position.x) / 2, (a.position.y + b.position.y) / 2, big || P.atk === 'charge'); }
+      else P.pushStep = simT;
       let vx = a.velocity.x, vy = a.velocity.y;
       if (Math.hypot(vx, vy) < 0.3){ vx = a.position.x - b.position.x; vy = a.position.y - b.position.y; vx = -vx; vy = -vy; }
       jetPush.push({ x: a.position.x, y: a.position.y, vx, vy, k: k * kk * (act.tough ? 0.5 : 1) });
@@ -1465,6 +1466,7 @@ function step(){
         addBody(d, drops);
       }
       pops.push({ x: bl.position.x, y: bl.position.y, t: simT, col: bl.plugin.col });
+      fxPop(bl.position.x, bl.position.y, BALLOON[bl.plugin.col || 0]);
     });
     popQ.clear();
   }
@@ -1484,7 +1486,8 @@ function step(){
 
 // ---------- 종료 ----------
 function finish(win, reason, delay = 450){
-  phase = 'end';
+  phase = 'end'; endT = performance.now();
+  if (win){ delay = Math.max(delay, 1100); fxWin(potBody.position.x, potBody.position.y + potOff.foot); }
   const pct = Math.round(inkUsed / L.ink * 100);
   const stars = pct <= 22 ? 3 : pct <= 40 ? 2 : 1;
   const score = win ? Math.round(Math.max(0, 1 - inkUsed / L.ink) * 700 + hp * 3) : 0;
@@ -2057,7 +2060,8 @@ function catFace(){
   return null; // 기본 얼굴
 }
 function drawCat(){
-  const x = potBody.position.x, foot = potBody.position.y + potOff.foot;
+  const x = potBody.position.x, hop = phase === 'end' && endInfo && endInfo.win ? Math.abs(Math.sin((performance.now() - endT) / 170)) * 12 * Math.max(0.25, 1 - (performance.now() - endT) / 2500) : 0;
+  const foot = potBody.position.y + potOff.foot - hop;
   const face = catFace();
   if (face === 'heart' && ok(IMG.heart)){
     const s = CAT_H / IMG.heart.naturalHeight;
@@ -2229,8 +2233,61 @@ function drawWater(d){
     ctx.beginPath(); ctx.moveTo(d.position.x, d.position.y); ctx.lineTo(d.position.x - v.x / m * 13, d.position.y - v.y / m * 13); ctx.stroke();
     return;
   }
-  ctx.fillStyle = d.label === 'splash' ? '#a5d8ff' : '#4dabf7';
-  ctx.beginPath(); ctx.ellipse(d.position.x, d.position.y, d.circleRadius * 0.85, d.circleRadius * 1.2, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = d.label === 'splash' ? '#8fd0ff' : '#4dabf7'; ctx.strokeStyle = 'rgba(35,48,77,.7)'; ctx.lineWidth = 1.1;
+  ctx.beginPath(); ctx.ellipse(d.position.x, d.position.y, d.circleRadius * 0.85, d.circleRadius * 1.2, 0, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.beginPath(); ctx.arc(d.position.x - d.circleRadius * 0.3, d.position.y - d.circleRadius * 0.35, d.circleRadius * 0.28, 0, 7); ctx.fill();
+}
+
+// ---------- 효과(화면 연출만, 물리에는 영향 없음) ----------
+// 위치는 시작점·속도·중력으로 계산(px/초). 시간은 실제 시간 기준이라 게임이 끝난 뒤에도 이어서 보임
+let fx = [], endT = 0;
+function addFx(o){ o.t0 = performance.now(); fx.push(o); if (fx.length > 220) fx.splice(0, fx.length - 220); }
+const FX_COLORS = ['#ff5a7a', '#ffcf3a', '#4fd65e', '#3ea8f2', '#a77af2', '#ff9a3c'];
+// 드론·개가 선에 부딪힘: 노란 별 모양 반짝
+function fxHit(x, y, big){ addFx({ kind: 'spark', x, y, s: big ? 1.6 : 1, life: big ? 300 : 220, rot: Math.random() * 6 }); }
+// 물풍선이 터짐: 풍선 색 고리 + 고무 조각
+function fxPop(x, y, col){
+  addFx({ kind: 'ring', x, y, c: col, life: 320 });
+  for (let i = 0; i < 6; i++){ const a = Math.random() * 6.28, v = 90 + Math.random() * 90; addFx({ kind: 'bit', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, g: 500, c: col, w: 5, h: 4, rot: a, spin: (Math.random() - 0.5) * 20, life: 420 }); }
+}
+// 성공: 모모 양옆 아래에서 색종이가 솟아오름
+function fxWin(x, y){
+  // 화면 아래 양쪽 모서리에서 대포처럼 + 모모 주변에서 조금
+  for (const sd of [-1, 1]) for (let i = 0; i < 34; i++){
+    const a = -Math.PI / 2 - sd * (0.25 + Math.random() * 0.5), v = 420 + Math.random() * 300;
+    addFx({ kind: 'bit', x: sd < 0 ? 6 : W - 6, y: GY, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 360, drag: 1.1, c: FX_COLORS[i % 6], w: 10, h: 6, rot: Math.random() * 6, spin: (Math.random() - 0.5) * 16, life: 1700 + Math.random() * 600 });
+  }
+  for (let i = 0; i < 16; i++){
+    const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.6, v = 200 + Math.random() * 160;
+    addFx({ kind: 'bit', x, y: y - 20, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 520, drag: 1.3, c: FX_COLORS[i % 6], w: 8, h: 5, rot: Math.random() * 6, spin: (Math.random() - 0.5) * 16, life: 1400 + Math.random() * 400 });
+  }
+  addFx({ kind: 'ring', x, y: y - 30, c: '#ffcf3a', life: 450, r0: 20, r1: 70 });
+}
+function drawFx(){
+  const now = performance.now();
+  fx = fx.filter(f => now - f.t0 < f.life);
+  for (const f of fx){
+    const t = (now - f.t0) / 1000, k = (now - f.t0) / f.life;
+    ctx.save();
+    if (f.kind === 'spark'){
+      ctx.translate(f.x, f.y); ctx.rotate(f.rot); const sc = f.s * (0.6 + Math.sin(Math.min(1, k * 1.6) * Math.PI) * 0.7);
+      ctx.globalAlpha = 1 - k * k; ctx.lineCap = 'round';
+      for (let i = 0; i < 5; i++){ ctx.rotate(Math.PI * 2 / 5); const r0 = 4 * sc + k * 6, r1 = r0 + 7 * sc;
+        ctx.strokeStyle = '#23304d'; ctx.lineWidth = 4.5; ctx.beginPath(); ctx.moveTo(r0, 0); ctx.lineTo(r1, 0); ctx.stroke();
+        ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(r0, 0); ctx.lineTo(r1, 0); ctx.stroke(); }
+    } else if (f.kind === 'ring'){
+      const r = (f.r0 ?? 10) + ((f.r1 ?? 34) - (f.r0 ?? 10)) * (1 - (1 - k) * (1 - k));
+      ctx.globalAlpha = 1 - k; ctx.strokeStyle = f.c; ctx.lineWidth = 4 * (1 - k) + 1; ctx.beginPath(); ctx.arc(f.x, f.y, r, 0, 7); ctx.stroke();
+    } else if (f.kind === 'bit'){
+      const dr = f.drag ? Math.exp(-f.drag * t) : 1, tt = f.drag ? (1 - dr) / f.drag : t;
+      const x = f.x + f.vx * tt, y = f.y + f.vy * tt + 0.5 * f.g * t * t * (f.drag ? 0.55 : 1);
+      ctx.translate(x, y); ctx.rotate(f.rot + f.spin * t); ctx.scale(1, Math.cos(t * 9 + f.rot) * 0.5 + 0.6);
+      ctx.globalAlpha = k > 0.75 ? (1 - k) / 0.25 : 1;
+      ctx.fillStyle = f.c; ctx.strokeStyle = '#23304d'; ctx.lineWidth = 1.2;
+      rrect(-f.w / 2, -f.h / 2, f.w, f.h, 1.5); ctx.fill(); ctx.stroke();
+    }
+    ctx.restore();
+  }
 }
 function drawPops(){
   pops = pops.filter(p => simT - p.t < 300 && simT >= p.t);
@@ -2438,6 +2495,7 @@ function render(){
   L.pins.forEach(drawPin);
   if (tut && phase === 'draw' && !drawing && pts.length === 0) drawGuide();
   bugs.forEach(drawBug);
+  drawFx();
   if (phase === 'sim') setTimerUI(Math.max(0, (simDur - simT) / 1000));
   else if (phase === 'end') setTimerUI(-1);
 }
