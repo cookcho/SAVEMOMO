@@ -391,7 +391,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.05p</span>
+  <span id="ver">v2026.11.05q</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -531,9 +531,10 @@ function carveToRects(ops){
   }
   return out;
 }
-function buildCarve(arch, R, r){
+function buildCarve(arch, R, r, D = 0){
   const snap = v => Math.round(v / TILE) * TILE;
   const ops = [], info = { arch };
+  const extra = D >= 0.42 && r() < 0.35 + 0.5 * D; // 두 번째 입구
   if (arch === 'pocket'){
     // 지표 아래 타원형 방 + 지표로 이어진 통로
     const ys = snap(R(300, 390)), cx = R(110, 250), rx = R(78, 108), ry = R(52, 68), cy = ys + R(125, 170);
@@ -541,6 +542,9 @@ function buildCarve(arch, R, r){
     ops.push({ op: 'add', t: 'rect', x0: -40, y0: ys, x1: W + 40, y1: H + 10 });
     ops.push({ op: 'cut', t: 'ellipse', cx, cy, rx, ry });
     ops.push({ op: 'cut', t: 'rect', x0: sx - sw / 2, y0: ys - 10, x1: sx + sw / 2, y1: cy });
+    // 두 번째 통로: 첫 통로에서 70 이상 떨어진 곳에서 방으로 내려옴
+    if (extra){ const sw2 = R(42, 56), sx2 = sx < cx ? clamp(sx + R(80, 120), 40, W - 40) : clamp(sx - R(80, 120), 40, W - 40);
+      if (Math.abs(sx2 - sx) > 70){ ops.push({ op: 'cut', t: 'rect', x0: sx2 - sw2 / 2, y0: ys - 10, x1: sx2 + sw2 / 2, y1: cy }); info.extra = { x: sx2, w: sw2 }; } }
     ops.push({ op: 'add', t: 'rect', x0: -40, y0: floorY, x1: W + 40, y1: H + 10 });
     Object.assign(info, { ys, shaftX: sx, shaftW: sw, floorY, px: clamp(cx + R(-20, 20), cx - rx * 0.5, cx + rx * 0.5) });
   } else if (arch === 'well'){
@@ -548,7 +552,11 @@ function buildCarve(arch, R, r){
     const ys = snap(R(250, 340)), sw = R(70, 92), sx = R(sw / 2 + 50, W - sw / 2 - 50), floorY = snap(ys + R(170, 240));
     ops.push({ op: 'add', t: 'rect', x0: -40, y0: ys, x1: W + 40, y1: H + 10 });
     ops.push({ op: 'cut', t: 'rect', x0: sx - sw / 2, y0: ys - 10, x1: sx + sw / 2, y1: floorY });
-    ops.push({ op: 'cut', t: 'rect', x0: sx - sw / 2 - R(15, 30), y0: floorY - 90, x1: sx + sw / 2 + R(15, 30), y1: floorY });
+    const wl = R(15, 30), wr = R(15, 30);
+    ops.push({ op: 'cut', t: 'rect', x0: sx - sw / 2 - wl, y0: floorY - 90, x1: sx + sw / 2 + wr, y1: floorY });
+    // 옆 굴: 바닥 방에서 옆으로 뚫린 굴 + 지표로 올라가는 두 번째 우물
+    if (extra){ const sd = sx < W / 2 ? 1 : -1, sw2 = R(44, 56), sx2 = sx + sd * R(95, 125);
+      if (sx2 > 34 && sx2 < W - 34){ ops.push({ op: 'cut', t: 'rect', x0: Math.min(sx, sx2) - sw2 / 2, y0: floorY - 62, x1: Math.max(sx, sx2) + sw2 / 2, y1: floorY - 12 }); ops.push({ op: 'cut', t: 'rect', x0: sx2 - sw2 / 2, y0: ys - 10, x1: sx2 + sw2 / 2, y1: floorY - 12 }); info.extra = { x: sx2, w: sw2 }; } }
     Object.assign(info, { ys, shaftX: sx, shaftW: sw, floorY, px: sx });
   } else {
     // alcove: 높은 절벽 속 옆굴 + 바로 옆 깊은 구덩이(드론 기지가 구덩이 안에 있음)
@@ -558,7 +566,11 @@ function buildCarve(arch, R, r){
     ops.push({ op: 'add', t: 'rect', x0: -40, y0: ys, x1: W + 40, y1: H + 10 });
     ops.push({ op: 'cut', t: 'rect', x0: Math.max(0, ax0 - 10), y0: ay - 92, x1: Math.min(W, ax1 + (left ? 10 : 0)), y1: ay });
     ops.push({ op: 'cut', t: 'rect', x0: px0, y0: ys - 10, x1: px1, y1: pitBot });
-    Object.assign(info, { ys, floorY: ay, left, mouthX: left ? aw : W - aw, mouthTop: ay - 92, pit: { x: (px0 + px1) / 2, y: pitBot - 26 }, px: left ? R(45, aw - 35) : W - R(45, aw - 35) });
+    const catX = left ? R(45, aw - 35) : W - R(45, aw - 35);
+    // 천창: 굴 천장에서 지표까지 뚫린 구멍(빗물·드론이 위에서도 들어옴)
+    if (extra){ const kw = R(40, 50), kx = clamp(catX + (left ? -1 : 1) * R(0, 18), (left ? ax0 : ax0) + kw / 2 + 6, (left ? ax1 : ax1) - kw / 2 - 14);
+      ops.push({ op: 'cut', t: 'rect', x0: kx - kw / 2, y0: ys - 10, x1: kx + kw / 2, y1: ay - 90 }); info.extra = { x: kx, w: kw }; }
+    Object.assign(info, { ys, floorY: ay, left, mouthX: left ? aw : W - aw, mouthTop: ay - 92, pit: { x: (px0 + px1) / 2, y: pitBot - 26 }, px: catX });
   }
   return { ops, info };
 }
@@ -574,7 +586,7 @@ const RAD = { drone: 8, tank: 14, pup: 12, bigdog: 24, balloon: [13, 17], rain: 
 //  · 챕터 안 흐름: 10레벨 단위로 오르내림, 10번째는 보스(급상승), 다음 챕터 첫 판은 숨 고르기
 const CH_SHAPE = [-0.06, -0.03, 0, 0.02, 0.04, -0.02, 0.05, 0.07, 0.09, 0.16];
 function diffOf(lv){
-  const base = 0.12 + 0.88 * (1 - Math.exp(-lv / 30)) + 0.004 * Math.max(0, lv - 60);
+  const base = 0.12 + 0.88 * (1 - Math.exp(-lv / 24)) + 0.004 * Math.max(0, lv - 60);
   return Math.max(0.05, base + CH_SHAPE[(lv - 1) % 10]);
 }
 const isBoss = lv => lv % 10 === 0;
@@ -582,6 +594,17 @@ const isBoss = lv => lv % 10 === 0;
 const ARCH_TIER = { plat: 0, ground: 0, pocket: 0, cliff: 1, shelf: 1, valley: 1, well: 1, cave: 1, stairs: 2, pillar: 2, bowl: 2, alcove: 2, hang: 3, seesaw: 3 };
 
 // ---------- 절차적 맵 생성기 ----------
+// 지형 고르기(레벨 번호·시드만으로 정해짐). avoid에 든 지형은 확률을 크게 낮춤 → 같은 지형이 연달아 나오지 않게
+function archBase(lv, seed, avoid = []){
+  const r2 = rng((seed ^ 0x5bd1e995) >>> 0);
+  const unlocked = ARCH_UNLOCK.filter(([, l]) => l <= lv).map(([a]) => a);
+  const D = diffOf(lv), boss = isBoss(lv) && lv >= 10;
+  const target = Math.min(boss ? 3.0 : 2.4, 3.2 * D + (boss ? 0.6 : 0));
+  const ws = unlocked.map(a => Math.exp(-((ARCH_TIER[a] - target) ** 2) / 1.2) * (CARVED.includes(a) ? 0.75 : 1) * (avoid.includes(a) ? 0.12 : 1));
+  let t = r2() * ws.reduce((x, y) => x + y, 0);
+  for (let i = 0; i < unlocked.length; i++){ t -= ws[i]; if (t <= 0) return unlocked[i]; }
+  return unlocked[unlocked.length - 1];
+}
 function genLevel(lv, seed, themeIdx){
   const r = rng(seed), R = (a, b) => a + r() * (b - a), pick = a => a[Math.floor(r() * a.length)];
   const has = k => MECH.find(m => m.k === k).lv <= lv;
@@ -597,8 +620,10 @@ function genLevel(lv, seed, themeIdx){
   L.diff = D; L.boss = isBoss(lv) && lv >= 10;
   // 단계 t의 가중치: D×3.2 근처 단계가 가장 자주. 보스는 해금된 가장 어려운 단계 쪽으로
   const target = Math.min(L.boss ? 3.0 : 2.4, 3.2 * D + (L.boss ? 0.6 : 0)); // 후반에도 여러 단계가 섞이게 상한
-  const wPick = list => { const ws = list.map(a => Math.exp(-((ARCH_TIER[a] - target) ** 2) / 1.2) * (CARVED.includes(a) ? 1.3 : 1)); let t = r() * ws.reduce((x, y) => x + y, 0); for (let i = 0; i < list.length; i++){ t -= ws[i]; if (t <= 0) return list[i]; } return list[list.length - 1]; };
-  let arch = lv === 1 ? 'plat' : archIntro ? archIntro[0] : wPick(unlocked);
+  const normal = seed === lv * 7919 + 101;
+  const avoid = normal && lv > 2 ? [archBase(lv - 1, (lv - 1) * 7919 + 101), archBase(lv - 2, (lv - 2) * 7919 + 101)] : [];
+  r();
+  let arch = lv === 1 ? 'plat' : archIntro ? archIntro[0] : archBase(lv, seed, avoid);
   if (intro && (intro.k === 'crawl' || intro.k === 'bigdog')) arch = 'ground';
   L.archIntro = archIntro ? arch : null;
   let px, top, hw;
@@ -659,7 +684,7 @@ function genLevel(lv, seed, themeIdx){
     px = R(90, 270); const pw = R(95, 130), py0 = R(390, 500); top = py0 - 7; hw = pw / 2;
     L.D.push({ type: 'hang', x: px, y: py0, w: pw, h: 14, ay: Math.max(26, py0 - R(150, 260)) });
   } else if (CARVED.includes(arch)){
-    const cv2 = buildCarve(arch, R, r);
+    const cv2 = buildCarve(arch, R, r, D);
     L.carve = cv2.ops; L.carveInfo = cv2.info;
     carveToRects(cv2.ops).forEach(o => S.push(o));
     px = cv2.info.px; top = cv2.info.floorY; hw = 30;
@@ -817,7 +842,9 @@ function genLevel(lv, seed, themeIdx){
     const n = u > 45 ? 2 : 1;
     for (let i = 0; i < n; i++){
       const rr = R(RAD.balloon[0], RAD.balloon[1]), interval = clamp(10000 * n / u, 480 / capS, 1500);
-      if (r() < 0.5 && !L.cave && !(intro && intro.k === 'rock')){
+      // 물풍선만 있는 레벨은 첫 발사대를 모모 바로 위에 둠(옆 발사대는 지형에 막혀 그냥 버텨지는 경우가 있음)
+      const onlyRock = i === 0 && !kinds.some(k => ['bee', 'wasp', 'crawl', 'tank', 'bigdog', 'rain'].includes(k));
+      if ((onlyRock || r() < 0.5) && !L.cave && !(intro && intro.k === 'rock')){
         L.chutes.push({ type: 'top', x: clamp(px + R(-30, 30), 24, W - 24), y: -12, vx: 0, vy: 1, r: rr, interval, first: R(350, 750) });
       } else {
         const fromLeft = L.cave ? !L.cave.left : r() < 0.5;
@@ -866,6 +893,7 @@ function genLevel(lv, seed, themeIdx){
               : { shape: 'circle', x, y, r: R(14, 24), kind: 'boulder' };
       if (o.shape === 'circle'){ o.w = o.r * 2; }
       if (dist(o, sp) < 100 || dist(o, L.pot) < 90) continue;
+      if (L.carve && o.y > L.carveInfo.ys - 40) continue; // 파낸 지형에서는 땅 위(지표 위쪽)에만
       if (o.y < sp.y && Math.abs(o.x - sp.x) < o.w / 2 + 40) continue; // 모모 위를 덮는 공짜 지붕 금지
       if (used.some(q => dist(q, o) < 70) || L.chutes.some(c => Math.abs(c.y - o.y) < 30 && c.type === 'side')) continue;
       if (S.some(s => dist(s, o) < 70 && s.kind !== 'ground')) continue;
@@ -894,7 +922,7 @@ function genLevel(lv, seed, themeIdx){
   // 별 기준(잉크 px): 지형마다 '꼭 필요한 최소 잉크'(par)를 잡고, ★3 = par 이하, ★2 = par×1.5 이하.
   // 잉크를 넉넉히 주는 초반 레벨은 기존 비율(22%·40%)이 더 너그러우면 그쪽을 씀
   const PAR = { pocket: 95, well: 95, alcove: 100, cave: 95, stairs: 150, bowl: 170, plat: 185, ground: 190, cliff: 190, shelf: 190, valley: 190, pillar: 205, hang: 205, seesaw: 205 };
-  L.par = PAR[L.arch] || 190;
+  L.par = (PAR[L.arch] || 190) + (L.carveInfo && L.carveInfo.extra ? 70 : 0);
   L.s3 = Math.round(Math.max(L.par, 0.22 * L.ink)); L.s2 = Math.round(Math.max(L.par * 1.5, 0.40 * L.ink));
   return L;
 }
