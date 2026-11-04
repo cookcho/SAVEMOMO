@@ -391,7 +391,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v1.0.2</span>
+  <span id="ver">v1.1.0</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -459,10 +459,16 @@ const MECH = [
   { k: 'tank',  lv: 27, name: '헤비 드론', icon: '🛡️', desc: '집사의 대형 드론! 막히면 선을 힘으로 밀어붙여요' },
 ];
 const CARVED = ['pocket', 'well', 'alcove'];
-const ARCH_UNLOCK = [['ground', 1], ['plat', 2], ['pocket', 10], ['well', 14], ['alcove', 18], ['cliff', 8], ['stairs', 9], ['shelf', 11], ['valley', 13], ['pillar', 15], ['cave', 17], ['bowl', 19], ['hang', 21], ['seesaw', 23]];
-const ARCH_W = { pocket: 0.9, well: 0.9, alcove: 1.2, plat: 1, ground: 0.95, cliff: 1, stairs: 1.3, shelf: 1, valley: 0.9, pillar: 1.12, cave: 0.65, bowl: 1.1, hang: 1.4, seesaw: 1.35 };
-const ARCH_DESC = { pocket: '땅속 굴에 숨은 모모! 통로 입구를 막아 보세요', well: '깊은 우물 바닥이에요. 입구를 덮거나 중간을 막아요', alcove: '절벽 속 굴이에요. 옆 구덩이에서 드론이 올라와요', cliff: '모모가 절벽 끝이나 절벽 아래에 있어요', stairs: '한쪽은 벽, 한쪽은 트여 있어요', shelf: '벽에 붙은 선반이에요', valley: '양쪽 벽을 기둥 삼아 보세요', pillar: '좁은 기둥 꼭대기예요', cave: '입구가 한쪽뿐인 동굴! 입구 위 핀을 써 보세요', bowl: '기울어진 판자 사이에 쏙 들어가 있어요', hang: '사슬에 매달려 부딪히면 흔들려요', seesaw: '선의 무게로 기울어요. 균형을 잡아요' };
-const ARCH_NAME = { pocket: '땅굴', well: '우물', alcove: '절벽 굴', plat: '공중 받침대', ground: '언덕 들판', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기', cliff: '절벽', cave: '동굴', bowl: 'V자 그릇', seesaw: '시소', hang: '매달린 발판', stairs: '계단' };
+// 지형 특징(레벨에 따라 등장): 욕조 물 — 바닥이 물이라 모모가 떨어지면 실패 / 선인장 — 모모가 닿으면 다침, 선도 통과 못 함
+const FEATS = [
+  { k: 'water', lv: 24, name: '욕조 물', icon: '🛁', desc: '바닥이 욕조 물이에요! 선에 밀리거나 떨어져서 모모가 물에 빠지면 실패' },
+  { k: 'cactus', lv: 32, name: '선인장', icon: '🌵', desc: '가시투성이 화분이에요. 모모가 닿으면 다치고, 선도 지나갈 수 없어요' },
+];
+const WATER_OK = ['plat', 'shelf', 'pillar', 'hang', 'seesaw', 'bowl', 'stairs', 'cave', 'cliff', 'slope', 'drop'];
+const ARCH_UNLOCK = [['ground', 1], ['plat', 2], ['pocket', 10], ['well', 14], ['alcove', 18], ['cliff', 8], ['stairs', 9], ['shelf', 11], ['valley', 13], ['pillar', 15], ['cave', 17], ['bowl', 19], ['hang', 21], ['seesaw', 23], ['slope', 26], ['drop', 29]];
+const ARCH_W = { slope: 1.25, drop: 2.1, pocket: 0.9, well: 0.9, alcove: 1.2, plat: 1, ground: 0.95, cliff: 1, stairs: 1.3, shelf: 1, valley: 0.9, pillar: 1.12, cave: 0.65, bowl: 1.1, hang: 1.4, seesaw: 1.35 };
+const ARCH_DESC = { slope: '비누칠한 미끄럼판! 가만두면 모모가 미끄러져 욕조에 빠져요. 붙잡아 주세요', drop: '비눗방울이 터지면 모모가 떨어져요! 받아 낼 자리와 지붕을 한 번에 그려요', pocket: '땅속 굴에 숨은 모모! 통로 입구를 막아 보세요', well: '깊은 우물 바닥이에요. 입구를 덮거나 중간을 막아요', alcove: '절벽 속 굴이에요. 옆 구덩이에서 드론이 올라와요', cliff: '모모가 절벽 끝이나 절벽 아래에 있어요', stairs: '한쪽은 벽, 한쪽은 트여 있어요', shelf: '벽에 붙은 선반이에요', valley: '양쪽 벽을 기둥 삼아 보세요', pillar: '좁은 기둥 꼭대기예요', cave: '입구가 한쪽뿐인 동굴! 입구 위 핀을 써 보세요', bowl: '기울어진 판자 사이에 쏙 들어가 있어요', hang: '사슬에 매달려 부딪히면 흔들려요', seesaw: '선의 무게로 기울어요. 균형을 잡아요' };
+const ARCH_NAME = { slope: '비누 미끄럼판', drop: '떨어지는 모모', pocket: '땅굴', well: '우물', alcove: '절벽 굴', plat: '공중 받침대', ground: '언덕 들판', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기', cliff: '절벽', cave: '동굴', bowl: 'V자 그릇', seesaw: '시소', hang: '매달린 발판', stairs: '계단' };
 // 10레벨마다 모모가 도망치는 장소가 바뀜 (70레벨 이후 2회차로 반복)
 const CHAPTERS = [
   { name: '거실', icon: '🏠', bg: 'living', sky: ['#f6e7cf', '#ecd6b4'], ground: '#a8774a', grass: '#8a5d34', stone: '#b39b7d', ink: '#1e2a4a', text: '#2b2118', story: '' },
@@ -591,7 +597,7 @@ function diffOf(lv){
 }
 const isBoss = lv => lv % 10 === 0;
 // 지형 난이도 단계(쉬움 → 매우 어려움). D가 오를수록 어려운 단계가 자주 나옴
-const ARCH_TIER = { plat: 0, ground: 0, pocket: 0, cliff: 1, shelf: 1, valley: 1, well: 1, cave: 1, stairs: 2, pillar: 2, bowl: 2, alcove: 2, hang: 3, seesaw: 3 };
+const ARCH_TIER = { slope: 2, drop: 3, plat: 0, ground: 0, pocket: 0, cliff: 1, shelf: 1, valley: 1, well: 1, cave: 1, stairs: 2, pillar: 2, bowl: 2, alcove: 2, hang: 3, seesaw: 3 };
 
 // ---------- 절차적 맵 생성기 ----------
 // 물풍선이 실제로 모모 근처(target)까지 가는지 미리 날려 봄: 지형에 먼저 부딪히면 실패
@@ -640,6 +646,8 @@ function genLevel(lv, seed, themeIdx){
   r();
   let arch = lv === 1 ? 'ground' : archIntro ? archIntro[0] : archBase(lv, seed, avoid);
   if (intro && (intro.k === 'crawl' || intro.k === 'bigdog')) arch = 'ground';
+  // 선인장 소개 레벨은 파낸 지형이 아닌 곳에서
+  if (!archIntro && FEATS.some(f => f.k === 'cactus' && f.lv === lv)) for (let k = 1; k < 12 && CARVED.includes(arch); k++) arch = archBase(lv, seed + k, CARVED);
   L.archIntro = archIntro ? arch : null;
   let px, top, hw;
   if (arch === 'plat'){
@@ -654,6 +662,28 @@ function genLevel(lv, seed, themeIdx){
       if (Math.abs(hx - px) < hr * 0.85 + 40 || S.some(o => o.kind === 'hill' && Math.abs(o.x - hx) < o.r + hr)) continue;
       S.push({ shape: 'circle', x: hx, y: GY + hr * 0.55, r: hr, kind: 'hill' }); break;
     }
+  } else if (arch === 'slope'){
+    // 비누 미끄럼판: 벽에 붙은 높은 쪽에서 모모가 미끄러져 내려옴. 아래는 욕조 물
+    const left = r() < 0.5, ang = R(0.3, 0.42), len = R(210, 260), hx = left ? 0 : W, hy = R(330, 420);
+    const lx = hx + (left ? 1 : -1) * len * Math.cos(ang), ly = hy + len * Math.sin(ang);
+    const cx = (hx + lx) / 2, cy = (hy + ly) / 2, a = left ? ang : -ang;
+    S.push({ x: cx, y: cy, w: len, h: 14, a, kind: 'soap' });
+    S.push({ x: left ? -10 : W + 10, y: (hy - 140 + GY) / 2, w: 40, h: GY - hy + 140, a: 0, kind: 'cliff' }); // 높은 쪽 벽
+    const f = R(0.18, 0.3); px = hx + (left ? 1 : -1) * len * f * Math.cos(ang);
+    top = hy + len * f * Math.sin(ang) - 7 - 4; hw = 30;
+    L.slope = { left, x0: hx, y0: hy, x1: lx, y1: ly }; L.forceWater = true;
+    // 비탈 아래쪽에 고정 핀 2개(비탈면에서 24 위): 두 핀을 지나는 선은 고정돼서 모모를 붙잡을 수 있음
+    const sd = left ? 1 : -1, ux = Math.cos(ang) * sd, uy = Math.sin(ang), nx = Math.sin(ang) * sd, ny = -Math.cos(ang);
+    const at = d => ({ x: hx + ux * (len * f + d) - nx * -24, y: hy + uy * (len * f + d) + ny * 24 });
+    L.slopePins = [at(R(48, 62)), at(R(98, 118))];
+  } else if (arch === 'drop'){
+    // 떨어지는 모모: 비눗방울 속 모모가 시작과 함께 떨어짐. 아래에는 두 턱 사이 틈과 욕조 물
+    px = R(120, 240); const gw = R(74, 100), ly = R(450, 520);
+    const gl = px - gw / 2 + R(-20, 20), gr = gl + gw;
+    S.push({ x: (gl - 40) / 2, y: ly + 12, w: gl + 40, h: 24, a: 0, kind: 'shelf' });
+    S.push({ x: (gr + W + 40) / 2, y: ly + 12, w: W + 40 - gr, h: 24, a: 0, kind: 'shelf' });
+    top = ly - R(16, 40); hw = 60; L.floatCat = true; L.forceWater = true; L.dropGap = { gl, gr, y: ly };
+    L.slopePins = [{ x: gl - 10, y: ly - 14 }, { x: gr + 10, y: ly - 14 }]; // 턱 안쪽 모서리 위 핀: 받침을 고정할 수 있음
   } else if (arch === 'shelf'){
     const left = r() < 0.5, sw = R(110, 165); top = R(380, 540);
     S.push({ x: left ? sw / 2 : W - sw / 2, y: top + 8, w: sw, h: 16, a: 0, kind: 'shelf', left });
@@ -725,6 +755,13 @@ function genLevel(lv, seed, themeIdx){
     ground = [{ x: 0, w: gx }, { x: gx + gw, w: W - gx - gw }];
   }
   if (L.carve) ground = [];
+  // 욕조 물: 소개 레벨은 반드시, 이후 D에 따라 점점 자주(모모가 땅에 앉은 지형·파낸 지형은 제외)
+  const featIntro = FEATS.find(f => f.lv === lv) || null;
+  const waterOk = lv >= 24 && WATER_OK.includes(arch) && !L.groundCat && !(arch === 'cliff' && top >= GY - 1);
+  L.water = !!L.forceWater || (waterOk && ((featIntro && featIntro.k === 'water') || r() < clamp((D - 0.5) * 1.7, 0, 0.65)));
+  if (featIntro && featIntro.k === 'water' && !L.water) L.water = waterOk;
+  if (L.water) ground = [];
+  L.featIntro = featIntro && ((featIntro.k === 'water' && L.water) || featIntro.k === 'cactus') ? featIntro : null;
   L.ground = ground;
   ground.forEach(g => S.unshift({ x: g.x + g.w / 2, y: H - 20, w: g.w, h: 40, a: 0, kind: 'ground' }));
 
@@ -768,6 +805,7 @@ function genLevel(lv, seed, themeIdx){
   B *= 1 - 0.08 * mods.length;
   B /= ARCH_W[arch];
   if (kinds.includes('wind')) B *= 0.8;
+  if (L.water && !L.forceWater) B *= 0.88;
   const u = B / kinds.filter(k => k !== 'wind').length;
   L.budget = Math.round(B * 10) / 10;
   const used = [];
@@ -817,7 +855,8 @@ function genLevel(lv, seed, themeIdx){
     const total = clamp(Math.round(u / 2), 4, Math.round(16 * capS)), nh = total > 18 ? 3 : total > 9 ? 2 : 1;
     for (let i = 0; i < nh; i++){
       const pit = arch === 'alcove' && i === 0 ? L.carveInfo.pit : null;
-      const p = pit || place(170, yMin, yMax) || { x: px < W / 2 ? W - 40 : 40, y: yMin + 30 };
+      const low = !pit && i === 0 && !L.floatCat && !L.groundCat && !L.carve && D > 0.55 && r() < 0.3 + (L.water ? 0.25 : 0) ? place(150, sp.y + 60, GY - 70) : null;
+      const p = pit || low || place(170, yMin, yMax) || { x: px < W / 2 ? W - 40 : 40, y: yMin + 30 };
       if (pit) used.push(pit);
       L.hives.push({ ...p, n: Math.round(total / nh), kind: 'bee' });
     }
@@ -897,6 +936,7 @@ function genLevel(lv, seed, themeIdx){
       : [{ x: ci.shaftX + (r() < 0.5 ? -1 : 1) * (ci.shaftW / 2 + 14), y: ci.ys - 16 }];
     for (const cp of cps) if (free(cp, ci.arch === 'alcove' ? 6 : 10)){ used.push(cp); L.pins.push(cp); }
   }
+  if (L.slopePins) for (const cp of L.slopePins){ used.push(cp); L.pins.push(cp); }
   if (L.cave && has('pin')){
     const cp = { x: L.cave.mouth + (L.cave.left ? 16 : -16), y: L.cave.ceilY + 18 };
     if (free(cp, 12)){ used.push(cp); L.pins.push(cp); }
@@ -914,6 +954,18 @@ function genLevel(lv, seed, themeIdx){
     }
   }
 
+  // 선인장: 모모 둘레(지붕이 지나갈 만한 곳)에 1~2개. 소개 레벨은 반드시
+  L.cacti = [];
+  if (lv >= 32 && !L.carve && ((L.featIntro && L.featIntro.k === 'cactus') || r() < clamp((D - 0.66) * 2.2, 0, 0.65))){
+    const n = L.featIntro ? 1 : r() < 0.5 ? 1 : 2;
+    for (let i = 0; i < n; i++) for (let t = 0; t < 80; t++){
+      const ang = R(-Math.PI + 0.35, -0.35) + (r() < 0.3 ? Math.PI * 0.5 * (r() < 0.5 ? 1 : -1) : 0), d = R(58, 88);
+      const c = { shape: 'circle', x: sp.x + Math.cos(ang) * d, y: sp.y + 20 + Math.sin(ang) * d, r: 13, kind: 'cactus' };
+      if (c.y > GY - 20 || !free(c, 18) || dist(c, L.pot) < 50 || used.some(q => dist(q, c) < 40) || L.cacti.some(q => dist(q, c) < 60)) continue;
+      used.push(c); S.push(c); L.cacti.push(c); break;
+    }
+  }
+
   // 4) 장애물 판자 (걸치거나 받칠 수 있는 지형)
   let no = L.carve ? 1 : Math.min(3, Math.floor(lv / 2)) - (arch === 'valley' || arch === 'pillar' ? 1 : 0);
   for (let i = 0; i < no; i++){
@@ -926,6 +978,8 @@ function genLevel(lv, seed, themeIdx){
       if (dist(o, sp) < 100 || dist(o, L.pot) < 90) continue;
       if (L.carve && o.y > L.carveInfo.ys - 40) continue; // 파낸 지형에서는 땅 위(지표 위쪽)에만
       if (o.y < sp.y && Math.abs(o.x - sp.x) < o.w / 2 + 40) continue; // 모모 위를 덮는 공짜 지붕 금지
+      if (L.floatCat && o.y > sp.y && Math.abs(o.x - sp.x) < o.w / 2 + 60) continue; // 떨어지는 모모를 공짜로 받치는 판자 금지
+      if (L.slope && o.y > sp.y - 20 && (L.slope.left ? o.x > sp.x - 20 : o.x < sp.x + 20)) continue; // 미끄러지는 길·그 아래에는 놓지 않음
       if (used.some(q => dist(q, o) < 70) || L.chutes.some(c => Math.abs(c.y - o.y) < 30 && c.type === 'side')) continue;
       if (S.some(s => dist(s, o) < 70 && s.kind !== 'ground')) continue;
       if (dynRects.some(d => inRect(o, d, 40)) || chainRects.some(d => inRect(o, d, 30))) continue;
@@ -946,14 +1000,14 @@ function genLevel(lv, seed, themeIdx){
     }
   }
   // 잉크: D가 오를수록 짧아짐(덮개 하나 ≈ 230px). 파낸 지형은 입구만 막으면 돼서 더 짧게
-  L.ink = Math.round(clamp(620 - 380 * D, 210, 620) * (L.carve ? 0.85 : 1));
+  L.ink = Math.round(clamp(620 - 380 * D, 210, 620) * (L.carve ? 0.85 : L.floatCat ? 1.9 : L.slope ? 1.15 : 1));
   L.speed = clamp(2.0 + 1.9 * D, 2.0, 4.2);
   L.force = clamp(0.75 + 0.85 * D + (L.boss ? 0.1 : 0), 0.75, 1.8); // 적이 선을 밀어내는 힘 배율
   L.diff10 = clamp(Math.round(D / 1.15 * 9) + 1, 1, 10);
   // 별 기준(잉크 px): 지형마다 '꼭 필요한 최소 잉크'(par)를 잡고, ★3 = par 이하, ★2 = par×1.5 이하.
   // 잉크를 넉넉히 주는 초반 레벨은 기존 비율(22%·40%)이 더 너그러우면 그쪽을 씀
   const PAR = { pocket: 95, well: 95, alcove: 100, cave: 95, stairs: 150, bowl: 170, plat: 185, ground: 190, cliff: 190, shelf: 190, valley: 190, pillar: 205, hang: 205, seesaw: 205 };
-  L.par = (PAR[L.arch] || 190) + (L.carveInfo && L.carveInfo.extra ? 70 : 0);
+  L.par = (PAR[L.arch] || (L.arch === 'drop' ? 300 : L.arch === 'slope' ? 190 : 190)) + (L.carveInfo && L.carveInfo.extra ? 70 : 0);
   L.s3 = Math.round(Math.max(L.par, 0.22 * L.ink)); L.s2 = Math.round(Math.max(L.par * 1.5, 0.40 * L.ink));
   return L;
 }
@@ -961,6 +1015,8 @@ function genLevel(lv, seed, themeIdx){
 // ---------- 상태 ----------
 let mode = 'level';
 let level = store.get('ss_level', 1);
+const WATER_Y = H - 34; // 욕조 물 수면
+let waterBody = null, bubbleOn = false;
 let L, engine, statics, dynBodies = [], potBody, potOff, sproutPart, lineBody, lineLocal;
 let phase, pts, inkUsed, drawing, simT, hp, bugs, drops, rocks, crawlers, spawnQ, cloudAcc, chuteT, simRng, flashT, toRemove, endInfo;
 let finger = null, fingerBlocked = false, blockToastShown = false, toastTimer = 0;
@@ -1023,14 +1079,17 @@ function setup(){
   const torso = Bodies.rectangle(px, top - 17, 42, 34, { label: 'catTorso', density: 0.02, friction: 1 });
   sproutPart = Bodies.circle(px, top - 45, 22, { label: 'catHead', density: 0.004 });
   potBody = Body.create({ parts: [torso, sproutPart], friction: 0.9, label: 'cat' });
+  // 비누 미끄럼판 레벨: 비누 거품을 뒤집어쓴 모모가 미끄러움(선은 미끄럽지 않아서 받쳐 줄 수 있음)
+  if (L.slope) [potBody, torso, sproutPart].forEach(b => { b.friction = 0.003; b.frictionStatic = 0; });
   Body.setInertia(potBody, Infinity); // 고양이는 넘어지지 않고 미끄러지기만 함
   potOff = { foot: top - potBody.position.y };
   const edgeWalls = [-55, W + 55].map(x => Bodies.rectangle(x, H / 2 - 200, 30, H + 400, { isStatic: true, label: 'edge', collisionFilter: { category: 16, mask: CAT_DEF } }));
-  Composite.add(engine.world, [...statics, ...dynBodies, ...dynCons, potBody, ...edgeWalls]);
+  waterBody = L.water ? Bodies.rectangle(W / 2, WATER_Y + 80, W + 400, 160, { isStatic: true, isSensor: true, label: 'water', collisionFilter: { category: 64, mask: CAT_DEF } }) : null;
+  Composite.add(engine.world, [...statics, ...dynBodies, ...dynCons, potBody, ...edgeWalls, ...(waterBody ? [waterBody] : [])]);
   Events.on(engine, 'collisionStart', onCollide);
   Events.on(engine, 'collisionActive', onCollide);
 
-  phase = 'draw'; pts = []; inkUsed = 0; drawing = false; simT = 0; hp = 100; act = {}; simDur = SIM_MS;
+  phase = 'draw'; pts = []; inkUsed = 0; drawing = false; simT = 0; hp = 100; act = {}; simDur = SIM_MS; bubbleOn = !!L.floatCat;
   if (document.getElementById('title').classList.contains('hidden')) AU.play(CHAPTERS[L.theme].bg, 'draw'); AU.setState('draw'); AU.drawingStop();
   if (activePointer !== null){ try { cv.releasePointerCapture(activePointer); } catch (_){} activePointer = null; }
   bugs = []; drops = []; rocks = []; crawlers = []; flashT = 0; lineBody = null; toRemove = new Set();
@@ -1046,6 +1105,8 @@ function setup(){
   document.getElementById('shareBox').classList.add('hidden');
   const ch = CHAPTERS[L.theme], rd = mode === 'level' ? roundOf(level) : 0;
   const chips = [`<span class="chip${L.boss ? ' boss' : ''}">${L.boss ? '🔥 보스 · ' : ''}난이도 <span class="dbar">${[0, 1, 2, 3, 4].map(i => `<i class="${i < Math.ceil(L.diff10 / 2) ? 'on' : ''}"></i>`).join('')}</span> ${L.diff10}</span>`, `<span class="chip">${ch.icon} ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</span>`, `<span class="chip${L.archIntro ? ' new' : ''}">${ARCH_NAME[L.arch]}</span>`];
+  if (L.water) chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'water' ? ' new' : ''}">🛁 욕조 물</span>`);
+  if (L.cacti && L.cacti.length) chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'cactus' ? ' new' : ''}">🌵 선인장</span>`);
   L.mods.forEach(k => { const m = MODS.find(x => x.k === k); chips.push(`<span class="chip${L.modIntro && L.modIntro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   L.kinds.forEach(k => { const m = MECH.find(x => x.k === k); chips.push(`<span class="chip${L.intro && L.intro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   if (L.pins.length){ const m = MECH[1]; chips.push(`<span class="chip${L.intro && L.intro.k === 'pin' ? ' new' : ''}">${m.icon} 핀 ${L.pins.length}</span>`); }
@@ -1056,6 +1117,8 @@ function setup(){
     ? '<b>👆 튜토리얼</b><br>손가락을 떼지 말고 점선을 따라<br>모모 위에 지붕을 그려 보세요'
     : L.intro && mode === 'level'
     ? `<b>NEW ${L.intro.icon} ${L.intro.name}</b><br>${L.intro.desc}`
+    : L.featIntro && mode === 'level' && !L.intro && !L.archIntro
+    ? `<b>NEW ${L.featIntro.icon} ${L.featIntro.name}</b><br>${L.featIntro.desc}`
     : L.archIntro && mode === 'level'
     ? `<b>NEW 지형 · ${ARCH_NAME[L.archIntro]}</b><br>${ARCH_DESC[L.archIntro]}`
     : L.modIntro && mode === 'level'
@@ -1229,6 +1292,7 @@ function endStroke(){
 
 function startSim(){
   phase = 'sim'; simT = 0; useItems(); AU.setState('sim'); AU.sfx('drop');
+  if (bubbleOn){ bubbleOn = false; fxPop(potBody.position.x, potBody.position.y - 10, '#9fd8ff'); AU.sfx('pop'); }
   if (tut) showToast('선은 물리 법칙대로 떨어져요 · 7초만 버티면 성공!');
   simRng = rng(L.seed + 7);
   spawnQ = [];
@@ -1253,7 +1317,12 @@ const WATER = ['drop', 'jet', 'splash'];
 function ouch(dmg, wet = false){ hp -= dmg; flashT = 280; lastHitT = simT; lastWet = wet; if (wet) AU.sfx('splat'); AU.sfx('meow'); }
 function handle(a, b, name){
   // 높은 곳에서 떨어지거나 세게 부딪히면 다침
-  if (name === 'collisionStart' && a.parent === potBody && (b.isStatic || b.parent.label === 'line') && prevPotSpeed > 6 && simT - lastImpactT > 500){ lastImpactT = simT; ouch(30); }
+  if (name === 'collisionStart' && a.parent === potBody && (b.isStatic || b.parent.label === 'line') && prevPotSpeed > (L.floatCat ? 11 : 6) && simT - lastImpactT > 500){ lastImpactT = simT; ouch(30); }
+  if (a.parent === potBody && b.label === 'cactus' && simT - (b.plugin.hitT ?? -1e9) > 600){
+    b.plugin.hitT = simT; ouch(20);
+    const dx = potBody.position.x - b.position.x, dy = potBody.position.y - b.position.y, m = Math.hypot(dx, dy) || 1;
+    Body.setVelocity(potBody, { x: dx / m * 3, y: Math.min(-1, dy / m * 3) });
+  }
   if (a.parent === potBody){
     if (b.label === 'bee') hurtBy(b, 12, true);
     else if (b.label === 'tank') hurtBy(b, 22, true);
@@ -1607,6 +1676,7 @@ function step(){
   if (flashT > 0) flashT -= STEP;
   hp = Math.max(0, hp);
   if (hp <= 0) return finish(false, lastWet ? '모모가 흠뻑 젖었어요' : '모모가 다쳤어요');
+  if (phase === 'sim' && L.water && potBody.position.y + potOff.foot > WATER_Y + 6){ fxSplash(potBody.position.x, WATER_Y); AU.sfx('pop'); AU.sfx('meow'); return finish(false, '모모가 물에 빠졌어요'); }
   if (potBody.position.y > H + 60 || potBody.position.x < -90 || potBody.position.x > W + 90) return finish(false, '모모가 떨어졌어요');
   prevPotSpeed = Body.getSpeed(potBody);
   if (simT >= simDur) return finish(true);
@@ -1635,7 +1705,8 @@ function finish(win, reason, delay = 450){
     const rs = document.getElementById('mReason'); rs.textContent = win ? '' : reason; rs.classList.toggle('hidden', win);
     const tip = document.getElementById('mTip');
     const tipText = tut ? (win ? '잉크를 적게 쓸수록 ⭐이 늘어나요. 잉크 막대의 ★ 표시 전에 끝내면 ⭐⭐⭐!' : '틈이 있으면 드론이 돌아서 들어와요. 빈틈없이 감싸 보세요!')
-      : (!win && reason === '모모가 떨어졌어요') ? '선이 너무 무거우면 모모를 밀어낼 수 있어요' : '';
+      : (!win && reason === '모모가 떨어졌어요') ? '선이 너무 무거우면 모모를 밀어낼 수 있어요'
+      : (!win && reason === '모모가 물에 빠졌어요') ? (L.slope ? '미끄럼판 아래쪽을 막아서 모모를 붙잡아요' : L.floatCat ? '모모가 떨어질 자리에 받침을 그려 주세요' : '선이 모모를 밀어내지 않게, 모모 옆을 단단히 받쳐요') : '';
     tip.textContent = tipText; tip.classList.toggle('hidden', !tipText);
     if (tut && win) store.set('momo_tut_done', true);
     document.getElementById('mStars').innerHTML = win ? [0, 1, 2].map(i => `<i class="${i < stars ? 'on' : ''}" style="animation-delay:${0.2 + i * 0.18}s">★</i>`).join('') : '<i class="drop" style="animation-delay:.15s">💧</i>';
@@ -1903,6 +1974,28 @@ function edgeExt(b){
   if (x0 <= 1) x0 = -XP - 2; if (x1 >= W - 1) x1 = W + XP + 2;
   return { position: { x: (x0 + x1) / 2, y: b.position.y }, angle: 0, vertices: b.vertices, plugin: { ...b.plugin, w: x1 - x0 } };
 }
+function drawCactus(x, y, r){
+  ctx.save(); ctx.translate(x, y); ctx.lineJoin = 'round'; ctx.strokeStyle = '#23304d'; ctx.lineWidth = 2;
+  ctx.fillStyle = '#e07a4a'; ctx.beginPath(); ctx.moveTo(-r * 0.8, r * 0.3); ctx.lineTo(r * 0.8, r * 0.3); ctx.lineTo(r * 0.6, r * 1.1); ctx.lineTo(-r * 0.6, r * 1.1); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#4fbf5e'; ctx.beginPath(); ctx.ellipse(0, -r * 0.25, r * 0.62, r * 0.9, 0, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(-r * 0.75, -r * 0.2, r * 0.28, r * 0.42, -0.4, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(r * 0.75, -r * 0.35, r * 0.28, r * 0.42, 0.4, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4;
+  for (const [sx, sy, dx, dy] of [[-0.3, -0.8, -0.5, -1.1], [0.3, -0.7, 0.55, -1], [0, -1.1, 0, -1.45], [-0.95, -0.5, -1.25, -0.75], [0.95, -0.7, 1.25, -0.95], [-0.25, 0, -0.55, 0.05], [0.25, -0.2, 0.55, -0.15]]){ ctx.beginPath(); ctx.moveTo(sx * r, sy * r); ctx.lineTo(dx * r, dy * r); ctx.stroke(); }
+  ctx.restore();
+}
+function drawWaterPool(){
+  const t = (phase === 'sim' ? simT : performance.now()) / 1000, y0 = WATER_Y;
+  ctx.save(); ctx.beginPath(); ctx.moveTo(-XP - 2, H + 2);
+  for (let x = -XP - 2; x <= W + XP + 2; x += 6) ctx.lineTo(x, y0 + Math.sin(x / 22 + t * 2.4) * 2.5);
+  ctx.lineTo(W + XP + 2, H + 2); ctx.closePath();
+  const g = ctx.createLinearGradient(0, y0, 0, H); g.addColorStop(0, 'rgba(110,200,255,.82)'); g.addColorStop(1, 'rgba(60,150,230,.9)');
+  ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.75)';
+  for (let i = 0; i < 9; i++){ const x = ((i * 53 + t * 18 * (i % 2 ? 1 : -1)) % (W + 40) + W + 40) % (W + 40) - 20; ctx.beginPath(); ctx.arc(x, y0 + 2 + (i % 3) * 2, 3 + (i % 3), 0, 7); ctx.fill(); }
+  ctx.font = '700 12px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,.95)'; if (phase === 'draw') ctx.fillText('🛁 욕조 물', W / 2, y0 + 22);
+  ctx.restore();
+}
 function drawStatic(b){
   const th = TH(), k = b.label;
   if (k === 'tile') return; // 파낸 지형은 배경에 미리 그림
@@ -1938,6 +2031,10 @@ function drawStatic(b){
     return;
   }
   if (k === 'obs' || k === 'plank') return drawWood(b);
+  if (k === 'soap'){ drawWood(b); const w = b.plugin.w; ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+    for (let i = 0; i < Math.floor(w / 18); i++){ const x = -w / 2 + 10 + i * 18 + (i % 2) * 5, r0 = 4 + (i % 3) * 1.5; ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.strokeStyle = 'rgba(120,170,220,.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, -8, r0, 0, 7); ctx.fill(); ctx.stroke(); }
+    ctx.restore(); return; }
+  if (k === 'cactus'){ drawCactus(b.position.x, b.position.y, b.circleRadius); return; }
   if (k === 'box' && sprOk('crate')){ drawSpr('crate', b.position.x, b.position.y, b.plugin.w + 2, b.plugin.w + 2, b.angle); return; }
   if (k === 'box'){
     const w = b.plugin.w;
@@ -2303,6 +2400,9 @@ function drawCat(){
     potBody.parts.slice(1).forEach(p => { poly(p.vertices); ctx.fill(); });
   }
   drawAcc(x, foot);
+  if (bubbleOn){ const bt = performance.now() / 600, cyb = foot - CAT_H / 2 + Math.sin(bt) * 2; ctx.save(); ctx.fillStyle = 'rgba(200,235,255,.28)'; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(x, cyb, CAT_H * 0.62, 0, 7); ctx.fill(); ctx.stroke(); ctx.strokeStyle = 'rgba(160,140,255,.5)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, cyb, CAT_H * 0.58, 3.6, 4.6); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.ellipse(x - CAT_H * 0.3, cyb - CAT_H * 0.32, 7, 4, -0.7, 0, 7); ctx.fill(); ctx.restore(); }
   const hd = sproutPart.position;
   if (flashT > 0){ ctx.fillStyle = lastWet ? `rgba(77,171,247,${flashT / 450})` : `rgba(255,60,60,${flashT / 500})`; ctx.beginPath(); ctx.arc(hd.x, hd.y + 8, 30, 0, 7); ctx.fill(); }
   if (phase === 'draw'){
@@ -2488,6 +2588,10 @@ function fxWin(x, y){
     addFx({ kind: 'bit', x, y: y - 20, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 520, drag: 1.3, c: FX_COLORS[i % 6], w: 8, h: 5, rot: Math.random() * 6, spin: (Math.random() - 0.5) * 16, life: 1400 + Math.random() * 400 });
   }
   addFx({ kind: 'ring', x, y: y - 30, c: '#ffcf3a', life: 450, r0: 20, r1: 70 });
+}
+function fxSplash(x, y){
+  for (let i = 0; i < 14; i++){ const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.6, v = 160 + Math.random() * 200; addFx({ kind: 'bit', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 700, c: '#8fd0ff', w: 6, h: 6, rot: 0, spin: 0, life: 700 }); }
+  addFx({ kind: 'ring', x, y, c: '#cfefff', life: 500, r0: 10, r1: 50 });
 }
 function drawFx(){
   const now = performance.now();
@@ -2721,6 +2825,7 @@ function render(){
   drawLine();
   L.pins.forEach(drawPin);
   if (tut && phase === 'draw' && !drawing && pts.length === 0) drawGuide();
+  if (L.water) drawWaterPool();
   bugs.forEach(drawBug);
   drawFx();
   if (phase === 'sim') setTimerUI(Math.max(0, (simDur - simT) / 1000));
