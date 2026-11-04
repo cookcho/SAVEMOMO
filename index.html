@@ -321,7 +321,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.04m</span>
+  <span id="ver">v2026.11.04n</span>
 </div>
 
 <div id="picker" class="hidden">
@@ -1760,8 +1760,8 @@ const BALLOON_SPR = ['balloon_red', 'balloon_blue', 'balloon_yellow', 'balloon_g
 const SPR = {}, BGIMG = {}, TEX = {}, UIIMG = {};
 const loadImg = (src, cb) => { const im = new Image(); im.onload = cb; im.src = src; return im; };
 SPRITE_NAMES.forEach(n => SPR[n] = loadImg(`assets/sprites/${n}.png`, () => { bgKey = ''; heroSprites(); }));
-CHAPTERS.forEach(c => { BGIMG[c.bg] = loadImg(`assets/bg/${c.bg}.png`, () => bgKey = ''); TEX[c.bg] = loadImg(`assets/tex/${c.bg}.png`, () => { bgKey = ''; texCache.clear(); }); });
-['logo', 'title_bg'].forEach(n => UIIMG[n] = loadImg(`assets/ui/${n}.png`, applyTitleImages));
+CHAPTERS.forEach(c => { BGIMG[c.bg] = loadImg(`assets/bg/${c.bg}.jpg`, () => bgKey = ''); TEX[c.bg] = loadImg(`assets/tex/${c.bg}.jpg`, () => { bgKey = ''; texCache.clear(); }); });
+UIIMG.logo = loadImg('assets/ui/logo.png', applyTitleImages); UIIMG.title_bg = loadImg('assets/ui/title_bg.jpg', applyTitleImages);
 const sprOk = n => ok(SPR[n]);
 function drawSpr(n, x, y, w, h, rot = 0, fx = 1){
   ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); if (fx !== 1) ctx.scale(fx, 1);
@@ -2012,7 +2012,8 @@ function buildBackdrop(){
   g.fillStyle = sky; g.fillRect(0, 0, W, H);
   const cloud = (x, y, s2, a) => { g.fillStyle = `rgba(255,255,255,${a})`; [[0, 0, 18], [16, -6, 14], [30, 2, 16], [14, 6, 14]].forEach(([dx, dy, rr]) => { g.beginPath(); g.arc(x + dx * s2, y + dy * s2, rr * s2, 0, 7); g.fill(); }); };
   const bg = th.bg;
-  if (ok(BGIMG[bg])){ g.drawImage(BGIMG[bg], 0, 0, W, H); }
+  // 그림 배경은 살짝 옅게 덮어서 적·선·지형이 더 또렷하게 보이게 함(밤 골목은 그대로)
+  if (ok(BGIMG[bg])){ g.drawImage(BGIMG[bg], 0, 0, W, H); if (bg !== 'alley'){ g.fillStyle = 'rgba(255,255,255,.2)'; g.fillRect(0, 0, W, H); } }
   else if (bg === 'living'){
     g.strokeStyle = 'rgba(160,120,80,.10)'; g.lineWidth = 6;
     for (let x = 12; x < W; x += 28){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 430); g.stroke(); }
