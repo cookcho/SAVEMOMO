@@ -138,6 +138,7 @@
   .pkGrid button small{display:block;font-size:11px;color:#ffe066;min-height:13px;margin-top:3px;letter-spacing:-1px;text-shadow:0 1px 0 var(--blueD)}
   .pkGrid button.cur{--c:var(--green);background:var(--green);border-color:var(--greenD);box-shadow:0 4px 0 var(--greenD);text-shadow:0 2px 0 var(--greenD)}
   .pkGrid button.boss{background:var(--orange);border-color:var(--orangeD);box-shadow:0 4px 0 var(--orangeD);text-shadow:0 2px 0 var(--orangeD)}
+  .lvpill .nav.dim{opacity:.35}
   .pkGrid button.lock{background:#b9c6d6;border-color:#8d9cb1;box-shadow:0 4px 0 #8d9cb1;text-shadow:none;color:#eef3f9}
 
   /* ---------- 이야기 카드 ---------- */
@@ -243,7 +244,7 @@
   .cbtn.tile .badge{position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;border-radius:11px;background:var(--red);border:2.5px solid #fff;font-size:12px;line-height:20px;text-shadow:none;box-shadow:0 2px 0 rgba(0,0,0,.2)}
   .cbtn.tile .badge.ok{background:var(--green)}
   #sndHint{width:44px;height:44px;border-radius:50%;font-size:20px;animation:pulse 1.4s ease-in-out infinite}
-  #ver{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom) + 4px);font-size:11px;color:rgba(35,48,77,.45)}
+  #ver{position:absolute;right:6px;bottom:calc(env(safe-area-inset-bottom) + 0px);padding:6px;cursor:pointer;font-size:11px;color:rgba(35,48,77,.45)}
   #btnInstall{position:absolute;left:12px;bottom:calc(env(safe-area-inset-bottom) + 4px);font-size:12px;padding:6px 10px;border-radius:12px;border-width:2.5px;box-shadow:0 3px 0 var(--d)}
 
   /* ---------- 꾸미기 겹쳐 그리기(시작 화면·결과 창) ---------- */
@@ -384,7 +385,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.05h</span>
+  <span id="ver">v2026.11.05i</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -944,6 +945,7 @@ function setup(){
   document.getElementById('lvl').textContent = mode === 'daily' ? '오늘의 도전' : curLabel();
   document.getElementById('prevLv').style.visibility = mode === 'level' ? 'visible' : 'hidden';
   document.getElementById('nextLv').style.visibility = mode === 'level' ? 'visible' : 'hidden';
+  document.getElementById('nextLv').classList.toggle('dim', mode === 'level' && !devOpen() && level + 1 > store.get('ss_level', 1));
   setTimerUI(-1);
   document.getElementById('modalWrap').classList.add('hidden');
   document.getElementById('shareBox').classList.add('hidden');
@@ -1566,7 +1568,8 @@ function openPicker(){
     const gl = !canPlay(first);
     html += `<div class="pkCh"><span>${ch.icon} 챕터 ${c + 1} · ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</span>${gl ? `<span class="lockTag">🔒 별 ${gateFor(first)}개</span>` : ''}</div><div class="pkGrid">`;
     for (let lv = first; lv < first + 10; lv++){
-      html += `<button data-lv="${lv}" class="${lv === level ? 'cur' : ''} ${gl ? 'gate' : lv > top ? 'lock' : ''} ${lv % 10 === 0 && !gl ? 'boss' : ''}">${lv}<small>${starsOf(lv) || (lv % 10 === 0 ? '🔥' : '')}</small></button>`;
+      const locked = !devOpen() && lv > top;
+      html += `<button data-lv="${lv}" class="${lv === level ? 'cur' : ''} ${gl ? 'gate' : locked ? 'lock' : ''} ${lv % 10 === 0 && !gl && !locked ? 'boss' : ''}">${lv}<small>${starsOf(lv) || (locked || gl ? '🔒' : lv % 10 === 0 ? '🔥' : '')}</small></button>`;
     }
     html += '</div>';
   }
@@ -1575,6 +1578,7 @@ function openPicker(){
   document.getElementById('picker').classList.remove('hidden');
   const cur = list.querySelector('.cur'); if (cur) cur.scrollIntoView({ block: 'center' });
 }
+function flashPicker(lv){ const b = document.querySelector(`#pkList button[data-lv="${lv}"]`); if (b){ b.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 250 }); } }
 function goLevel(lv){ if (mode !== 'level') mode = 'level'; if (!store.get('momo_story_seen', false)) store.set('momo_story_seen', true); if (tryLevel(lv)) document.getElementById('picker').classList.add('hidden'); }
 document.getElementById('lvlBtn').onclick = openPicker;
 document.getElementById('pkList').onclick = e => { const b = e.target.closest('button[data-lv]'); if (b) goLevel(b.dataset.lv); };
@@ -1953,9 +1957,16 @@ const walletStars = () => earnedStars() - store.get('momo_spent', 0);
 if (store.get('momo_gate_base', null) === null) store.set('momo_gate_base', store.get('ss_level', 1));
 function gateFor(lv){ return lv <= store.get('momo_gate_base', 0) ? 0 : Math.floor((lv - 1) / 10) * GATE_PER_CH; }
 const canPlay = lv => earnedStars() >= gateFor(lv);
+// 아직 안 깬 레벨은 못 들어감(바로 다음 레벨까지만). 테스트용: 버전 글자를 5번 누르면 모든 레벨 열림
+const devOpen = () => store.get('momo_dev_all', false);
 function tryLevel(lv){
   lv = Math.max(1, Math.floor(+lv || 1));
-  if (mode === 'level' && !canPlay(lv)){ showGate(lv); return false; }
+  if (mode === 'level' && !devOpen() && lv > store.get('ss_level', 1)){
+    AU.sfx('nope'); showToast(`🔒 ${lv - 1}레벨을 먼저 깨야 열려요`);
+    const pk = document.getElementById('picker'); if (!pk.classList.contains('hidden')) flashPicker(lv);
+    return false;
+  }
+  if (mode === 'level' && !devOpen() && !canPlay(lv)){ showGate(lv); return false; }
   level = lv; hideTitle(); setup(); return true;
 }
 function showGate(lv){
@@ -2079,6 +2090,11 @@ document.getElementById('shopGrid').onclick = e => {
 };
 document.getElementById('shopClose').onclick = () => { document.getElementById('shop').classList.add('hidden'); refreshAccs(); refreshTitle(); renderItemBar(); };
 document.getElementById('tShop').onclick = () => openShop();
+let verTaps = 0, verT = 0;
+document.getElementById('ver').onclick = () => {
+  const t = performance.now(); verTaps = t - verT < 600 ? verTaps + 1 : 1; verT = t;
+  if (verTaps >= 5){ verTaps = 0; store.set('momo_dev_all', !devOpen()); const v = document.getElementById('ver'); v.textContent = devOpen() ? '테스트: 모든 레벨 열림' : '테스트 해제'; AU.sfx(devOpen() ? 'item' : 'back'); }
+};
 // 버튼 누르는 소리(사기·쓰기·아이템 버튼은 각자 소리가 있음)
 document.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || b.dataset.buy || b.dataset.eq || b.classList.contains('ib')) return;
