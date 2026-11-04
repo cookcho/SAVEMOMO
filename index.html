@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>SAVE MOMO 프로토타입</title>
 <script src="lib/matter.min.js"></script>
+<script src="audio.js"></script>
 <style>
   @font-face{font-family:'Jua';src:url(fonts/jua-sub.woff2) format('woff2');font-display:swap}
   :root{color-scheme:only light;
@@ -288,6 +289,11 @@
   .gbar{height:18px;border-radius:9px;background:#e3ebf3;border:2.5px solid var(--navy);overflow:hidden;margin:10px 0 4px}
   .gbar i{display:block;height:100%;background:linear-gradient(90deg,#ffd84a,#ffb02e)}
   .gcard .btns{margin-top:14px}
+  .setRow{display:flex;justify-content:space-between;align-items:center;font-size:18px;padding:8px 4px}
+  .tg{width:58px;height:32px;border-radius:16px;border:3px solid #c9d6e6;background:#e3ebf3;position:relative;cursor:pointer;padding:0;transition:background .15s}
+  .tg i{position:absolute;left:2px;top:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 0 rgba(0,0,0,.15);transition:left .15s}
+  .tg.on{background:var(--green);border-color:var(--greenD)}.tg.on i{left:28px}
+  .setSep{height:2px;background:#e8dccb;margin:10px 0 12px;border-radius:1px}
   .pkCh .lockTag{background:var(--navy);color:#fff;border-color:var(--navy)}
   .pkGrid button.gate{background:#8d9cb1;border-color:#6b7a90;box-shadow:0 4px 0 #6b7a90;color:#dfe6ef;text-shadow:none}
   @media (max-height:640px){.tHero{height:26vh}.playBtn{width:104px;height:104px}.tMenu{margin-top:12px}.cbtn.tile{height:70px}}
@@ -376,7 +382,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.05f</span>
+  <span id="ver">v2026.11.05g</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -389,11 +395,12 @@
 </div>
 <div id="reset" class="hidden">
   <div class="gcard">
-    <div class="lock" style="animation:none">⚙️</div>
-    <h3>처음부터 다시 하기</h3>
-    <p>레벨 기록, 별, 아이템, 꾸미기가 모두 지워지고<br>1레벨 이야기부터 다시 시작해요.</p>
-    <p style="font-size:13px;color:#c63f62">지운 기록은 되돌릴 수 없어요.</p>
-    <div class="btns"><button class="cbtn red big" id="rDo">기록 지우고 처음부터</button><button class="cbtn white" id="rClose">취소</button></div>
+    <h3 style="margin-top:0">설정</h3>
+    <div class="setRow"><span>🎵 배경음악</span><button class="tg" id="tgMusic" aria-label="배경음악"><i></i></button></div>
+    <div class="setRow"><span>🔔 효과음</span><button class="tg" id="tgSfx" aria-label="효과음"><i></i></button></div>
+    <div class="setSep"></div>
+    <p style="font-size:13px;color:#7a8aa6;margin:0 0 8px">레벨 기록, 별, 아이템, 꾸미기를 모두 지우고<br>1레벨 이야기부터 다시 시작해요.</p>
+    <div class="btns" style="margin-top:6px"><button class="cbtn red" id="rDo">처음부터 다시 하기</button><button class="cbtn white" id="rClose">닫기</button></div>
   </div>
 </div>
 <div id="gate" class="hidden">
@@ -926,6 +933,7 @@ function setup(){
   Events.on(engine, 'collisionActive', onCollide);
 
   phase = 'draw'; pts = []; inkUsed = 0; drawing = false; simT = 0; hp = 100; act = {}; simDur = SIM_MS;
+  if (document.getElementById('title').classList.contains('hidden')) AU.play(CHAPTERS[L.theme].bg, 'draw'); AU.setState('draw'); AU.drawingStop();
   if (activePointer !== null){ try { cv.releasePointerCapture(activePointer); } catch (_){} activePointer = null; }
   bugs = []; drops = []; rocks = []; crawlers = []; flashT = 0; lineBody = null; toRemove = new Set();
   cloudAcc = L.clouds.map(() => 0);
@@ -996,7 +1004,7 @@ function pushPt(q){
   if (inkUsed + d >= inkCap()){
     const f = (inkCap() - inkUsed) / d;
     pts.push({ x: last.x + (q.x - last.x) * f, y: last.y + (q.y - last.y) * f });
-    inkUsed = inkCap(); updateInk(); endStroke(); return false;
+    inkUsed = inkCap(); updateInk(); AU.sfx('inkOut'); endStroke(); return false;
   }
   pts.push(q); inkUsed += d; updateInk(); return true;
 }
@@ -1006,7 +1014,7 @@ function addPoint(q){
   for (const pin of L.pins){
     if (pin.on) continue;
     if (segPointDist(last, q, pin) < 15 && segFree(last, pin) >= 1){
-      pin.on = true;
+      pin.on = true; AU.sfx('pin');
       if (!pushPt({ x: pin.x, y: pin.y })) return false;
       return addPoint(q);
     }
@@ -1029,21 +1037,23 @@ function beginAt(p0){
   if (phase !== 'draw' || drawing) return false;
   const p = nearestFree(p0);
   if (!p){ showToast('물체 위에서는 시작할 수 없어요'); return false; }
-  drawing = true; pts = [p];
+  drawing = true; pts = [p]; AU.sfx('drawStart'); lastMoveT = performance.now();
   L.pins.forEach(pin => {
-    if (dist(pin, p) < 15){ pin.on = true; pts = [{ x: pin.x, y: pin.y }]; }
+    if (dist(pin, p) < 15){ pin.on = true; pts = [{ x: pin.x, y: pin.y }]; AU.sfx('pin'); }
   });
   document.getElementById('hint').classList.add('hidden');
   return true;
 }
+let lastMoveT = 0;
 function moveTo(p){
   if (!drawing) return;
   const last = pts[pts.length - 1];
+  { const tn = performance.now(), sp = finger ? dist(p, finger) / Math.max(8, tn - lastMoveT) * 16 : 0; lastMoveT = tn; AU.drawing(sp); }
   finger = p;
   if (dist(p, last) < 4){ fingerBlocked = false; return; }
   const f = segFree(last, p);
   if (f >= 1){ fingerBlocked = false; addPoint(p); return; }
-  fingerBlocked = true;
+  fingerBlocked = true; AU.sfx('blocked');
   if (!blockToastShown){ blockToastShown = true; showToast('선은 물체를 통과할 수 없어요 · 빈 곳으로 돌아오면 이어져요'); }
   const q = { x: last.x + (p.x - last.x) * f, y: last.y + (p.y - last.y) * f };
   if (dist(q, last) > 2) addPoint(q);
@@ -1073,7 +1083,7 @@ function showToast(msg){
 
 const inkDensity = () => L.mods.includes('heavy') ? 0.0028 : 0.0012; // 선이 가벼워야 적에게 밀림
 function endStroke(){
-  drawing = false; fingerBlocked = false;
+  drawing = false; fingerBlocked = false; AU.drawingStop();
   if (inkUsed < 12){
     pts = []; inkUsed = 0; L.pins.forEach(p => p.on = false); updateInk();
     document.getElementById('hint').classList.remove('hidden'); return;
@@ -1119,7 +1129,7 @@ function endStroke(){
 }
 
 function startSim(){
-  phase = 'sim'; simT = 0; useItems();
+  phase = 'sim'; simT = 0; useItems(); AU.setState('sim'); AU.sfx('drop');
   if (tut) showToast('선은 물리 법칙대로 떨어져요 · 7초만 버티면 성공!');
   simRng = rng(L.seed + 7);
   spawnQ = [];
@@ -1141,7 +1151,7 @@ function onCollide(ev){
 let jetPush = [];
 let prevPotSpeed = 0, lastHitT = -9999, lastImpactT = -9999, lastWet = false, ducks = [], popQ = new Set();
 const WATER = ['drop', 'jet', 'splash'];
-function ouch(dmg, wet = false){ hp -= dmg; flashT = 280; lastHitT = simT; lastWet = wet; }
+function ouch(dmg, wet = false){ hp -= dmg; flashT = 280; lastHitT = simT; lastWet = wet; if (wet) AU.sfx('splat'); AU.sfx('meow'); }
 function handle(a, b, name){
   // 높은 곳에서 떨어지거나 세게 부딪히면 다침
   if (name === 'collisionStart' && a.parent === potBody && (b.isStatic || b.parent.label === 'line') && prevPotSpeed > 6 && simT - lastImpactT > 500){ lastImpactT = simT; ouch(30); }
@@ -1166,7 +1176,7 @@ function handle(a, b, name){
     const kk = P.atk === 'charge' ? 1.6 : 1;
     const okHit = name === 'collisionStart' ? simT - (P.pushT ?? -1e9) >= 120 : P.pushStep !== simT;
     if (k && okHit){
-      if (name === 'collisionStart'){ P.pushT = simT; if (a.label !== 'balloon') fxHit((a.position.x + b.position.x) / 2, (a.position.y + b.position.y) / 2, big || P.atk === 'charge'); }
+      if (name === 'collisionStart'){ P.pushT = simT; if (a.label !== 'balloon'){ fxHit((a.position.x + b.position.x) / 2, (a.position.y + b.position.y) / 2, big || P.atk === 'charge'); AU.sfx('hit', { big: big || P.atk === 'charge' }); } }
       else P.pushStep = simT;
       let vx = a.velocity.x, vy = a.velocity.y;
       if (Math.hypot(vx, vy) < 0.3){ vx = a.position.x - b.position.x; vy = a.position.y - b.position.y; vx = -vx; vy = -vy; }
@@ -1317,7 +1327,7 @@ function step(){
       const big = q.crawl.big, rr = big ? RAD.bigdog : RAD.pup, x = q.crawl.side < 0 ? rr + 2 : W - rr - 2;
       const c = Bodies.circle(x, GY - rr - 1, rr, { label: 'crawl', density: big ? 0.014 : 0.0075, friction: 0.9, collisionFilter: { category: CAT_CRAWL, mask: CAT_DEF | CAT_CRAWL } });
       c.plugin = { hitT: -9999, ph: simRng() * 6, big, nextHop: simT + 500 + simRng() * 600 };
-      addBody(c, crawlers);
+      addBody(c, crawlers); AU.sfx('woof', { big });
     } else {
       const h = q.h, tank = h.kind === 'tank';
       const bug = Bodies.circle(h.x + (simRng() - 0.5) * 10, h.y + (tank ? 48 : 40), tank ? RAD.tank : RAD.drone, {
@@ -1354,7 +1364,7 @@ function step(){
     if (!dk.burst){
       const dx = hd.x - h.x, dy = hd.y - h.y, m = Math.hypot(dx, dy) || 1;
       dk.dir = { x: dx / m, y: dy / m }; // 조준 중에는 모모를 계속 따라감
-      if (simT >= dk.next){ dk.burst = dk.size; dk.shotT = simT; }
+      if (simT >= dk.next){ dk.burst = dk.size; dk.shotT = simT; AU.sfx('quack'); AU.sfx('squirt'); }
     }
     if (dk.burst && simT >= dk.shotT){
       const j = Bodies.circle(h.x + dk.dir.x * 30, h.y + dk.dir.y * 30, RAD.jet, {
@@ -1443,7 +1453,7 @@ function step(){
         if (ad < P.best - 4){ P.best = ad; P.prog = simT; }
         if (P.atk === 'seek' && simT - P.prog > 700 && ad > 18){ P.atk = 'back'; P.atkT = simT + 380 + simRng() * 150; }
         else if (P.atk === 'back' && simT > P.atkT){
-          P.atk = 'charge'; P.atkT = simT + 550;
+          P.atk = 'charge'; P.atkT = simT + 550; AU.sfx('woof', { big: P.big });
           const v = Body.getVelocity(c);
           if (Math.abs(v.y) < 0.8) Body.setVelocity(c, { x: dir * (P.big ? 1.6 : 3.5), y: P.big ? -2.2 : -5.2 });
         } else if (P.atk === 'charge' && simT > P.atkT){ P.atk = 'seek'; P.best = ad; P.prog = simT; }
@@ -1481,7 +1491,7 @@ function step(){
         addBody(d, drops);
       }
       pops.push({ x: bl.position.x, y: bl.position.y, t: simT, col: bl.plugin.col });
-      fxPop(bl.position.x, bl.position.y, BALLOON[bl.plugin.col || 0]);
+      fxPop(bl.position.x, bl.position.y, BALLOON[bl.plugin.col || 0]); AU.sfx('pop');
     });
     popQ.clear();
   }
@@ -1502,7 +1512,9 @@ function step(){
 // ---------- 종료 ----------
 function finish(win, reason, delay = 450){
   phase = 'end'; endT = performance.now();
-  if (win){ delay = Math.max(delay, 1100); fxWin(potBody.position.x, potBody.position.y + potOff.foot); }
+  if (win){ delay = Math.max(delay, 1100); fxWin(potBody.position.x, potBody.position.y + potOff.foot); AU.sfx('win'); AU.sfx('popper'); }
+  else AU.sfx('fail');
+  AU.duck(2.4); AU.setState('draw'); AU.drawingStop();
   const pct = Math.round(inkUsed / L.ink * 100);
   const stars = pct <= 22 ? 3 : pct <= 40 ? 2 : 1;
   const score = win ? Math.round(Math.max(0, 1 - inkUsed / L.ink) * 700 + hp * 3) : 0;
@@ -1531,6 +1543,7 @@ function finish(win, reason, delay = 450){
     document.getElementById('mRetry').textContent = win && stars < 3 ? '⭐ 더 받기' : '다시 도전';
     document.getElementById('mShare').classList.toggle('hidden', !win);
     document.getElementById('modalWrap').classList.remove('hidden');
+    if (win) for (let i = 0; i < stars; i++) setTimeout(() => AU.sfx('star', { i }), 220 + i * 180);
   }, delay);
 }
 
@@ -1595,8 +1608,8 @@ function refreshTitle(){
   const done = !!store.get('ss_daily_' + todayKey(), null), bd = document.getElementById('dailyBadge');
   bd.textContent = done ? '✓' : '!'; bd.classList.toggle('ok', done); bd.classList.remove('hidden');
 }
-function showTitle(){ refreshTitle(); heroSprites(); refreshAccs(); document.getElementById('title').classList.remove('hidden'); if (phase === 'sim') setup(); }
-function hideTitle(){ document.getElementById('title').classList.add('hidden'); }
+function showTitle(){ refreshTitle(); heroSprites(); refreshAccs(); AU.play('title'); document.getElementById('title').classList.remove('hidden'); if (phase === 'sim') setup(); }
+function hideTitle(){ document.getElementById('title').classList.add('hidden'); if (L) AU.play(CHAPTERS[L.theme].bg, phase === 'sim' ? 'sim' : 'draw'); }
 document.getElementById('tPlay').onclick = () => {
   if (!store.get('momo_story_seen', false)){ hideTitle(); showStory(); return; }
   mode = 'level'; tryLevel(store.get('ss_level', 1));
@@ -1948,7 +1961,7 @@ function showGate(lv){
   document.getElementById('gText').innerHTML = `이 챕터는 <b>별 ${need}개</b>를 모아야 열려요.<br>지난 레벨을 잉크를 아껴 다시 깨면 별이 늘어나요.`;
   document.getElementById('gFill').style.width = Math.min(100, have / need * 100) + '%';
   document.getElementById('gNum').textContent = `지금 모은 별 ${have} / ${need}`;
-  document.getElementById('gate').classList.remove('hidden');
+  document.getElementById('gate').classList.remove('hidden'); AU.sfx('lock');
 }
 document.getElementById('gClose').onclick = () => document.getElementById('gate').classList.add('hidden');
 document.getElementById('gPick').onclick = () => { document.getElementById('gate').classList.add('hidden'); if (mode !== 'level'){ mode = 'level'; } openPicker(); };
@@ -1976,7 +1989,7 @@ document.getElementById('itemBar').onclick = e => {
   const k = b.dataset.k, it = ITEMS.find(x => x.k === k);
   if (!(inv[k] > 0)){ openShop('item'); return; }
   if (pts.length){ showToast('아이템은 선을 긋기 전에 켜야 해요'); return; }
-  act[k] = !act[k];
+  act[k] = !act[k]; AU.sfx(act[k] ? 'item' : 'back');
   showToast(act[k] ? `${it.icon} ${it.name} 켬 · ${it.desc}` : `${it.name} 끔`);
   renderItemBar(); updateInk();
 };
@@ -2049,26 +2062,36 @@ document.getElementById('shopGrid').onclick = e => {
   if (b.dataset.buy){
     const [tab, k] = b.dataset.buy.split(':');
     const x = (tab === 'item' ? ITEMS : tab === 'pen' ? PENS : ACCS).find(o => o.k === k);
-    if (walletStars() < x.price){ b.textContent = `별이 ${x.price - walletStars()}개 모자라요`; setTimeout(renderShop, 1300); return; }
-    store.set('momo_spent', store.get('momo_spent', 0) + x.price);
+    if (walletStars() < x.price){ AU.sfx('nope'); b.textContent = `별이 ${x.price - walletStars()}개 모자라요`; setTimeout(renderShop, 1300); return; }
+    store.set('momo_spent', store.get('momo_spent', 0) + x.price); AU.sfx('coin');
     if (tab === 'item'){ inv[k] = (inv[k] || 0) + 1; saveInv(); }
     else {
       const key = tab === 'pen' ? 'momo_pens' : 'momo_accs', own = owned(key, [tab === 'pen' ? 'navy' : 'none']);
       own.push(k); store.set(key, own); store.set(tab === 'pen' ? 'momo_pen' : 'momo_acc', k);
     }
   } else if (b.dataset.eq){
-    const [tab, k] = b.dataset.eq.split(':'); store.set(tab === 'pen' ? 'momo_pen' : 'momo_acc', k);
+    const [tab, k] = b.dataset.eq.split(':'); store.set(tab === 'pen' ? 'momo_pen' : 'momo_acc', k); AU.sfx('equip');
   }
   renderShop(); refreshAccs(); refreshTitle(); renderItemBar();
 };
 document.getElementById('shopClose').onclick = () => { document.getElementById('shop').classList.add('hidden'); refreshAccs(); refreshTitle(); renderItemBar(); };
 document.getElementById('tShop').onclick = () => openShop();
-// 기록 초기화: 이 게임이 저장한 것(ss_*, momo_*)만 지움
-document.getElementById('tSet').onclick = () => document.getElementById('reset').classList.remove('hidden');
+// 버튼 누르는 소리(사기·쓰기·아이템 버튼은 각자 소리가 있음)
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.dataset.buy || b.dataset.eq || b.classList.contains('ib')) return;
+  AU.sfx(['pkClose', 'shopClose', 'gClose', 'rClose', 'sSkip'].includes(b.id) ? 'back' : 'click');
+}, true);
+// 기록 초기화: 이 게임이 저장한 것(ss_*, momo_*)만 지움(소리 설정은 남김)
+const syncToggles = () => { document.getElementById('tgMusic').classList.toggle('on', AU.musicOn); document.getElementById('tgSfx').classList.toggle('on', AU.sfxOn); };
+document.getElementById('tSet').onclick = () => { syncToggles(); const r = document.getElementById('rDo'); r.textContent = '처음부터 다시 하기'; r.dataset.armed = ''; document.getElementById('reset').classList.remove('hidden'); };
+document.getElementById('tgMusic').onclick = () => { AU.setMusic(!AU.musicOn); syncToggles(); };
+document.getElementById('tgSfx').onclick = () => { AU.setSfx(!AU.sfxOn); syncToggles(); };
 document.getElementById('rClose').onclick = () => document.getElementById('reset').classList.add('hidden');
-document.getElementById('rDo').onclick = () => {
+document.getElementById('rDo').onclick = e => {
+  const r = e.currentTarget;
+  if (!r.dataset.armed){ r.dataset.armed = '1'; r.textContent = '한 번 더 누르면 모두 지워져요'; return; }
   try {
-    const ks = []; for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k && (k.startsWith('ss_') || k.startsWith('momo_'))) ks.push(k); }
+    const ks = []; for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k && (k.startsWith('ss_') || k.startsWith('momo_')) && k !== 'momo_music' && k !== 'momo_sfx') ks.push(k); }
     ks.forEach(k => localStorage.removeItem(k));
   } catch (_){}
   location.reload();
@@ -2349,6 +2372,7 @@ function setTimerUI(left){
   document.getElementById('tNum').innerHTML = Math.floor(left) + '<small>.' + Math.floor((left % 1) * 10) + '</small>';
   document.getElementById('tFill').style.width = (left / (simDur / 1000) * 100) + '%';
   if (sec !== lastSec){
+    if (lastSec > 0 && sec <= 3 && sec >= 1) AU.sfx('tick', { last: sec === 1 });
     lastSec = sec;
     el.className = cls; void el.offsetWidth; el.className = cls + ' tick';
   } else if (!el.classList.contains(cls || 'x') && cls) el.classList.add(cls);
@@ -2551,6 +2575,7 @@ function loop(t){
       if (n >= 5) accum = 0;
     } else accum = 0;
   } catch (e){ console.error(e); if (++loopErrors > 20){ loopErrors = 0; finish(false, '오류가 나서 다시 시작해요'); } }
+  try { AU.update(phase === 'sim' ? { active: true, drones: bugs.filter(b => b.label === 'bee').length, tanks: bugs.filter(b => b.label === 'tank').length, rain: L.clouds.length > 0 } : { active: false }); } catch (_){}
   try { render(); } catch (e){ console.error(e); try { ctx.setLineDash([]); ctx.restore(); } catch (_){} }
 }
 // ---------- 이야기 (처음 실행 시 한 번) ----------
