@@ -391,7 +391,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.05q</span>
+  <span id="ver">v2026.11.05r</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -459,7 +459,7 @@ const MECH = [
   { k: 'tank',  lv: 27, name: '헤비 드론', icon: '🛡️', desc: '집사의 대형 드론! 막히면 선을 힘으로 밀어붙여요' },
 ];
 const CARVED = ['pocket', 'well', 'alcove'];
-const ARCH_UNLOCK = [['plat', 1], ['ground', 2], ['pocket', 10], ['well', 14], ['alcove', 18], ['cliff', 8], ['stairs', 9], ['shelf', 11], ['valley', 13], ['pillar', 15], ['cave', 17], ['bowl', 19], ['hang', 21], ['seesaw', 23]];
+const ARCH_UNLOCK = [['ground', 1], ['plat', 2], ['pocket', 10], ['well', 14], ['alcove', 18], ['cliff', 8], ['stairs', 9], ['shelf', 11], ['valley', 13], ['pillar', 15], ['cave', 17], ['bowl', 19], ['hang', 21], ['seesaw', 23]];
 const ARCH_W = { pocket: 0.9, well: 0.9, alcove: 1.2, plat: 1, ground: 0.95, cliff: 1, stairs: 1.3, shelf: 1, valley: 0.9, pillar: 1.12, cave: 0.65, bowl: 1.1, hang: 1.4, seesaw: 1.35 };
 const ARCH_DESC = { pocket: '땅속 굴에 숨은 모모! 통로 입구를 막아 보세요', well: '깊은 우물 바닥이에요. 입구를 덮거나 중간을 막아요', alcove: '절벽 속 굴이에요. 옆 구덩이에서 드론이 올라와요', cliff: '모모가 절벽 끝이나 절벽 아래에 있어요', stairs: '한쪽은 벽, 한쪽은 트여 있어요', shelf: '벽에 붙은 선반이에요', valley: '양쪽 벽을 기둥 삼아 보세요', pillar: '좁은 기둥 꼭대기예요', cave: '입구가 한쪽뿐인 동굴! 입구 위 핀을 써 보세요', bowl: '기울어진 판자 사이에 쏙 들어가 있어요', hang: '사슬에 매달려 부딪히면 흔들려요', seesaw: '선의 무게로 기울어요. 균형을 잡아요' };
 const ARCH_NAME = { pocket: '땅굴', well: '우물', alcove: '절벽 굴', plat: '공중 받침대', ground: '언덕 들판', shelf: '벽 선반', pillar: '기둥 꼭대기', valley: '골짜기', cliff: '절벽', cave: '동굴', bowl: 'V자 그릇', seesaw: '시소', hang: '매달린 발판', stairs: '계단' };
@@ -623,7 +623,7 @@ function genLevel(lv, seed, themeIdx){
   const normal = seed === lv * 7919 + 101;
   const avoid = normal && lv > 2 ? [archBase(lv - 1, (lv - 1) * 7919 + 101), archBase(lv - 2, (lv - 2) * 7919 + 101)] : [];
   r();
-  let arch = lv === 1 ? 'plat' : archIntro ? archIntro[0] : archBase(lv, seed, avoid);
+  let arch = lv === 1 ? 'ground' : archIntro ? archIntro[0] : archBase(lv, seed, avoid);
   if (intro && (intro.k === 'crawl' || intro.k === 'bigdog')) arch = 'ground';
   L.archIntro = archIntro ? arch : null;
   let px, top, hw;
@@ -633,7 +633,7 @@ function genLevel(lv, seed, themeIdx){
   } else if (arch === 'ground'){
     px = R(60, 300); top = GY; hw = 999; L.groundCat = true;
     // 언덕: 모모 자리는 피해서 0~2개
-    const nh = Math.floor(R(0, 2.7));
+    const nh = lv === 1 ? 0 : Math.floor(R(0, 2.7)); // 1레벨은 평평한 바닥
     for (let i = 0; i < nh; i++) for (let t = 0; t < 30; t++){
       const hr = R(50, 90), hx = R(20, W - 20);
       if (Math.abs(hx - px) < hr * 0.85 + 40 || S.some(o => o.kind === 'hill' && Math.abs(o.x - hx) < o.r + hr)) continue;
