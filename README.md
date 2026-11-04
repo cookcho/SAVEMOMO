@@ -75,3 +75,16 @@
 
 ## 상태
 초기 프로토타입입니다. 핵심 재미("잉크를 아끼며 막아내기")를 검증하는 단계입니다.
+
+## 그림 교체 (이미지 AI 에셋)
+
+정해진 이름의 PNG를 올리면 코드로 그린 기본 그림 대신 그 그림을 씁니다. 없는 파일은 기본 그림이 그대로 나옵니다.
+
+| 폴더 | 파일 |
+| --- | --- |
+| `assets/sprites/` | drone, drone_heavy, drone_dock, heavy_dock, duck, water_gun, puppy, big_dog, balloon_red/blue/yellow/green, launcher, rain_cloud, pin, crate, boulder, plank, pencil |
+| `assets/ui/` | logo, title_bg |
+| `assets/bg/` | living, yard, roof, park, beach, alley, bath (챕터 배경 720×1280) |
+| `assets/tex/` | living, yard, roof, park, beach, alley, bath (지형 무늬 512×512, 반복) |
+
+글꼴: `fonts/jua-sub.woff2` (Jua, SIL OFL 1.1 — `fonts/OFL.txt`). 게임에 쓰는 글자만 남긴 축소본이라, 화면 문구를 새로 넣으면 `pyftsubset`으로 다시 만들어야 그 글자도 Jua로 나옵니다.

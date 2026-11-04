@@ -1,11 +1,12 @@
 /* SAVE MOMO — 서비스 워커
    목표: (1) 한 번 열었으면 인터넷이 없어도 실행된다  (2) 인터넷이 있으면 최신본을 가져온다 */
-const CACHE = 'savemomo-v11';
+const CACHE = 'savemomo-v12';
 const FILES = [
   './', './index.html', './manifest.webmanifest', './lib/matter.min.js',
   './icon-192.png', './icon-512.png', './icon-mask-512.png', './apple-touch-icon.png', './favicon.png',
   './assets/momo_sit.png', './assets/momo_body.png', './assets/momo_happy.png', './assets/momo_surprised.png',
-  './assets/momo_neutral.png', './assets/momo_angry.png', './assets/momo_sleepy.png', './assets/momo_heart.png'
+  './assets/momo_neutral.png', './assets/momo_angry.png', './assets/momo_sleepy.png', './assets/momo_heart.png',
+  './fonts/jua-sub.woff2'
 ];
 const NET_TIMEOUT = 4000; // 신호가 약할 때 무한정 기다리지 않음
 
@@ -61,10 +62,14 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // 그 외(이미지·물리 엔진·매니페스트): 캐시 우선, 없으면 네트워크
+  // 그 외(이미지·글꼴·물리 엔진): 캐시에 있으면 바로 쓰고, 뒤에서 최신본으로 바꿔 둠
+  // (같은 이름의 그림을 새로 올려도 다음 실행 때 반영됨)
   e.respondWith((async () => {
     const hit = await caches.match(req);
-    if (hit) return hit;
+    if (hit){
+      e.waitUntil(fetch(req, { cache: 'no-cache' }).then(res => { if (res && res.ok) return caches.open(CACHE).then(c => c.put(req, res)); }).catch(() => {}));
+      return hit;
+    }
     try {
       const res = await fetch(req);
       if (res && res.ok){
