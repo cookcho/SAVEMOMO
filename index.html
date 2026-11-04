@@ -391,7 +391,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2026.11.05o</span>
+  <span id="ver">v2026.11.05p</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -891,6 +891,11 @@ function genLevel(lv, seed, themeIdx){
   L.speed = clamp(2.0 + 1.9 * D, 2.0, 4.2);
   L.force = clamp(0.75 + 0.85 * D + (L.boss ? 0.1 : 0), 0.75, 1.8); // 적이 선을 밀어내는 힘 배율
   L.diff10 = clamp(Math.round(D / 1.15 * 9) + 1, 1, 10);
+  // 별 기준(잉크 px): 지형마다 '꼭 필요한 최소 잉크'(par)를 잡고, ★3 = par 이하, ★2 = par×1.5 이하.
+  // 잉크를 넉넉히 주는 초반 레벨은 기존 비율(22%·40%)이 더 너그러우면 그쪽을 씀
+  const PAR = { pocket: 95, well: 95, alcove: 100, cave: 95, stairs: 150, bowl: 170, plat: 185, ground: 190, cliff: 190, shelf: 190, valley: 190, pillar: 205, hang: 205, seesaw: 205 };
+  L.par = PAR[L.arch] || 190;
+  L.s3 = Math.round(Math.max(L.par, 0.22 * L.ink)); L.s2 = Math.round(Math.max(L.par * 1.5, 0.40 * L.ink));
   return L;
 }
 
@@ -999,7 +1004,7 @@ function setup(){
     : '한 번에 선을 그어 모모를 지키세요 · 7초';
   hint.classList.remove('hidden');
   const b = store.get(curKey(), null);
-  document.getElementById('best').innerHTML = mode === 'daily' ? (b ? `최고 ${b.score}점` : String(todayKey()).slice(4, 6) + '월 ' + +String(todayKey()).slice(6) + '일 도전') : b ? `<span class="gs">${starsOfPct(b.pct)}</span> 최고 ${b.score}점` : '첫 도전';
+  document.getElementById('best').innerHTML = mode === 'daily' ? (b ? `최고 ${b.score}점` : String(todayKey()).slice(4, 6) + '월 ' + +String(todayKey()).slice(6) + '일 도전') : b ? `<span class="gs">${'★'.repeat(recStars(b))}</span> 최고 ${b.score}점` : '첫 도전';
   updateInk(); renderItemBar();
   resize();
   if (typeof maybeChapterCard === 'function' && store.get('momo_story_seen', false)) maybeChapterCard();
@@ -1009,7 +1014,7 @@ function updateInk(){
   const cap = inkCap(), left = 1 - inkUsed / cap;
   document.getElementById('inkFill').style.width = (left * 100) + '%';
   // 별 기준선: 기본 잉크의 22%·40% 사용 지점 (긴 펜을 켜면 기준선이 오른쪽으로 감)
-  const p3 = 1 - 0.22 * L.ink / cap, p2 = 1 - 0.40 * L.ink / cap;
+  const p3 = Math.max(0.3, 1 - L.s3 / cap), p2 = Math.max(0.17, Math.min(p3 - 0.1, 1 - L.s2 / cap)); // 별 기준선(잉크를 이만큼 쓰면 별이 하나 줄어듦)
   [['stb3', 'mk3', p3], ['stb2', 'mk2', p2]].forEach(([a, b, v]) => { document.getElementById(a).style.left = document.getElementById(b).style.left = (v * 100) + '%'; });
   document.getElementById('inkTxt').textContent = `${Math.round(left * 100)}%`;
   document.getElementById('stb3').classList.toggle('off', left < p3 - 0.001);
@@ -1551,11 +1556,12 @@ function finish(win, reason, delay = 450){
   else AU.sfx('fail');
   AU.duck(2.4); AU.setState('draw'); AU.drawingStop();
   const pct = Math.round(inkUsed / L.ink * 100);
-  const stars = pct <= 22 ? 3 : pct <= 40 ? 2 : 1;
+  const stars = inkUsed <= L.s3 + 0.5 ? 3 : inkUsed <= L.s2 + 0.5 ? 2 : 1;
   const score = win ? Math.round(Math.max(0, 1 - inkUsed / L.ink) * 700 + hp * 3) : 0;
   endInfo = { win, pct, stars, score, hp: Math.round(hp), reason };
   let best = store.get(curKey(), null), newBest = false;
-  if (win && (!best || score > best.score)){ best = { score, pct }; store.set(curKey(), best); newBest = true; }
+  if (win && (!best || score > best.score)){ best = { score, pct, stars: Math.max(stars, recStars(best)) }; store.set(curKey(), best); newBest = true; }
+  else if (win && best && stars > recStars(best)){ best.stars = stars; store.set(curKey(), best); }
   if (win && mode === 'level' && level + 1 > store.get('ss_level', 1)) store.set('ss_level', level + 1);
   setTimeout(() => {
     if (phase !== 'end') return;
@@ -1565,7 +1571,7 @@ function finish(win, reason, delay = 450){
     refreshAccs();
     const rs = document.getElementById('mReason'); rs.textContent = win ? '' : reason; rs.classList.toggle('hidden', win);
     const tip = document.getElementById('mTip');
-    const tipText = tut ? (win ? '잉크를 적게 쓸수록 ⭐이 늘어나요. 22% 이하면 ⭐⭐⭐!' : '틈이 있으면 드론이 돌아서 들어와요. 빈틈없이 감싸 보세요!')
+    const tipText = tut ? (win ? '잉크를 적게 쓸수록 ⭐이 늘어나요. 잉크 막대의 ★ 표시 전에 끝내면 ⭐⭐⭐!' : '틈이 있으면 드론이 돌아서 들어와요. 빈틈없이 감싸 보세요!')
       : (!win && reason === '모모가 떨어졌어요') ? '선이 너무 무거우면 모모를 밀어낼 수 있어요' : '';
     tip.textContent = tipText; tip.classList.toggle('hidden', !tipText);
     if (tut && win) store.set('momo_tut_done', true);
@@ -1587,8 +1593,10 @@ document.getElementById('mRetry').onclick = () => setup();
 document.getElementById('btnRetry').onclick = () => setup();
 document.getElementById('prevLv').onclick = () => { if (level > 1){ level--; setup(); } };
 // 레벨 선택 화면: 챕터별 10칸, 별 기록 표시, 번호로 바로 이동
+// 기록의 별 수(새 기록은 stars를 저장, 예전 기록은 잉크 비율로 계산)
+function recStars(b){ return !b ? 0 : b.stars || (b.pct <= 22 ? 3 : b.pct <= 40 ? 2 : 1); }
 function starsOfPct(p){ return p <= 22 ? '★★★' : p <= 40 ? '★★' : '★'; }
-function starsOf(lv){ const b = store.get('ss_best_' + lv, null); if (!b) return ''; return starsOfPct(b.pct); }
+function starsOf(lv){ const b = store.get('ss_best_' + lv, null); if (!b) return ''; return '★'.repeat(recStars(b)); }
 function openPicker(){
   if (mode !== 'level') return;
   const top = store.get('ss_level', 1), maxLv = Math.max(top, level) + 10;
@@ -1634,7 +1642,7 @@ function setMode(m){
 // ---------- 시작 화면 ----------
 function totalStars(){
   let n = 0; const top = store.get('ss_level', 1);
-  for (let lv = 1; lv <= top + 10; lv++){ const b = store.get('ss_best_' + lv, null); if (b) n += b.pct <= 22 ? 3 : b.pct <= 40 ? 2 : 1; }
+  for (let lv = 1; lv <= top + 10; lv++){ const b = store.get('ss_best_' + lv, null); if (b) n += recStars(b); }
   return n;
 }
 function refreshTitle(){
@@ -2010,7 +2018,7 @@ function earnedStars(){
   try {
     for (let i = 0; i < localStorage.length; i++){
       const k = localStorage.key(i);
-      if (k && (k.startsWith('ss_best_') || k.startsWith('ss_daily_'))){ const b = store.get(k, null); if (b && b.pct != null) n += starN(b.pct); }
+      if (k && (k.startsWith('ss_best_') || k.startsWith('ss_daily_'))){ const b = store.get(k, null); if (b && b.pct != null) n += recStars(b); }
     }
   } catch (_){}
   return n;
