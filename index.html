@@ -90,6 +90,14 @@
   .chip{flex:none;white-space:nowrap;font-size:12px;background:rgba(255,255,255,.88);color:var(--navy);padding:3px 9px 2px;border-radius:12px;border:2px solid rgba(35,48,77,.12);line-height:15px}
   .dbar{display:inline-flex;gap:2px;vertical-align:1px;margin:0 2px}.dbar i{width:5px;height:10px;border-radius:2px;background:rgba(35,48,77,.18)}.dbar i.on{background:currentColor}
   .chip.new{background:var(--yellow);border-color:var(--yellowD)}
+  .chip.mis{background:#fff4c7;border-color:var(--yellowD);font-weight:700}.chip.mis b{color:var(--orangeD,#d36a00)}
+  .chip.mis.got{background:#e9f9ec;border-color:var(--greenD)}.chip.mis.got b{color:var(--greenD)}
+  .chip.mis.ok{background:var(--green);border-color:var(--greenD);color:#fff}.chip.mis.ok b{color:#fff}
+  .chip.mis.fail{background:#e3e7ee;border-color:#b9c2cf;color:#8a95a6;text-decoration:line-through}.chip.mis.fail b{color:#8a95a6}
+  #mMis{font-size:14px;margin:-2px 0 8px;padding:5px 12px;border-radius:14px;display:inline-block}
+  #mMis.new{background:var(--yellow);color:var(--navy);animation:misPop .5s .7s both}#mMis.got{background:#e9f9ec;color:var(--greenD)}#mMis.miss{background:#eef1f5;color:#8a95a6}
+  @keyframes misPop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+  .pkGrid button small em{font-style:normal;font-size:9px;margin-left:1px}
   .chip.boss{background:var(--red);border-color:var(--redD);color:#fff}
 
   #stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0;padding:4px 0 6px}
@@ -335,6 +343,7 @@
         <div class="mRibbon" id="mTitle">성공!</div>
         <div class="momoBox mImgBox"><img id="mImg" src="assets/momo_heart.png" alt=""><i class="acc" data-acc-img="mImg"></i></div>
         <div class="stars" id="mStars"></div>
+        <div id="mMis" class="hidden"></div>
         <div id="mReason" class="hidden"></div>
         <div class="mStats"><div><small>잉크 사용</small><b id="mInk"></b></div><div><small>모모 체력</small><b id="mHp"></b></div><div><small>점수</small><b id="mScore"></b></div></div>
         <div id="mBest"></div>
@@ -392,7 +401,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v1.2.0</span>
+  <span id="ver">v1.3.0</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -461,6 +470,29 @@ const MECH = [
 ];
 const CARVED = ['pocket', 'well', 'alcove'];
 // 지형 특징(레벨에 따라 등장): 욕조 물 — 바닥이 물이라 모모가 떨어지면 실패 / 선인장 — 모모가 닿으면 다침, 선도 통과 못 함
+// ---------- 보너스 목표(🎯): 판마다 하나, 성공하면 ⭐ +1 ----------
+const MIS_LV = 12;
+const MIS_TEXT = {
+  hp70: () => '체력 70 이상 남기기',
+  hp50: () => '체력 절반 이상 남기기',
+  flawless: () => '한 대도 안 맞기',
+  pins: L => `핀 ${L.pins.length}개 모두 지나기`,
+  notouch: L => L.twin ? '선이 모모·코코에 안 닿게' : '선이 모모에 안 닿게',
+  quick: L => `${L.misQ}초 안에 다 그리기`,
+  still: L => L.twin ? '모모·코코가 밀리지 않게' : '모모가 밀리지 않게',
+};
+function pickMission(L, lv, seed){
+  if (lv < MIS_LV) return null;
+  const r2 = rng((seed ^ 0x2c1b3c6d) >>> 0), moving = L.slope || L.floatCat || L.arch === 'seesaw' || L.arch === 'hang';
+  L.misQ = L.twin || L.floatCat ? 3.5 : L.diff < 0.6 ? 3 : 2.5;
+  if (lv === MIS_LV) return { k: 'hp70', intro: true };
+  const el = ['quick'];
+  if (!moving) el.push('still', 'notouch');
+  if (lv < 45) el.push('hp70'); else el.push('hp50');
+  if (lv >= 20) el.push('flawless');
+  if (L.pins.length && !L.slope && !L.floatCat && !L.carve && !L.cave) el.push('pins', 'pins');
+  return { k: el[Math.floor(r2() * el.length)] };
+}
 const FEATS = [
   { k: 'water', lv: 24, name: '욕조 물', icon: '🛁', desc: '바닥이 욕조 물이에요! 선에 밀리거나 떨어져서 모모가 물에 빠지면 실패' },
   { k: 'cactus', lv: 32, name: '선인장', icon: '🌵', desc: '가시투성이 화분이에요. 모모가 닿으면 다치고, 선도 지나갈 수 없어요' },
@@ -1044,6 +1076,7 @@ function genLevel(lv, seed, themeIdx){
   // 잉크를 넉넉히 주는 초반 레벨은 기존 비율(22%·40%)이 더 너그러우면 그쪽을 씀
   // L.par은 잉크를 정할 때 계산함
   L.s3 = Math.round(Math.max(L.par, 0.22 * L.ink)); L.s2 = Math.round(Math.max(L.s3 + 1, Math.min(Math.max(L.par * 1.5, 0.40 * L.ink), 0.85 * L.ink)));
+  L.mis = pickMission(L, lv, seed);
   return L;
 }
 
@@ -1160,6 +1193,8 @@ function setup(){
   L.mods.forEach(k => { const m = MODS.find(x => x.k === k); chips.push(`<span class="chip${L.modIntro && L.modIntro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   L.kinds.forEach(k => { const m = MECH.find(x => x.k === k); chips.push(`<span class="chip${L.intro && L.intro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   if (L.pins.length){ const m = MECH[1]; chips.push(`<span class="chip${L.intro && L.intro.k === 'pin' ? ' new' : ''}">${m.icon} 핀 ${L.pins.length}</span>`); }
+  misFail = false;
+  if (L.mis) chips.unshift(misChipHTML());
   document.getElementById('chips').innerHTML = chips.join('');
   const hint = document.getElementById('hint');
   tut = mode === 'level' && level === 1 && !store.get('momo_tut_done', false);
@@ -1173,6 +1208,8 @@ function setup(){
     ? `<b>NEW 지형 · ${ARCH_NAME[L.archIntro]}</b><br>${ARCH_DESC[L.archIntro]}`
     : L.modIntro && mode === 'level'
     ? `<b>NEW 규칙 · ${L.modIntro.icon} ${L.modIntro.name}</b><br>${L.modIntro.desc}`
+    : L.mis && L.mis.intro && mode === 'level'
+    ? `<b>NEW 🎯 보너스 목표</b><br>위쪽 🎯 목표까지 해내면 ⭐ 하나 더! 판마다 목표가 달라요`
     : '한 번에 선을 그어 모모를 지키세요 · 7초';
   hint.classList.remove('hidden', 'fade');
   // 안내는 잠깐 보여 주고 사라짐(위에서 내려오는 물풍선·구름을 가리지 않게). 처음 나오는 요소 안내는 읽을 시간을 조금 더. 튜토리얼은 그대로
@@ -1255,7 +1292,7 @@ function beginAt(p0){
   if (phase !== 'draw' || drawing) return false;
   const p = nearestFree(p0);
   if (!p){ showToast('물체 위에서는 시작할 수 없어요'); return false; }
-  drawing = true; pts = [p]; AU.sfx('drawStart'); lastMoveT = performance.now();
+  drawing = true; pts = [p]; AU.sfx('drawStart'); lastMoveT = performance.now(); misT0 = lastMoveT;
   L.pins.forEach(pin => {
     if (dist(pin, p) < 15){ pin.on = true; pts = [{ x: pin.x, y: pin.y }]; AU.sfx('pin'); }
   });
@@ -1316,6 +1353,7 @@ function endStroke(){
     pts = []; inkUsed = 0; L.pins.forEach(p => p.on = false); updateInk();
     { const h = document.getElementById('hint'); h.classList.remove('hidden', 'fade'); clearTimeout(toastTimer); if (!tut) toastTimer = setTimeout(hideHint, 2000); } return;
   }
+  misT1 = performance.now();
   const rs = [pts[0]]; let acc = 0;
   for (let i = 1; i < pts.length; i++){
     acc += dist(pts[i], pts[i - 1]);
@@ -1358,6 +1396,11 @@ function endStroke(){
 
 function startSim(){
   phase = 'sim'; simT = 0; useItems(); AU.setState('sim'); AU.sfx('drop');
+  misPos = catList().map(c => ({ x: c.position.x, y: c.position.y }));
+  if (L.mis){
+    if (L.mis.k === 'quick' && (misT1 - misT0) / 1000 > L.misQ + 0.05) misFailNow();
+    else if (L.mis.k === 'pins' && L.pins.some(p => !p.on)) misFailNow();
+  }
   if (bubbleOn){ bubbleOn = false; fxPop(potBody.position.x, potBody.position.y - 10, '#9fd8ff'); AU.sfx('pop'); }
   if (tut) showToast('선은 물리 법칙대로 떨어져요 · 7초만 버티면 성공!');
   simRng = rng(L.seed + 7);
@@ -1378,10 +1421,12 @@ function onCollide(ev){
   for (const pr of ev.pairs){ handle(pr.bodyA, pr.bodyB, ev.name); handle(pr.bodyB, pr.bodyA, ev.name); }
 }
 let jetPush = [];
+let misFail = false, misT0 = 0, misT1 = 0, misPos = [];
 let prevPotSpeed = 0, lastHitT = -9999, lastImpactT = -9999, lastWet = false, ducks = [], popQ = new Set();
 const WATER = ['drop', 'jet', 'splash'];
 function ouch(dmg, wet = false){ hp -= dmg; flashT = 280; lastHitT = simT; lastWet = wet; if (wet) AU.sfx('splat'); AU.sfx('meow'); }
 function handle(a, b, name){
+  if (L.mis && L.mis.k === 'notouch' && !misFail && isCat(a.parent) && b.parent.label === 'line') misFailNow();
   // 높은 곳에서 떨어지거나 세게 부딪히면 다침
   if (name === 'collisionStart' && isCat(a.parent) && (b.isStatic || b.parent.label === 'line') && (a.parent.plugin.pv || 0) > (L.floatCat ? 11 : 6) && simT - lastImpactT > 500){ lastImpactT = simT; ouch(30); }
   if (isCat(a.parent) && b.label === 'cactus' && simT - (b.plugin.hitT ?? -1e9) > 600){
@@ -1742,6 +1787,7 @@ function step(){
   }
   if (flashT > 0) flashT -= STEP;
   hp = Math.max(0, hp);
+  if (L.mis && !misFail && ((L.mis.k === 'hp70' && hp < 70) || (L.mis.k === 'hp50' && hp < 50) || (L.mis.k === 'flawless' && hp < 100) || (L.mis.k === 'still' && catList().some((c, i) => misPos[i] && dist(c.position, misPos[i]) > 18)))) misFailNow();
   if (hp <= 0) return finish(false, (coco ? '모모·코코가 ' : '모모가 ') + (lastWet ? '흠뻑 젖었어요' : '다쳤어요'));
   for (const c of catList()){
     const nm = c === coco ? '코코가' : '모모가';
@@ -1753,6 +1799,13 @@ function step(){
   if (simT >= simDur) return finish(true);
 }
 
+// ---------- 보너스 목표 표시 ----------
+function misDoneBefore(){ const b = store.get(curKey(), null); return !!(b && b.mis); }
+function misChipHTML(){ const done = misDoneBefore(); return `<span class="chip mis${done ? ' got' : ''}" id="misChip">🎯 ${MIS_TEXT[L.mis.k](L)} <b>${done ? '✓' : '+★'}</b></span>`; }
+function misFailNow(){
+  misFail = true;
+  const c = document.getElementById('misChip'); if (c){ c.classList.add('fail'); c.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }], { duration: 260 }); }
+}
 // ---------- 종료 ----------
 function finish(win, reason, delay = 450){
   phase = 'end'; endT = performance.now();
@@ -1764,8 +1817,12 @@ function finish(win, reason, delay = 450){
   const score = win ? Math.round(Math.max(0, 1 - inkUsed / L.ink) * 700 + hp * 3) : 0;
   endInfo = { win, pct, stars, score, hp: Math.round(hp), reason };
   let best = store.get(curKey(), null), newBest = false;
-  if (win && (!best || score > best.score)){ best = { score, pct, stars: Math.max(stars, recStars(best)) }; store.set(curKey(), best); newBest = true; }
+  if (win && (!best || score > best.score)){ best = { score, pct, stars: Math.max(stars, recStars(best)), ...(best && best.mis ? { mis: true } : {}) }; store.set(curKey(), best); newBest = true; }
   else if (win && best && stars > recStars(best)){ best.stars = stars; store.set(curKey(), best); }
+  const misOK = !!(win && L.mis && !misFail), misNew = misOK && best && !best.mis;
+  if (misNew){ best.mis = true; store.set(curKey(), best); }
+  if (L.mis){ const c = document.getElementById('misChip'); if (c) c.classList.toggle('ok', misOK); }
+  endInfo.mis = misOK;
   if (win && mode === 'level' && level + 1 > store.get('ss_level', 1)) store.set('ss_level', level + 1);
   setTimeout(() => {
     if (phase !== 'end') return;
@@ -1781,15 +1838,22 @@ function finish(win, reason, delay = 450){
     tip.textContent = tipText; tip.classList.toggle('hidden', !tipText);
     if (tut && win) store.set('momo_tut_done', true);
     document.getElementById('mStars').innerHTML = win ? [0, 1, 2].map(i => `<i class="${i < stars ? 'on' : ''}" style="animation-delay:${0.2 + i * 0.18}s">★</i>`).join('') : '<i class="drop" style="animation-delay:.15s">💧</i>';
+    const mm = document.getElementById('mMis');
+    mm.classList.toggle('hidden', !L.mis || !win);
+    if (L.mis && win){
+      const t = MIS_TEXT[L.mis.k](L);
+      mm.className = misNew ? 'new' : misOK || (best && best.mis) ? 'got' : 'miss';
+      mm.innerHTML = misNew ? `🎯 ${t} <b>성공! ★+1</b>` : misOK || (best && best.mis) ? `🎯 ${t} <b>✓</b>` : `🎯 ${t} <b>실패</b>`;
+    }
     document.getElementById('mInk').textContent = pct + '%';
     document.getElementById('mHp').textContent = Math.round(hp);
     document.getElementById('mScore').textContent = score;
     document.getElementById('mBest').textContent = newBest ? '🏆 새 최고 기록!' : (best ? `최고 기록 ${best.score}점` : '');
     document.getElementById('mNext').classList.toggle('hidden', !win || mode === 'daily');
-    document.getElementById('mRetry').textContent = win && stars < 3 ? '⭐ 더 받기' : '다시 도전';
+    document.getElementById('mRetry').textContent = win && (recStars(best) < 3 || (L.mis && !(best && best.mis))) ? '⭐ 더 받기' : '다시 도전';
     document.getElementById('mShare').classList.toggle('hidden', !win);
     document.getElementById('modalWrap').classList.remove('hidden');
-    if (win) for (let i = 0; i < stars; i++) setTimeout(() => AU.sfx('star', { i }), 220 + i * 180);
+    if (win) for (let i = 0; i < stars + (misNew ? 1 : 0); i++) setTimeout(() => AU.sfx('star', { i }), 220 + i * 180);
   }, delay);
 }
 
@@ -1801,7 +1865,7 @@ document.getElementById('prevLv').onclick = () => { if (level > 1){ level--; set
 // 기록의 별 수(새 기록은 stars를 저장, 예전 기록은 잉크 비율로 계산)
 function recStars(b){ return !b ? 0 : b.stars || (b.pct <= 22 ? 3 : b.pct <= 40 ? 2 : 1); }
 function starsOfPct(p){ return p <= 22 ? '★★★' : p <= 40 ? '★★' : '★'; }
-function starsOf(lv){ const b = store.get('ss_best_' + lv, null); if (!b) return ''; return '★'.repeat(recStars(b)); }
+function starsOf(lv){ const b = store.get('ss_best_' + lv, null); if (!b) return ''; return '★'.repeat(recStars(b)) + (b.mis ? '<em>🎯</em>' : ''); }
 function openPicker(){
   if (mode !== 'level') return;
   const top = store.get('ss_level', 1), maxLv = Math.max(top, level) + 10;
@@ -1847,7 +1911,7 @@ function setMode(m){
 // ---------- 시작 화면 ----------
 function totalStars(){
   let n = 0; const top = store.get('ss_level', 1);
-  for (let lv = 1; lv <= top + 10; lv++){ const b = store.get('ss_best_' + lv, null); if (b) n += recStars(b); }
+  for (let lv = 1; lv <= top + 10; lv++){ const b = store.get('ss_best_' + lv, null); if (b) n += recStars(b) + (b.mis ? 1 : 0); }
   return n;
 }
 function refreshTitle(){
@@ -2272,7 +2336,7 @@ function earnedStars(){
   try {
     for (let i = 0; i < localStorage.length; i++){
       const k = localStorage.key(i);
-      if (k && (k.startsWith('ss_best_') || k.startsWith('ss_daily_'))){ const b = store.get(k, null); if (b && b.pct != null) n += recStars(b); }
+      if (k && (k.startsWith('ss_best_') || k.startsWith('ss_daily_'))){ const b = store.get(k, null); if (b && b.pct != null) n += recStars(b) + (b.mis ? 1 : 0); }
     }
   } catch (_){}
   return n;
