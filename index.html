@@ -465,7 +465,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v1.4.2</span>
+  <span id="ver">v1.4.3</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -1101,6 +1101,27 @@ function genLevel(lv, seed, themeIdx){
         if (!free(p, 12) || used.some(q => dist(q, p) < 45)) continue;
         used.push(p); L.pins.push(p); break;
       }
+    }
+  }
+  // 오리 사격선이 핀 바로 옆을 지나면 핀에 짧은 선만 걸어도 다 막힘 → 핀에서 떨어진 사격 자리로 옮김
+  const pinNear = (a, b2) => {
+    const n = Math.ceil(dist(a, b2) / 6);
+    for (let i = 1; i < n; i++){
+      const q = { x: a.x + (b2.x - a.x) * i / n, y: a.y + (b2.y - a.y) * i / n };
+      if (dist(q, sp) < 44) break;
+      if (L.pins.some(pn => dist(pn, q) < 36)) return true;
+    }
+    return false;
+  };
+  for (const h of L.hives) if (h.kind === 'wasp' && L.pins.length && pinNear(h, sp)){
+    for (let t = 0; t < 60; t++){
+      const c = place(190, yMin, Math.min(sp.y + 40, 470));
+      if (c && los(c, sp) && !pinNear(c, sp) && !L.pins.some(pn => dist(pn, c) < 50)){ h.x = c.x; h.y = c.y; break; }
+      if (c) used.pop();
+    }
+    if (pinNear(h, sp)) for (let t = 0; t < 80; t++){ // 못 찾으면 모모와 비슷한 높이에서 옆으로 쏘는 자리
+      const sd = L.cave ? (L.cave.left ? 1 : -1) : (r() < 0.5 ? -1 : 1), c = { x: clamp(sp.x + sd * R(120, 230), 30, W - 30), y: sp.y + (L.cave ? R(5, 50) : R(-40, 10)) };
+      if (free(c, 30) && los(c, sp) && !pinNear(c, sp) && !L.pins.some(pn => dist(pn, c) < 50)){ h.x = c.x; h.y = c.y; used.push(c); break; }
     }
   }
 
