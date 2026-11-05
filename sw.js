@@ -1,12 +1,14 @@
 /* SAVE MOMO — 서비스 워커
    목표: (1) 한 번 열었으면 인터넷이 없어도 실행된다  (2) 인터넷이 있으면 최신본을 가져온다 */
-const CACHE = 'savemomo-v49';
+const CACHE = 'savemomo-v50';
 const FILES = [
   './', './index.html', './manifest.webmanifest', './lib/matter.min.js', './audio.js',
   './icon-192.png', './icon-512.png', './icon-mask-512.png', './apple-touch-icon.png', './favicon.png',
   './assets/momo_sit.png', './assets/momo_body.png', './assets/momo_happy.png', './assets/momo_surprised.png',
   './assets/momo_neutral.png', './assets/momo_angry.png', './assets/momo_sleepy.png', './assets/momo_heart.png',
-  './fonts/jua-sub.woff2'
+  './fonts/jua-sub.woff2',
+  './assets/map/town.svg', './assets/map/isl0.svg', './assets/map/isl1.svg', './assets/map/isl2.svg', './assets/map/isl3.svg',
+  './assets/map/isl4.svg', './assets/map/isl5.svg', './assets/map/isl6.svg'
 ];
 const NET_TIMEOUT = 4000; // 신호가 약할 때 무한정 기다리지 않음
 

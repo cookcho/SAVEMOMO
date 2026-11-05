@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 200" width="170" height="200"><ellipse cx="85.0" cy="167.2" rx="72" ry="18" fill="rgba(35,48,77,.16)"></ellipse>
+<polygon points="19.0,120.0 85.0,153.0 76.2,168.4 36.6,150.8" fill="#6e482b" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="151.0,120.0 85.0,153.0 76.2,168.4 133.4,144.2" fill="#7e5231" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="19.0,120.0 85.0,153.0 85.0,143.1 19.0,110.1" fill="#ad976a" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="151.0,120.0 85.0,153.0 85.0,143.1 151.0,110.1" fill="#c7ad7a" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="85.0,77.1 151.0,110.1 85.0,143.1 19.0,110.1" fill="#f0d9a6" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="47.6,95.6 113.6,128.6 85.0,142.9 19.0,109.9" fill="#5cc6ee" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon>
+<path d="M33.2 106.6 q5 -4 10 0 q5 4 10 0" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
+<path d="M53.0 116.5 q5 -4 10 0 q5 4 10 0" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
+<path d="M72.8 126.4 q5 -4 10 0 q5 4 10 0" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
+<line x1="87.2" y1="98.0" x2="87.2" y2="58.0" stroke="#23304d" stroke-width="2.5"></line>
+<path d="M61.2 64.0 Q87.2 36.0 113.2 64.0 Z" fill="#ff6f91" stroke="#23304d" stroke-width="2"></path>
+<path d="M78.2 61.0 Q87.2 40.0 96.2 61.0" fill="#fff" stroke="none"></path>
+<ellipse cx="118.0" cy="105.7" rx="9" ry="9" fill="#ffcf3a" stroke="#23304d" stroke-width="2"></ellipse>
+<polygon points="107.0,101.3 126.8,111.2 126.8,108.6 107.0,98.7" fill="#c6c6c6" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon>
+<polygon points="134.5,107.3 126.8,111.2 126.8,108.6 134.5,104.7" fill="#e5e5e5" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon>
+<polygon points="114.7,94.8 134.5,104.7 126.8,108.6 107.0,98.7" fill="#ffffff" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon></svg>

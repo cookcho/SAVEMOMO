@@ -311,6 +311,70 @@
   .tg i{position:absolute;left:2px;top:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 0 rgba(0,0,0,.15);transition:left .15s}
   .tg.on{background:var(--green);border-color:var(--greenD)}.tg.on i{left:28px}
   .setSep{height:2px;background:#e8dccb;margin:10px 0 12px;border-radius:1px}
+
+  /* ---- 챕터 지도(레벨 선택) ---- */
+  .pkMap{position:relative;margin:0 -14px}
+  .pkMap .pkPath{position:absolute;left:0;top:0;pointer-events:none}
+  .isl{position:absolute;width:150px;height:176px;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .isl img{width:100%;height:100%;display:block;pointer-events:none}
+  .isl.lockI img{filter:grayscale(.85) brightness(1.08);opacity:.8}
+  .isl.sel img{animation:islBob 1.8s ease-in-out infinite}
+  .isl:active img{transform:scale(.96)}
+  @keyframes islBob{50%{transform:translateY(-5px)}}
+  .islLbl{position:absolute;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:#fff;border:3px solid var(--navy);border-radius:16px;box-shadow:0 3px 0 var(--navy);padding:3px 10px 2px 4px;white-space:nowrap;font-size:15px;color:var(--navy);pointer-events:none}
+  .islLbl i{font-style:normal;width:22px;height:22px;border-radius:11px;background:var(--blue);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center}
+  .islLbl.boss i{background:var(--red)}
+  .islLbl.lockL{background:#e3e7ee;border-color:#6b7a90;box-shadow:0 3px 0 #6b7a90}
+  .islLbl.lockL i{background:#8d9cb1}
+  .islLbl b{font-weight:400;color:#b06d00;font-size:13px}
+  .islLbl em{font-style:normal;background:var(--navy);color:#fff;border-radius:9px;padding:1px 7px;font-size:12px}
+  .islLbl.sel{background:#fff4c7}
+  .pkMomo{position:absolute;width:40px;height:50px;object-fit:contain;pointer-events:none}
+  .pkCloud{position:absolute;width:70px;height:26px;border-radius:13px;background:#fff;opacity:.85;pointer-events:none}
+  .pkCloud:before{content:'';position:absolute;left:14px;top:-12px;width:30px;height:30px;border-radius:50%;background:#fff}
+  .pkSheet{background:var(--cream);border-top:4px solid var(--navy);border-radius:22px 22px 0 0;padding:12px 14px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -4px 0 rgba(35,48,77,.15)}
+  .pkShTop{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:19px;color:var(--navy)}
+  .pkShTop b{font-weight:400;flex:1}
+  .pkShTop .lockTag{background:var(--navy);color:#fff;border-radius:12px;padding:3px 10px 1px;font-size:14px}
+  /* ---- 챕터 전환 장면 ---- */
+  #cs{position:fixed;inset:0;z-index:45;background:linear-gradient(180deg,#a9dcff,#d4efff 60%,#eaf7ff);overflow:hidden;color:var(--navy);-webkit-tap-highlight-color:transparent}
+  .csStage{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 70px);width:390px;height:440px;transform-origin:top center}
+  .csScene{position:absolute;inset:0;transition:transform 1.1s cubic-bezier(.5,0,.2,1)}
+  .csTown{position:absolute;left:0;top:0;width:390px;height:440px}
+  .csPins{transition:opacity .4s}
+  .csPin{position:absolute;width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:16px;border:3px solid var(--navy);box-sizing:border-box;background:#8d9cb1;color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 0 var(--navy);-webkit-text-stroke:.5px var(--navy)}
+  .csPin.boss{background:var(--red)}.csPin.done{background:var(--yellow)}
+  .csPin.cur{background:var(--green);width:40px;height:40px;margin:-20px 0 0 -20px;font-size:18px;animation:popIn .4s cubic-bezier(.2,1.6,.4,1)}
+  #csMomo{position:absolute;width:44px;height:54px;object-fit:contain;transition:left 1.3s ease-in-out,top 1.3s ease-in-out;z-index:2}
+  #csMomo.run{animation:csHop .28s ease-in-out infinite}
+  @keyframes csHop{50%{transform:translateY(-10px) rotate(-8deg)}}
+  #csAlert{position:absolute;width:20px;height:20px;border-radius:10px;background:var(--red);border:2px solid var(--navy);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;z-index:3;animation:popIn .35s cubic-bezier(.2,1.6,.4,1)}
+  .csDrone{position:absolute;width:56px;height:56px;object-fit:contain;transition:left 1s ease-out,top 1s ease-out;z-index:3}
+  #csBanner{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 168px);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:4;pointer-events:none}
+  .csBan{padding:8px 26px 6px;border-radius:18px;background:var(--green);border:3px solid var(--navy);box-shadow:0 5px 0 var(--navy);color:#fff;font-size:30px;-webkit-text-stroke:.8px var(--navy);animation:popIn .45s cubic-bezier(.2,1.6,.4,1) both}
+  .csSub{display:flex;align-items:center;gap:4px;padding:4px 14px 2px;border-radius:16px;background:#fff;border:3px solid var(--navy);font-size:18px;color:#b06d00;animation:popIn .45s .15s cubic-bezier(.2,1.6,.4,1) both}
+  .csBox{position:absolute;left:50%;transform:translateX(-50%);width:min(362px,calc(100% - 28px));bottom:calc(22px + env(safe-area-inset-bottom));background:var(--cream);border:3px solid var(--navy);border-radius:24px;box-shadow:0 6px 0 var(--navy);padding:16px 16px 10px 92px;min-height:118px;box-sizing:border-box;z-index:4}
+  .csBox img{position:absolute;left:12px;top:-26px;width:72px;height:90px;object-fit:contain}
+  #csText{font-size:18px;line-height:1.5;animation:csFade .35s both;word-break:keep-all}
+  #csText b{font-weight:400;color:var(--greenD)}
+  @keyframes csFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .csBox small{display:block;text-align:right;color:#6b7a90;font-size:13px;margin-top:6px}
+  #csSkip{position:absolute;right:14px;top:calc(env(safe-area-inset-top) + 14px);height:38px;padding:0 14px;border-radius:19px;border:3px solid var(--navy);background:rgba(255,255,255,.92);color:var(--navy);font-family:inherit;font-size:15px;z-index:5}
+  #csDots{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top) + 28px);display:flex;justify-content:center;gap:6px;z-index:5}
+  #csDots i{width:8px;height:8px;border-radius:4px;background:rgba(35,48,77,.25);transition:width .2s}#csDots i.on{width:22px;background:var(--navy)}
+  #csDim{position:absolute;inset:0;background:rgba(35,48,77,.42);opacity:0;transition:opacity .4s;pointer-events:none;z-index:5}
+  #csCard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(346px,calc(100% - 44px));background:var(--cream);border:3px solid var(--navy);border-radius:28px;box-shadow:0 7px 0 var(--navy);padding:46px 20px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;box-sizing:border-box;z-index:6}
+  #csCard:not(.hidden){animation:csCardIn .45s cubic-bezier(.2,1.6,.4,1) both}
+  @keyframes csCardIn{from{transform:translate(-50%,-50%) scale(.6);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+  .csCh{position:absolute;top:-24px;padding:7px 20px 5px;border-radius:16px;background:var(--blue);border:3px solid var(--navy);box-shadow:0 4px 0 var(--navy);color:#fff;font-size:18px;-webkit-text-stroke:.5px var(--navy);white-space:nowrap}
+  .csName{font-size:44px;line-height:1.05}
+  .csLv{font-size:15px;color:#5a6478}
+  .csHr{width:100%;height:2px;background:#e8dccb;border-radius:1px}
+  .csNewT{font-size:14px;color:#6b7a90}
+  .csNew{display:flex;flex-wrap:wrap;justify-content:center;gap:7px}
+  .csNew span{padding:5px 12px 3px;border-radius:14px;background:#fff;border:2px solid var(--navy);font-size:14px}
+  #csGo{width:100%;margin-top:6px}
+  #csCardMomo{position:absolute;right:-6px;top:-62px;width:64px;height:78px;object-fit:contain}
   .pkCh .lockTag{background:var(--navy);color:#fff;border-color:var(--navy)}
   .pkGrid button.gate{background:#8d9cb1;border-color:#6b7a90;box-shadow:0 4px 0 #6b7a90;color:#dfe6ef;text-shadow:none}
   @media (max-height:640px){.tHero{height:26vh}.playBtn{width:104px;height:104px}.tMenu{margin-top:12px}.cbtn.tile{height:70px}}
@@ -401,7 +465,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v1.3.0</span>
+  <span id="ver">v1.4.0</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -440,7 +504,24 @@
   <div class="pk">
     <div class="pkTop"><h3>레벨 선택</h3><input id="pkNum" type="number" inputmode="numeric" min="1" placeholder="번호"><button id="pkGo" class="cbtn green" style="height:44px">이동</button><button id="pkClose" class="cbtn sq red" aria-label="닫기" style="width:44px;height:44px"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/></svg></button></div>
     <div class="pkList" id="pkList"></div>
+    <div class="pkSheet" id="pkSheet"><div class="pkShTop"><b id="pkShT"></b><span id="pkShS"></span></div><div class="pkGrid" id="pkShG"></div></div>
   </div>
+</div>
+<div id="cs" class="hidden">
+  <div class="csStage" id="csStage">
+    <div class="csScene" id="csScene">
+      <img class="csTown" src="assets/map/town.svg" alt="">
+      <div class="csPins" id="csPins"></div>
+      <img id="csMomo" src="assets/momo_sit.png" alt="모모">
+    </div>
+    <div id="csDrones"></div>
+  </div>
+  <div id="csBanner"></div>
+  <div id="csDots"></div>
+  <button id="csSkip">건너뛰기</button>
+  <div class="csBox" id="csBox"><img src="assets/momo_sit.png" alt=""><div id="csText"></div><small>탭해서 계속 ▶</small></div>
+  <div id="csDim"></div>
+  <div id="csCard" class="hidden"></div>
 </div>
 <div id="story" class="hidden">
   <div class="scard">
@@ -1866,30 +1947,54 @@ document.getElementById('prevLv').onclick = () => { if (level > 1){ level--; set
 function recStars(b){ return !b ? 0 : b.stars || (b.pct <= 22 ? 3 : b.pct <= 40 ? 2 : 1); }
 function starsOfPct(p){ return p <= 22 ? '★★★' : p <= 40 ? '★★' : '★'; }
 function starsOf(lv){ const b = store.get('ss_best_' + lv, null); if (!b) return ''; return '★'.repeat(recStars(b)) + (b.mis ? '<em>🎯</em>' : ''); }
+const STAR_I = c => `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="${c}" stroke="#23304d" stroke-width="2" stroke-linejoin="round"/></svg>`;
+function chStars(c){ let n = 0; for (let lv = c * 10 + 1; lv <= c * 10 + 10; lv++){ const b = store.get('ss_best_' + lv, null); if (b) n += recStars(b) + (b.mis ? 1 : 0); } return n; }
+// 레벨 선택 = 챕터 지도: 아래(1챕터)부터 위로 떠 있는 섬들. 섬을 누르면 아래 시트에 그 챕터 레벨 10개
 function openPicker(){
   if (mode !== 'level') return;
   const top = store.get('ss_level', 1), maxLv = Math.max(top, level) + 10;
-  const chapters = Math.ceil(maxLv / 10);
-  let html = '';
-  for (let c = 0; c < chapters; c++){
-    const first = c * 10 + 1, ch = CHAPTERS[chapterOf(first)], rd = roundOf(first);
-    const gl = !canPlay(first);
-    html += `<div class="pkCh"><span>${ch.icon} 챕터 ${c + 1} · ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</span>${gl ? `<span class="lockTag">🔒 별 ${gateFor(first)}개</span>` : ''}</div><div class="pkGrid">`;
-    for (let lv = first; lv < first + 10; lv++){
-      const locked = !devOpen() && lv > top;
-      html += `<button data-lv="${lv}" class="${lv === level ? 'cur' : ''} ${gl ? 'gate' : locked ? 'lock' : ''} ${lv % 10 === 0 && !gl && !locked ? 'boss' : ''}">${lv}<small>${starsOf(lv) || (locked || gl ? '🔒' : lv % 10 === 0 ? '🔥' : '')}</small></button>`;
-    }
-    html += '</div>';
-  }
-  const list = document.getElementById('pkList');
-  list.innerHTML = html;
+  const chapters = Math.ceil(maxLv / 10), curC = Math.floor((level - 1) / 10), topC = Math.floor((top - 1) / 10);
   document.getElementById('picker').classList.remove('hidden');
-  const cur = list.querySelector('.cur'); if (cur) cur.scrollIntoView({ block: 'center' });
+  const list = document.getElementById('pkList');
+  const Wd = list.clientWidth || 360, GAP = 196, Hh = chapters * GAP + 90;
+  const pos = c => ({ x: Math.round(c % 2 ? Wd * 0.68 : Wd * 0.32), y: Hh - 150 - c * GAP });
+  let path = '', html = '';
+  for (let c = 0; c < chapters - 1; c++){
+    const a = pos(c), b = pos(c + 1), my = (a.y + b.y) / 2, done = c < topC;
+    const d = `M${a.x} ${a.y + 10} C${a.x} ${my - 20} ${b.x} ${my + 40} ${b.x} ${b.y + 60}`;
+    path += `<path d="${d}" fill="none" stroke="#23304d" stroke-width="12" stroke-linecap="round" opacity=".16"/><path d="${d}" fill="none" stroke="${done ? '#ffcf3a' : '#fff'}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${done ? '0' : '1 13'}"/>`;
+  }
+  for (let c = 0; c < chapters; c++){
+    const p = pos(c), first = c * 10 + 1, ch = CHAPTERS[chapterOf(first)], rd = roundOf(first);
+    const gl = !devOpen() && !canPlay(first), locked = gl || (!devOpen() && first > top), boss = c % CHAPTERS.length === CHAPTERS.length - 1;
+    if (c % 2 === 0) html += `<i class="pkCloud" style="left:${Wd - 90 - (c * 37) % 60}px;top:${p.y - 60}px"></i>`;
+    html += `<button class="isl${locked ? ' lockI' : ''}${c === curC ? ' sel' : ''}" data-ch="${c}" aria-label="챕터 ${c + 1} ${ch.name}" style="left:${p.x - 75}px;top:${p.y - 100}px"><img src="assets/map/isl${chapterOf(first)}.svg" alt=""></button>`;
+    const badge = gl ? `<em>🔒 ★${gateFor(first)}</em>` : locked ? '<em>🔒</em>' : `<b>${STAR_I('#ffcf3a')} ${chStars(c)}</b>`;
+    html += `<div class="islLbl${locked ? ' lockL' : ''}${boss ? ' boss' : ''}${c === curC ? ' sel' : ''}" style="left:${p.x}px;top:${p.y + 62}px"><i>${c + 1}</i>${ch.name}${rd ? ' ★' + (rd + 1) : ''}${badge}</div>`;
+    if (c === curC) html += `<img class="pkMomo" src="assets/momo_sit.png" alt="" style="left:${p.x - 20}px;top:${p.y - 78}px">`;
+  }
+  list.innerHTML = `<div class="pkMap" style="height:${Hh}px"><svg class="pkPath" width="${Wd}" height="${Hh}" aria-hidden="true">${path}</svg>${html}</div>`;
+  pickSheet(curC);
+  list.scrollTop = pos(curC).y - list.clientHeight / 2;
 }
-function flashPicker(lv){ const b = document.querySelector(`#pkList button[data-lv="${lv}"]`); if (b){ b.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 250 }); } }
+function pickSheet(c){
+  const top = store.get('ss_level', 1), first = c * 10 + 1, ch = CHAPTERS[chapterOf(first)], rd = roundOf(first), gl = !canPlay(first);
+  document.getElementById('pkShT').textContent = `${ch.icon} 챕터 ${c + 1} · ${ch.name}${rd ? ' ★' + (rd + 1) : ''}`;
+  document.getElementById('pkShS').innerHTML = gl ? `<span class="lockTag">🔒 별 ${gateFor(first)}개</span>` : '';
+  let html = '';
+  for (let lv = first; lv < first + 10; lv++){
+    const locked = !devOpen() && lv > top;
+    html += `<button data-lv="${lv}" class="${lv === level ? 'cur' : ''} ${gl ? 'gate' : locked ? 'lock' : ''} ${lv % 10 === 0 && !gl && !locked ? 'boss' : ''}">${lv}<small>${starsOf(lv) || (locked || gl ? '🔒' : lv % 10 === 0 ? '🔥' : '')}</small></button>`;
+  }
+  document.getElementById('pkShG').innerHTML = html;
+  document.querySelectorAll('#pkList .isl').forEach(b => b.classList.toggle('sel', +b.dataset.ch === c));
+  document.querySelectorAll('#pkList .islLbl').forEach((b, i) => b.classList.toggle('sel', i === c));
+}
+function flashPicker(lv){ const b = document.querySelector(`#pkShG button[data-lv="${lv}"]`); if (b){ b.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 250 }); } }
 function goLevel(lv){ if (mode !== 'level') mode = 'level'; if (!store.get('momo_story_seen', false)) store.set('momo_story_seen', true); if (tryLevel(lv)) document.getElementById('picker').classList.add('hidden'); }
 document.getElementById('lvlBtn').onclick = openPicker;
-document.getElementById('pkList').onclick = e => { const b = e.target.closest('button[data-lv]'); if (b) goLevel(b.dataset.lv); };
+document.getElementById('pkList').onclick = e => { const b = e.target.closest('button[data-ch]'); if (b){ AU.sfx('click'); pickSheet(+b.dataset.ch); } };
+document.getElementById('pkShG').onclick = e => { const b = e.target.closest('button[data-lv]'); if (b) goLevel(b.dataset.lv); };
 document.getElementById('pkGo').onclick = () => { const v = document.getElementById('pkNum').value; if (v) goLevel(v); };
 document.getElementById('pkNum').onkeydown = e => { if (e.key === 'Enter') document.getElementById('pkGo').click(); };
 document.getElementById('pkClose').onclick = () => document.getElementById('picker').classList.add('hidden');
@@ -3054,11 +3159,95 @@ function maybeChapterCard(){
   const key = 'momo_ch_' + level;
   if (store.get(key, false)) return;
   store.set(key, true);
-  const ch = CHAPTERS[chapterOf(level)], rd = roundOf(level);
-  cards = [{ art: `<div class="row"><span>${ch.icon}</span></div><img src="assets/momo_surprised.png" class="big shake" alt="" style="height:110px">`,
-    text: `<b>챕터 ${Math.floor((level - 1) / 10) + 1} · ${ch.name}</b><br>` + (rd ? `<b>${rd + 1}회차</b> · 집사가 더 강해져서 돌아왔어요!<br>` : '') + (ch.story || '모모의 도망은 다시 거실에서 시작돼요.') }];
-  storyIdx = 0; renderStory(); document.getElementById('story').classList.remove('hidden');
+  showCutscene(level);
 }
+// ---------- 챕터 전환 장면: 동네 지도에서 모모가 다음 장소로 도망 ----------
+const TOWN_PINS = [[164, 183], [133, 214], [197, 136], [101, 152], [195, 233], [278, 180], [197, 80]];
+let cs = null;
+function newThingsIn(first){
+  const last = first + 9, out = [], add = (l, n) => { if (l > 1 && l >= first && l <= last) out.push([l, n]); };
+  MECH.forEach(m => add(m.lv, m.name)); FEATS.forEach(f => add(f.lv, f.name)); MODS.forEach(m => add(m.lv, m.name));
+  ARCH_UNLOCK.forEach(([a, l]) => add(l, ARCH_NAME[a])); add(MIS_LV, '보너스 목표');
+  return out.sort((a, b) => a[0] - b[0]).map(x => x[1]);
+}
+function csPins(upto, cur){
+  document.getElementById('csPins').innerHTML = TOWN_PINS.map(([x, y], i) => {
+    const done = i <= upto && i !== cur, c = i === cur;
+    return `<span class="csPin${done ? ' done' : c ? ' cur' : i === 6 ? ' boss' : ''}" style="left:${x}px;top:${y}px">${done ? STAR_I('#fff') : i + 1}</span>`;
+  }).join('');
+}
+function csMomoAt(i){ const [x, y] = TOWN_PINS[i], m = document.getElementById('csMomo'); m.style.left = (x - 22) + 'px'; m.style.top = (y - 66) + 'px'; }
+function csFit(){
+  const k = Math.min(innerWidth / 390, (innerHeight - 250) / 440, 1.3);
+  document.getElementById('csStage').style.transform = `translateX(-50%) scale(${Math.max(0.6, k)})`;
+}
+function showCutscene(lv){
+  const c = Math.floor((lv - 1) / 10), N = CHAPTERS.length, to = c % N, from = (c - 1) % N, rd = roundOf(lv);
+  const ch = CHAPTERS[to], prev = CHAPTERS[from], wrap = to === 0, parts = (ch.story || '').split('<br>');
+  cs = { step: -1, c, to, from, rd, lv, ch,
+    lines: [
+      wrap ? `<b>${prev.name}</b>에서 끝까지 버텨냈어요!<br>그런데 집사가 포기하지 않았어요…` : `<b>${prev.name}</b>에서 끝까지 버텨냈어요!<br>이제 다음 장소로 도망쳐요.`,
+      wrap ? '모모는 다시 <b>거실</b>로 도망쳤어요!' : parts[0],
+      wrap ? `<b>${rd + 1}회차</b> · 집사가 더 강해져서 돌아왔어요!` : (parts[1] || '그런데… 위잉- 드론 소리가 또 들려요!'),
+    ] };
+  const sc = document.getElementById('csScene'); sc.style.transition = 'none'; sc.style.transform = ''; sc.offsetWidth; sc.style.transition = '';
+  const m = document.getElementById('csMomo'); m.style.transition = 'none'; csMomoAt(from); m.offsetWidth; m.style.transition = ''; m.classList.remove('run');
+  document.getElementById('csDrones').innerHTML = ''; document.getElementById('csPins').style.opacity = 1;
+  const al = document.getElementById('csAlert'); if (al) al.remove();
+  document.getElementById('csCard').classList.add('hidden'); document.getElementById('csDim').style.opacity = 0;
+  document.getElementById('csBox').style.display = ''; document.getElementById('csSkip').style.display = '';
+  csFit(); document.getElementById('cs').classList.remove('hidden');
+  csGo(0);
+}
+function csGo(n){
+  if (!cs || n <= cs.step) return;
+  cs.step = n;
+  document.getElementById('csDots').innerHTML = [0, 1, 2, 3].map(i => `<i class="${i === n ? 'on' : ''}"></i>`).join('');
+  const txt = document.getElementById('csText'), ban = document.getElementById('csBanner');
+  const setText = t => { txt.innerHTML = t; txt.style.animation = 'none'; txt.offsetWidth; txt.style.animation = ''; };
+  if (n === 0){
+    csPins(cs.from, -1);
+    ban.innerHTML = `<div class="csBan">챕터 ${cs.c} 클리어!</div><div class="csSub">${STAR_I('#ffcf3a')} ${chStars(cs.c - 1)} 모음</div>`;
+    setText(cs.lines[0]); AU.sfx('popper');
+  } else if (n === 1){
+    ban.innerHTML = '';
+    const m = document.getElementById('csMomo'); m.classList.add('run'); csMomoAt(cs.to);
+    setTimeout(() => { m.classList.remove('run'); if (cs && cs.step >= 1) csPins(cs.to === 0 ? -1 : cs.to - 1, cs.to); AU.sfx('pin'); }, 1300);
+    setText(cs.lines[1]); AU.sfx('drawStart');
+  } else if (n === 2){
+    ban.innerHTML = '';
+    const m = document.getElementById('csMomo'); m.classList.remove('run'); m.style.transition = 'none'; csMomoAt(cs.to); m.offsetWidth; m.style.transition = '';
+    csPins(cs.to === 0 ? -1 : cs.to - 1, cs.to);
+    const [x, y] = TOWN_PINS[cs.to], sc = document.getElementById('csScene');
+    sc.style.transformOrigin = `${x}px ${y}px`; sc.style.transform = `translate(${195 - x}px, ${250 - y}px) scale(1.9)`;
+    document.getElementById('csPins').style.opacity = 0;
+    sc.insertAdjacentHTML('beforeend', `<div id="csAlert" style="left:${x + 6}px;top:${y - 90}px">!</div>`);
+    const dr = document.getElementById('csDrones'), src = sprOk('drone') ? SPR.drone.src : 'assets/sprites/drone.png';
+    dr.innerHTML = [[430, 40, 300, 50, 64], [460, 150, 320, 150, 52], [420, -40, 230, 0, 44]].map(([x0, y0, , , sz], i) => `<img class="csDrone" src="${src}" alt="" style="left:${x0}px;top:${y0}px;width:${sz}px;height:${sz}px">`).join('');
+    setTimeout(() => { if (!cs || cs.step !== 2) return; [[300, 50], [320, 150], [230, 0]].forEach(([x1, y1], i) => { const d = dr.children[i]; if (d){ d.style.left = x1 + 'px'; d.style.top = y1 + 'px'; } }); AU.sfx('meow'); }, 700);
+    setText(cs.lines[2]);
+  } else {
+    ban.innerHTML = '';
+    const first = cs.c * 10 + 1, nw = cs.rd ? [] : newThingsIn(first);
+    document.getElementById('csDim').style.opacity = 1;
+    document.getElementById('csBox').style.display = 'none'; document.getElementById('csSkip').style.display = 'none';
+    const card = document.getElementById('csCard');
+    card.innerHTML = `<img id="csCardMomo" src="assets/momo_sit.png" alt=""><div class="csCh">CHAPTER ${cs.c + 1}</div>
+      <div class="csName">${cs.ch.name}</div>
+      <div class="csLv">${cs.rd ? `<b style="font-weight:400;color:var(--pinkD)">${cs.rd + 1}회차</b> · ` : ''}Lv.${first} – ${first + 9} · 보스는 Lv.${first + 9}</div>
+      ${nw.length ? `<div class="csHr"></div><div class="csNewT">여기서 처음 만나요</div><div class="csNew">${nw.map(t => `<span>${t}</span>`).join('')}</div>` : ''}
+      <button class="cbtn green big" id="csGo">시작하기 🐾</button>`;
+    card.classList.remove('hidden'); AU.sfx('star');
+    document.getElementById('csGo').onclick = e => { e.stopPropagation(); AU.sfx('click'); closeCutscene(); };
+  }
+}
+function closeCutscene(){ cs = null; document.getElementById('cs').classList.add('hidden'); }
+document.getElementById('cs').addEventListener('click', e => {
+  if (!cs || e.target.closest('button')) return;
+  if (cs.step < 3){ AU.sfx('click'); csGo(cs.step + 1); }
+});
+document.getElementById('csSkip').onclick = e => { e.stopPropagation(); csGo(3); };
+addEventListener('resize', () => { if (cs) csFit(); });
 document.getElementById('sSkip').onclick = closeStory;
 document.getElementById('btnStory').onclick = showStory;
 
