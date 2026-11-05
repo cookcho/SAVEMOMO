@@ -392,7 +392,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v1.1.2</span>
+  <span id="ver">v1.1.3</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -1062,7 +1062,7 @@ function setup(){
   });
   // 움직이는 지형(시소·매달린 발판)
   // 옆 발사대: 물풍선이 실제로 화면에 들어오는 지점(발사구)과 그때의 방향을 미리 계산 → 발사대를 그 자리·방향에 그림
-  L.chutes.forEach(c => { if (c.type === 'side' && !c.mouth) c.mouth = chuteMouth(c); });
+  L.chutes.forEach(c => { if (!c.mouth) c.mouth = c.type === 'side' ? chuteMouth(c) : { x: c.x, y: 66, vx: 0, vy: 1 }; c._outT = -1e9; });
   dynBodies = []; const dynCons = [];
   L.D.forEach(d => {
     const b = Bodies.rectangle(d.x, d.y, d.w, d.h, { label: d.type, density: d.type === 'seesaw' ? 0.002 : 0.003, friction: 0.9, frictionAir: 0.02 });
@@ -1539,7 +1539,7 @@ function step(){
     if (simT >= chuteT[i]){
       chuteT[i] += c.interval * TC;
       const k = Bodies.circle(c.x, c.y, c.r, { label: 'balloon', density: 0.008, friction: 0.3, restitution: 0.25, collisionFilter: { category: 32, mask: 0xFFFFFFFF & ~16 } });
-      k.plugin = { hit: false, col: Math.floor(simRng() * 4), side: c.type === 'side' ? (c.x < 0 ? -1 : 1) : 0, mx: c.mouth ? c.mouth.x : 0 };
+      k.plugin = { hit: false, col: Math.floor(simRng() * 4), side: c.type === 'side' ? (c.x < 0 ? -1 : 1) : 0, mx: c.mouth.x, my: c.mouth.y, chute: c };
       Body.setVelocity(k, { x: c.vx, y: c.vy });
       addBody(k, rocks);
     }
@@ -1934,15 +1934,18 @@ function drawChute(c){
   // 물풍선 발사대(파란 통)
   ctx.fillStyle = '#4dabf7'; const S = VIS.chute;
   if (sprOk('launcher')){
-    if (c.type === 'top') drawSpr('launcher', c.x, 26, 62, 62);
-    else { const m = c.mouth, vm = Math.hypot(m.vx, m.vy) || 1, ux = m.vx / vm, uy = m.vy / vm; // 발사구(그림 아래쪽)를 물풍선이 나오는 자리·방향에 맞춤
-      drawSpr('launcher', m.x - ux * 22, m.y - uy * 22, 62, 62, Math.atan2(uy, ux) - Math.PI / 2); }
+    // 발사구(그림 아래쪽)를 물풍선이 나오는 자리·방향에 맞춤. 쏠 때 뒤로 밀렸다 돌아옴
+    const m = c.mouth, vm = Math.hypot(m.vx, m.vy) || 1, ux = m.vx / vm, uy = m.vy / vm, SZ = 84;
+    const dt = (phase === 'sim' ? simT : 0) - (c._outT ?? -1e9), rc = dt >= 0 && dt < 220 ? Math.sin(dt / 220 * Math.PI) : 0;
+    const back = 34 + rc * 9, sq = 1 + rc * 0.12;
+    ctx.save(); ctx.translate(m.x - ux * back, m.y - uy * back); ctx.rotate(Math.atan2(uy, ux) - Math.PI / 2); ctx.scale(sq, 1 / sq);
+    ctx.drawImage(SPR.launcher, -SZ / 2, -SZ / 2, SZ, SZ); ctx.restore();
   }
   else if (c.type === 'top'){ ctx.fillRect(c.x - 17 * S, 0, 34 * S, 16 * S); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x - 13 * S, 10 * S, 26 * S, 6 * S); }
   else { const x = c.x < 0 ? 0 : W - 22 * S; /* 발사구는 화면 가장자리에 그림 */ ctx.fillRect(x, c.y - 17 * S, 22 * S, 34 * S); ctx.fillStyle = '#1c7ed6'; ctx.fillRect(c.x < 0 ? 16 * S : W - 22 * S, c.y - 13 * S, 6 * S, 26 * S); }
   if (phase === 'draw'){
     ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.font = '800 14px sans-serif'; ctx.textAlign = 'center';
-    if (c.type === 'top') ctx.fillText('🎈 ↓', c.x, 42);
+    if (c.type === 'top') ctx.fillText('🎈 ↓', c.x, c.mouth.y + 18);
     else { const m = c.mouth || { x: c.x < 0 ? 56 : W - 56, y: c.y }; ctx.fillText(c.x < 0 ? '🎈 →' : '← 🎈', m.x + (c.x < 0 ? 26 : -26), m.y - 22); }
   }
 }
@@ -2560,7 +2563,18 @@ function drawCrawler(c){
 // 물풍선
 function drawRock(k){
   const P = k.plugin;
-  if (P.side && !P.out){ if (P.side < 0 ? k.position.x >= P.mx - 4 : k.position.x <= P.mx + 4) P.out = true; else return; }
+  // 대포 입구를 지날 때까지는 숨김 → 지나는 순간 '펑' 하고 튀어나옴(대포가 뒤로 밀리고 연기)
+  if (!P.out){
+    const passed = P.side ? (P.side < 0 ? k.position.x >= P.mx - 4 : k.position.x <= P.mx + 4) : k.position.y >= P.my - 4;
+    if (!passed) return;
+    P.out = true; P.outT = simT;
+    if (P.chute){ P.chute._outT = simT; fxCannon(P.chute.mouth); AU.sfx('cannon'); }
+  }
+  const grow = Math.min(1, 0.55 + (simT - P.outT) / 160 * 0.45);
+  ctx.save(); ctx.translate(k.position.x, k.position.y); ctx.scale(grow, grow); ctx.translate(-k.position.x, -k.position.y);
+  drawRockBody(k); ctx.restore();
+}
+function drawRockBody(k){
   const r = k.circleRadius, col = BALLOON[k.plugin.col || 0], sn = BALLOON_SPR[k.plugin.col || 0];
   if (sprOk(sn)){ drawSpr(sn, k.position.x, k.position.y + r * 0.08, r * 2.75, r * 2.75, clamp(k.velocity.x * 0.05, -0.3, 0.3)); return; }
   ctx.save(); ctx.translate(k.position.x, k.position.y); ctx.rotate(clamp(k.velocity.x * 0.05, -0.3, 0.3));
@@ -2609,6 +2623,12 @@ function fxWin(x, y){
 function fxSplash(x, y){
   for (let i = 0; i < 14; i++){ const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.6, v = 160 + Math.random() * 200; addFx({ kind: 'bit', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 700, c: '#8fd0ff', w: 6, h: 6, rot: 0, spin: 0, life: 700 }); }
   addFx({ kind: 'ring', x, y, c: '#cfefff', life: 500, r0: 10, r1: 50 });
+}
+function fxCannon(m){
+  const vm = Math.hypot(m.vx, m.vy) || 1, ux = m.vx / vm, uy = m.vy / vm;
+  addFx({ kind: 'ring', x: m.x + ux * 6, y: m.y + uy * 6, c: '#ffffff', life: 280, r0: 8, r1: 30 });
+  for (let i = 0; i < 6; i++){ const a = Math.atan2(uy, ux) + (Math.random() - 0.5) * 1.8, v = 60 + Math.random() * 90;
+    addFx({ kind: 'bit', x: m.x, y: m.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: -40, c: '#ffffff', w: 9, h: 9, rot: 0, spin: 0, life: 420 }); }
 }
 function drawFx(){
   const now = performance.now();

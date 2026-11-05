@@ -243,6 +243,7 @@ const AU = (() => {
     equip: () => { tone({ f: 660, f2: 990, d: 0.12, v: 0.16 }); tone({ f: 1320, t: now() + 0.08, d: 0.15, v: 0.08 }); },
     nope: () => { tone({ type: 'square', f: 220, d: 0.09, v: 0.07, lp: 1200 }); tone({ type: 'square', f: 180, t: now() + 0.1, d: 0.12, v: 0.07, lp: 1200 }); },
     lock: () => { tone({ type: 'triangle', f: 180, f2: 120, d: 0.15, v: 0.3 }); noise({ d: 0.06, v: 0.12, f: 1500, q: 2 }); },
+    cannon: () => { if (!gap('cannon', 0.15)) return; tone({ f: 130, f2: 55, d: 0.18, v: 0.4 }); noise({ d: 0.12, v: 0.18, type: 'lowpass', f: 1200, f2: 300 }); tone({ f: 600, f2: 900, t: now() + 0.03, d: 0.08, v: 0.08 }); },
     gust: () => { if (!gap('gust', 0.8)) return; noise({ a: 0.08, d: 0.9, v: 0.16, f: 700, f2: 2400, q: 0.7 }); noise({ a: 0.05, d: 0.6, v: 0.08, type: 'lowpass', f: 500 }); },
     rev: () => { if (!gap('rev', 0.8)) return; noise({ a: 0.15, d: 0.35, v: 0.05, f: 500, f2: 900, q: 0.8 }); },
     item: () => { tone({ f: 784, d: 0.1, v: 0.14 }); tone({ f: 1175, t: now() + 0.07, d: 0.18, v: 0.12 }); },
