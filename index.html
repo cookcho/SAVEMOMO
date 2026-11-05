@@ -465,7 +465,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v1.4.1</span>
+  <span id="ver">v1.4.2</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -1049,7 +1049,8 @@ function genLevel(lv, seed, themeIdx){
       // 물풍선만 있는 레벨은 첫 발사대를 모모 바로 위에 둠
       const onlyRock = i === 0 && !kinds.some(k => ['bee', 'wasp', 'crawl', 'tank', 'bigdog', 'rain'].includes(k));
       const top = () => ({ type: 'top', x: clamp(px + R(-30, 30), 24, W - 24), y: -12, vx: 0, vy: 1, ...base });
-      if ((onlyRock || r() < 0.5) && !L.cave && !(intro && intro.k === 'rock')){ L.chutes.push(top()); continue; }
+      const cloudOver = L.clouds.some(cl => Math.abs(cl.x - px) < cl.w / 2 + 30); // 비구름이 모모 위에 있으면 옆 발사대를 먼저
+      if ((onlyRock || r() < 0.5) && !cloudOver && !L.cave && !(intro && intro.k === 'rock')){ L.chutes.push(top()); continue; }
       // 옆 발사대: 실제로 날려 보고 모모 근처까지 가는 궤도만 씀(지형에 막히면 다시 고르고, 끝내 안 되면 위에서 떨어뜨림)
       let ok = null;
       for (let t2 = 0; t2 < 6 && !ok; t2++){
@@ -1065,6 +1066,15 @@ function genLevel(lv, seed, themeIdx){
       if (ok) L.chutes.push(ok); else if (!L.cave) L.chutes.push(top());
     }
     if (!L.chutes.length) kinds.splice(kinds.indexOf('rock'), 1);
+  }
+  // 위쪽 물풍선 발사대와 비구름이 겹치지 않게: 구름을 발사대 옆으로 비킴(빗물과 물풍선이 한데 섞여 떨어지던 문제)
+  for (const ch of L.chutes.filter(c => c.type === 'top')) for (const cl of L.clouds){
+    const gap = cl.w / 2 + 34;
+    if (Math.abs(cl.x - ch.x) >= gap) continue;
+    const opts = [-1, 1].map(sd => ch.x + sd * gap).filter(x => x - cl.w / 2 >= 6 && x + cl.w / 2 <= W - 6)
+      .sort((a, b) => Math.abs(a - px) - Math.abs(b - px));
+    if (opts.length) cl.x = opts[0];
+    else { cl.w = Math.max(70, Math.min(ch.x - 40, W - ch.x - 40) * 2 - 20); cl.x = ch.x < W / 2 ? ch.x + cl.w / 2 + 34 : ch.x - cl.w / 2 - 34; }
   }
 
 
