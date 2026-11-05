@@ -1,6 +1,6 @@
 /* SAVE MOMO — 서비스 워커
    목표: (1) 한 번 열었으면 인터넷이 없어도 실행된다  (2) 인터넷이 있으면 최신본을 가져온다 */
-const CACHE = 'savemomo-v50';
+const CACHE = 'savemomo-v51';
 const FILES = [
   './', './index.html', './manifest.webmanifest', './lib/matter.min.js', './audio.js',
   './icon-192.png', './icon-512.png', './icon-mask-512.png', './apple-touch-icon.png', './favicon.png',

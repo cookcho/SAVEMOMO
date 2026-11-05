@@ -7,7 +7,7 @@ const AU = (() => {
   const sv = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_){} };
   let ctx = null, comp, musicBus, sfxBus, noiseBuf, amb = null;
   // 소리 크기 0=끄기 1=작게 2=보통 3=크게 (예전 켜기/끄기 설정은 보통/끄기로 옮김)
-  const VOLK = [0, 0.45, 1, 1.6];
+  const VOLK = [0, 0.16, 1, 1.6]; // 끄기·작게·보통·크게 (작게는 약 -16dB)
   let musicV = st('momo_music_v', st('momo_music', true) === false ? 0 : 2), sfxV = st('momo_sfx_v', st('momo_sfx', true) === false ? 0 : 2);
   const SFX_VOL = 1.0;
   // 음악 크기: 시작 화면은 크게, 게임 중에는 효과음이 잘 들리게 작게
