@@ -465,7 +465,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v1.5.0</span>
+  <span id="ver">v1.5.1</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -540,7 +540,7 @@ const CAT_DEF = 1, CAT_BUG = 2, CAT_DROP = 4, CAT_CRAWL = 8;
 // ---------- 요소 정의: 레벨이 오르면 하나씩 처음 등장 ----------
 const MECH = [
   { k: 'bee',   lv: 1, name: '드론 떼', icon: '🛸', desc: '집사가 띄운 물 드론! 틈이 있으면 돌아서 들어와요' },
-  { k: 'pin',   lv: 2, name: '고정 핀', icon: '📌', desc: '선이 핀을 지나가면 그 자리에 고정돼요' },
+  { k: 'pin',   lv: 2, name: '고정 핀', icon: '📌', desc: '선이 핀을 지나가면 그 자리에 고정돼요. 받침이 좁으니 점선처럼 핀에 걸어 천막을 쳐 보세요' },
   { k: 'rain',  lv: 3, name: '빗물', icon: '🌧️', desc: '비구름이 몰려왔어요. 위를 막아 주세요' },
   { k: 'rock',  lv: 4, name: '물풍선', icon: '🎈', desc: '날아온 물풍선은 부딪히면 터지며 물이 튀어요' },
   { k: 'wind',  lv: 5, name: '돌풍', icon: '💨', desc: '바람이 잦아들었다가 확 몰아쳐요. 띠가 깜빡이면 곧 돌풍! 띠 안의 선·빗물·드론을 세게 밀어요' },
@@ -742,7 +742,7 @@ function archBase(lv, seed, avoid = []){
   return unlocked[unlocked.length - 1];
 }
 // 레벨별 변형 번호(1~150). 같은 레벨 번호로 여러 판을 만들어 자동 풀이로 재 보고, 난이도 곡선에 가장 맞는 판을 고름(0 = 기본)
-const VAR = [0,1,2,3,2,1,3,2,1,1,2,3,0,0,1,1,1,1,0,3,0,3,1,1,0,0,3,3,1,3,0,1,3,1,0,0,0,1,0,0,1,1,0,3,3,0,0,0,2,2,2,0,2,1,3,2,0,0,0,2,1,0,0,1,0,2,0,2,2,1,1,0,1,2,0,2,1,0,1,1,0,1,2,1,3,0,2,2,3,2,0,1,1,1,2,1,2,2,3,1,1,1,0,0,2,2,0,3,2,2,3,1,3,0,3,2,3,2,1,2];
+const VAR = [0,1,2,3,2,1,3,2,1,1,2,3,0,0,1,1,1,1,0,3,0,3,1,1,0,0,3,3,1,1,1,1,1,1,0,1,0,1,0,0,1,1,0,3,3,2,0,0,1,2,2,1,3,1,3,2,0,0,2,2,1,3,2,2,0,0,2,2,2,0,3,1,1,2,0,2,2,1,3,2,1,0,0,0,1,3,1,1,3,3,3,0,0,1,3,3,1,0,0,1,0,2,1,1,0,3,0,3,3,3,1,1,1,1,3,2,3,2,1,2];
 const lvSeed = lv => lv * 7919 + 101 + (VAR[lv - 1] || 0) * 1000003;
 function genLevel(lv, seed, themeIdx){
   const r = rng(seed), R = (a, b) => a + r() * (b - a), pick = a => a[Math.floor(r() * a.length)];
@@ -773,7 +773,8 @@ function genLevel(lv, seed, themeIdx){
   L.archIntro = archIntro ? arch : null;
   let px, top, hw;
   if (arch === 'plat'){
-    px = R(70, 290); top = R(400, 540); const pw = R(80, 120); hw = pw / 2;
+    const pinIntro = MECH.find(m => m.k === 'pin').lv === lv; // 핀 소개 판: 모모만 겨우 앉는 좁은 받침 → 지붕 다리를 받칠 곳이 없어 핀에 걸어야 함
+    px = pinIntro ? R(130, 230) : R(70, 290); top = pinIntro ? R(400, 450) : R(400, 540); const pw = pinIntro ? 50 : R(80, 120); hw = pw / 2;
     S.push({ x: px, y: top + 8, w: pw, h: 16, a: 0, kind: 'plat' });
   } else if (arch === 'ground'){
     px = R(60, 300); top = GY; hw = 999; L.groundCat = true;
@@ -1098,8 +1099,10 @@ function genLevel(lv, seed, themeIdx){
   if (has('pin') && ((intro && intro.k === 'pin') || lv >= 31 || r() < 0.75 - 0.35 * D)){
     const n = lv >= 45 ? 2 : 1 + (r() < 0.35 ? 1 : 0);
     for (let i = 0; i < n; i++){
+      if (intro && intro.k === 'pin' && i === 0){ const p = { x: sp.x + R(-5, 5), y: sp.y - 44 }; used.push(p); L.pins.push(p); continue; } // 머리 바로 위: 천막처럼 걸면 됨
       for (let t = 0; t < 80; t++){
-        const ang = R(-Math.PI + 0.25, -0.25), d = R(70, 130);
+        // 지붕을 걸 수 있는 거리(머리 위쪽 42~75px)
+        const ang = R(-Math.PI + 0.35, -0.35), d = R(42, 75);
         const p = { x: sp.x + Math.cos(ang) * d, y: sp.y + Math.sin(ang) * d };
         if (!free(p, 12) || used.some(q => dist(q, p) < 45)) continue;
         used.push(p); L.pins.push(p); break;
@@ -1965,6 +1968,7 @@ function finish(win, reason, delay = 450){
       : (!win && /물에 빠졌어요/.test(reason)) ? (L.slope ? '미끄럼판 아래쪽을 막아서 모모를 붙잡아요' : L.floatCat ? '모모가 떨어질 자리에 받침을 그려 주세요' : '선이 모모를 밀어내지 않게, 모모 옆을 단단히 받쳐요') : '';
     tip.textContent = tipText; tip.classList.toggle('hidden', !tipText);
     if (tut && win) store.set('momo_tut_done', true);
+    if (win && pinTut()) store.set('momo_pin_done', true);
     document.getElementById('mStars').innerHTML = win ? [0, 1, 2].map(i => `<i class="${i < stars ? 'on' : ''}" style="animation-delay:${0.2 + i * 0.18}s">★</i>`).join('') : '<i class="drop" style="animation-delay:.15s">💧</i>';
     const mm = document.getElementById('mMis');
     mm.classList.toggle('hidden', !L.mis || !win);
@@ -2943,8 +2947,10 @@ function drawPops(){
   }
 }
 let tut = false;
+const pinTut = () => mode === 'level' && L.intro && L.intro.k === 'pin' && L.pins.length && !store.get('momo_pin_done', false);
 function guidePath(){
   const sp = L.sp, top = L.pot.y + 18, w = 40, y = sp.y - 26;
+  if (!tut && pinTut()){ const pn = L.pins[0]; return [{ x: sp.x - 46, y: sp.y + 88 }, { x: pn.x, y: pn.y }, { x: sp.x + 46, y: sp.y + 88 }]; } // 핀을 지나는 천막(받침 아래까지 덮어야 아래로 파고드는 드론도 막음)
   return [{ x: sp.x - w, y: top - 10 }, { x: sp.x - w, y }, { x: sp.x + w, y }, { x: sp.x + w, y: top - 10 }];
 }
 function drawGuide(){
@@ -3139,7 +3145,7 @@ function render(){
   crawlers.forEach(drawCrawler);
   drawLine();
   L.pins.forEach(drawPin);
-  if (tut && phase === 'draw' && !drawing && pts.length === 0) drawGuide();
+  if ((tut || pinTut()) && phase === 'draw' && !drawing && pts.length === 0) drawGuide();
   if (L.water) drawWaterPool();
   bugs.forEach(drawBug);
   drawFx();
