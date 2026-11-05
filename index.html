@@ -96,7 +96,8 @@
   canvas{touch-action:none;border-radius:16px;display:block;border:3px solid #fff;box-shadow:0 6px 0 rgba(35,48,77,.22),0 10px 24px rgba(35,48,77,.18)}
   #stage.danger::after{content:'';position:absolute;inset:6px 8px 8px;border-radius:18px;pointer-events:none;box-shadow:inset 0 0 0 4px rgba(255,60,60,.7);animation:dpulse .5s ease-in-out infinite alternate}
   @keyframes dpulse{from{opacity:.35}to{opacity:1}}
-  #hint{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.95);color:var(--navy);border:3px solid var(--navy);box-shadow:0 4px 0 rgba(35,48,77,.25);padding:8px 14px 7px;border-radius:16px;font-size:14px;text-align:center;pointer-events:none;max-width:86%;width:max-content;line-height:1.45;word-break:keep-all}
+  #hint{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.95);color:var(--navy);border:3px solid var(--navy);box-shadow:0 4px 0 rgba(35,48,77,.25);padding:8px 14px 7px;border-radius:16px;font-size:14px;text-align:center;pointer-events:none;max-width:86%;width:max-content;line-height:1.45;word-break:keep-all;transition:opacity .4s}
+  #hint.fade{opacity:0}
   #hint b{color:#e8590c}
 
   /* ---------- 결과 창 ---------- */
@@ -391,7 +392,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v1.1.1</span>
+  <span id="ver">v1.1.2</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -1124,7 +1125,10 @@ function setup(){
     : L.modIntro && mode === 'level'
     ? `<b>NEW 규칙 · ${L.modIntro.icon} ${L.modIntro.name}</b><br>${L.modIntro.desc}`
     : '한 번에 선을 그어 모모를 지키세요 · 7초';
-  hint.classList.remove('hidden');
+  hint.classList.remove('hidden', 'fade');
+  // 안내는 잠깐 보여 주고 사라짐(위에서 내려오는 물풍선·구름을 가리지 않게). 처음 나오는 요소 안내는 읽을 시간을 조금 더. 튜토리얼은 그대로
+  clearTimeout(toastTimer);
+  if (!tut) toastTimer = setTimeout(hideHint, hint.textContent.startsWith('NEW') ? 3500 : 2000);
   const b = store.get(curKey(), null);
   document.getElementById('best').innerHTML = mode === 'daily' ? (b ? `최고 ${b.score}점` : String(todayKey()).slice(4, 6) + '월 ' + +String(todayKey()).slice(6) + '일 도전') : b ? `<span class="gs">${'★'.repeat(recStars(b))}</span> 최고 ${b.score}점` : '첫 도전';
   updateInk(); renderItemBar();
@@ -1248,11 +1252,12 @@ cv.addEventListener('lostpointercapture', () => { if (drawing) release(); active
 cv.addEventListener('pointermove', e => moveTo(toWorld(e)));
 ['pointerup', 'pointercancel'].forEach(t => cv.addEventListener(t, () => { release(); activePointer = null; }));
 
+function hideHint(){ const h = document.getElementById('hint'); h.classList.add('fade'); setTimeout(() => { if (h.classList.contains('fade')) h.classList.add('hidden'); }, 400); }
 function showToast(msg){
   const h = document.getElementById('hint');
-  h.textContent = msg; h.classList.remove('hidden');
+  h.textContent = msg; h.classList.remove('hidden', 'fade');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { if (phase !== 'draw' || drawing) h.classList.add('hidden'); }, 2200);
+  toastTimer = setTimeout(hideHint, 2200);
 }
 
 const inkDensity = () => L.mods.includes('heavy') ? 0.0028 : 0.0012; // 선이 가벼워야 적에게 밀림
@@ -1260,7 +1265,7 @@ function endStroke(){
   drawing = false; fingerBlocked = false; AU.drawingStop();
   if (inkUsed < 12){
     pts = []; inkUsed = 0; L.pins.forEach(p => p.on = false); updateInk();
-    document.getElementById('hint').classList.remove('hidden'); return;
+    { const h = document.getElementById('hint'); h.classList.remove('hidden', 'fade'); clearTimeout(toastTimer); if (!tut) toastTimer = setTimeout(hideHint, 2000); } return;
   }
   const rs = [pts[0]]; let acc = 0;
   for (let i = 1; i < pts.length; i++){
