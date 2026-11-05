@@ -465,7 +465,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v1.4.3</span>
+  <span id="ver">v1.4.4</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -1164,11 +1164,23 @@ function genLevel(lv, seed, themeIdx){
   L.zones = [];
   if (mods.includes('nozone')){
     const nz = 1 + (r() < 0.5 ? 1 : 0) + (lv >= 50 ? 1 : 0);
-    for (let i = 0; i < nz; i++) for (let t = 0; t < 60; t++){
-      const z = { x: R(40, W - 40), y: R(110, GY - 40), w: R(60, 120), h: R(50, 110), a: 0 };
-      if (inRect(sp, z, 60) || inRect(L.pot, z, 50) || (L.sp2 && inRect(L.sp2, z, 60)) || L.pins.some(pn => inRect(pn, z, 16)) || L.zones.some(o => dist(o, z) < 70)) continue;
-      L.zones.push(z); break;
+    // 모모 가까이에 둬서 '늘 그리던 지붕'을 못 쓰게 함:
+    //  cap = 머리 바로 위(낮고 꽉 끼는 지붕만 됨), side = 한쪽 옆(그쪽을 크게 돌아 감싸야 함), near = 모모 둘레 아무 데나
+    const typs = r() < 0.5 ? ['cap', 'side', 'near'] : ['side', 'cap', 'near'];
+    for (let i = 0; i < nz; i++) for (let t = 0; t < 80; t++){
+      const typ = t < 40 && !L.twin ? typs[i % 3] : 'near'; // 코코 판은 두 마리를 잇는 지붕 길은 비워 둠
+      let z;
+      if (typ === 'cap'){ const w = R(90, 150), h = R(50, 90); z = { x: sp.x + R(-30, 30), y: sp.y - R(52, 62) - h / 2, w, h, a: 0 }; }
+      else if (typ === 'side'){ const w = R(50, 80), h = R(80, 130), sd = r() < 0.5 ? -1 : 1; z = { x: sp.x + sd * (R(42, 56) + w / 2), y: sp.y + R(-30, 10), w, h, a: 0 }; }
+      else { const ang = R(-Math.PI, 0.3), d = R(90, 150), w = R(60, 110), h = R(50, 100); z = { x: sp.x + Math.cos(ang) * d, y: sp.y + Math.sin(ang) * d, w, h, a: 0 }; }
+      if (z.x - z.w / 2 < -10 || z.x + z.w / 2 > W + 10 || z.y - z.h / 2 < 100 || z.y + z.h / 2 > GY) continue;
+      if (inRect(sp, z, 36) || inRect(L.pot, z, 30) || (L.sp2 && (inRect(L.sp2, z, 36) || inRect(L.pot2, z, 30))) || L.pins.some(pn => inRect(pn, z, 16)) || L.zones.some(o => Math.abs(o.x - z.x) < (o.w + z.w) / 2 + 20 && Math.abs(o.y - z.y) < (o.h + z.h) / 2 + 20)) continue;
+      if (L.twin){ const y0 = Math.min(sp.y, L.sp2.y) - 75, y1 = Math.max(sp.y, L.sp2.y) + 40, x0 = Math.min(sp.x, L.sp2.x) - 70, x1 = Math.max(sp.x, L.sp2.x) + 70;
+        if (z.x + z.w / 2 > x0 && z.x - z.w / 2 < x1 && z.y + z.h / 2 > y0 && z.y - z.h / 2 < y1) continue; }
+      if (S.some(o => !o.shape && !o.a && Math.abs(o.x - z.x) < (o.w + z.w) / 2 - 10 && Math.abs(o.y - z.y) < (o.h + z.h) / 2 - 10 && o.w * o.h > z.w * z.h * 0.6)) continue; // 지형 속에 파묻힌 구역은 의미 없음
+      z.typ = typ; L.zones.push(z); break;
     }
+    if (!L.zones.length && !(L.modIntro && L.modIntro.k === 'nozone')) L.mods = mods = mods.filter(k => k !== 'nozone');
   }
   // 잉크: D가 오를수록 짧아짐(덮개 하나 ≈ 230px). 파낸 지형은 입구만 막으면 돼서 더 짧게
   const inkOld = clamp(620 - 380 * D, 210, 620) * (L.carve ? 0.85 : L.floatCat ? 1.9 : L.slope ? 1.15 : 1);
@@ -1176,6 +1188,7 @@ function genLevel(lv, seed, themeIdx){
     const PAR0 = { pocket: 95, well: 95, alcove: 100, cave: 95, stairs: 150, bowl: 170, plat: 185, ground: 190, cliff: 190, shelf: 190, valley: 190, pillar: 205, hang: 205, seesaw: 205, slope: 190, drop: 300 };
     let par = (PAR0[arch] || 190) + (L.carveInfo && L.carveInfo.extra ? 70 : 0) + (L.cacti && L.cacti.length ? 35 : 0);
     if (L.twin) par += Math.abs(L.pot2.x - px) + 70; // 둘을 잇는 지붕
+    par += L.zones.reduce((n, z) => n + (z.typ === 'side' ? 60 : z.typ === 'cap' ? 20 : 30), 0); // 금지 구역을 돌아가는 만큼
     if (L.hives.some(h => h.y > sp.y + 40)) par *= 1.35; // 아래에서도 공격 → 아래까지 감싸야 함
     L.par = Math.round(par);
   }
