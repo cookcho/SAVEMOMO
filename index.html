@@ -391,7 +391,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v1.1.0</span>
+  <span id="ver">v1.1.1</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -1146,12 +1146,15 @@ function updateInk(){
 // ---------- 선 그리기 ----------
 function toWorld(e){ const r = cv.getBoundingClientRect(); return { x: clamp((e.clientX - r.left - cv.clientLeft) / scale - XP, 3 - XP, W + XP - 3), y: (e.clientY - r.top - cv.clientTop) / scale }; }
 // 선 두께(11px)만큼 물체와 겹치지 않게 가장자리 6px 안쪽은 그릴 수 없음
+const PROBES_CAT = [[0, 0], [4, 0], [-4, 0], [0, 4], [0, -4], [2.8, 2.8], [-2.8, 2.8], [2.8, -2.8], [-2.8, -2.8]];
 const EDGE = 6, PROBES = [[0, 0], [EDGE, 0], [-EDGE, 0], [0, EDGE], [0, -EDGE], [4.2, 4.2], [-4.2, 4.2], [4.2, -4.2], [-4.2, -4.2]];
 function blocked(p){
   if (p.x < 2 - XP || p.x > W + XP - 2 || p.y < 2 || p.y > H - 2) return true; // 양옆으로 넓힌 화면 끝까지 그릴 수 있음
   if (L.zones && L.zones.some(z => inRect(p, z, 0))) return true;
-  const bs = [...statics, ...dynBodies, potBody];
-  return PROBES.some(([ox, oy]) => Query.point(bs, { x: p.x + ox, y: p.y + oy }).length > 0);
+  const bs = [...statics, ...dynBodies];
+  if (PROBES.some(([ox, oy]) => Query.point(bs, { x: p.x + ox, y: p.y + oy }).length > 0)) return true;
+  // 모모는 조금 더 바짝 붙여 그릴 수 있게(선 두께 절반만큼만 띄움)
+  return PROBES_CAT.some(([ox, oy]) => Query.point([potBody], { x: p.x + ox, y: p.y + oy }).length > 0);
 }
 function segFree(a, b){
   const steps = Math.max(1, Math.ceil(dist(a, b) / 3));
@@ -1215,6 +1218,15 @@ function moveTo(p){
   if (dist(p, last) < 4){ fingerBlocked = false; return; }
   const f = segFree(last, p);
   if (f >= 1){ fingerBlocked = false; addPoint(p); return; }
+  // 물체 가장자리를 따라 미끄러지기: 손가락 위치에서 가장 가까운 빈 곳으로 이어 그림(모모를 바짝 감쌀 수 있게)
+  const near = nearestFree(p, 26);
+  if (near && dist(near, last) >= 2){
+    const f2 = segFree(last, near);
+    if (f2 >= 1){ fingerBlocked = false; addPoint(near); return; }
+    // 모서리를 돌아가야 하면 중간 지점을 거쳐 감
+    const mid = nearestFree({ x: (last.x + near.x) / 2, y: (last.y + near.y) / 2 }, 20);
+    if (mid && segFree(last, mid) >= 1 && segFree(mid, near) >= 1){ fingerBlocked = false; if (addPoint(mid)) addPoint(near); return; }
+  }
   fingerBlocked = true; AU.sfx('blocked');
   if (!blockToastShown){ blockToastShown = true; showToast('선은 물체를 통과할 수 없어요 · 빈 곳으로 돌아오면 이어져요'); }
   const q = { x: last.x + (p.x - last.x) * f, y: last.y + (p.y - last.y) * f };
