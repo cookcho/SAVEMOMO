@@ -465,7 +465,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2 시험판</span>
+  <span id="ver">v2.0.0</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -488,6 +488,7 @@
     <div class="setHd">📁 기록</div>
     <p style="font-size:13px;color:#7a8aa6;margin:0 0 8px">레벨 기록, 별, 아이템, 꾸미기를 모두 지우고<br>1레벨 이야기부터 다시 시작해요.</p>
     <div class="btns" style="margin-top:6px"><button class="cbtn red" id="rDo">처음부터 다시 하기</button><button class="cbtn white" id="rClose">닫기</button></div>
+    <a href="./v1/" style="display:block;margin-top:10px;font-size:13px;color:#6b7a90;text-align:center">이전 버전(v1) 하러 가기</a>
   </div>
 </div>
 <div id="gate" class="hidden">
@@ -3404,7 +3405,7 @@ showTitle();
 
 // ---------- 앱 설치(PWA) ----------
 // 오프라인 실행용 서비스 워커. 한 번 열면 인터넷 없이도 실행됨
-if (false && 'serviceWorker' in navigator && location.protocol.startsWith('http')){ // v2 시험판: 서비스 워커 끔
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load', () => {
     // 새 버전의 서비스 워커가 자리를 잡아도 게임 중에는 새로고침하지 않음(시작 버튼을 누른 직후 처음 화면으로 튕기던 문제).
     // 화면(index.html)은 늘 서버에서 최신본을 받아 오므로 지금 화면이 이미 최신이고, 바뀐 그림·소리는 다음 실행 때 반영됨.
