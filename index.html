@@ -465,7 +465,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2.0.0</span>
+  <span id="ver">v2.0.1</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -1109,6 +1109,12 @@ function genLevel(lv, seed, themeIdx){
       if (ok) L.chutes.push(ok); else if (!L.cave) L.chutes.push(top());
     }
     if (!L.chutes.length) kinds.splice(kinds.indexOf('rock'), 1);
+    // 발사대 두 개가 겹치면(위쪽은 80px, 옆쪽은 같은 편 70px 안) 하나로 합치고 더 자주 쏨
+    for (let i = L.chutes.length - 1; i > 0; i--) for (let j = 0; j < i; j++){
+      const a = L.chutes[j], c = L.chutes[i];
+      const near = a.type === c.type && (a.type === 'top' ? Math.abs(a.x - c.x) < 80 : Math.sign(a.x) === Math.sign(c.x) && Math.abs(a.y - c.y) < 70);
+      if (near){ a.interval = Math.max(300, Math.min(a.interval, c.interval) * 0.55); a.first = Math.min(a.first, c.first); L.chutes.splice(i, 1); break; }
+    }
   }
   // 위쪽 물풍선 발사대와 비구름이 겹치지 않게: 구름을 발사대 옆으로 비킴(빗물과 물풍선이 한데 섞여 떨어지던 문제)
   for (const ch of L.chutes.filter(c => c.type === 'top')) for (const cl of L.clouds){
