@@ -37,8 +37,8 @@ const out=await p.evaluate(([A,B])=>{
   const p0=catList().map(c=>({...c.position}));
   startSim(); for(const h of bugs) Matter.Composite.remove(engine.world,h); bugs.length=0; L.hives.forEach(h=>h.n=0); L.chutes.forEach(c=>c.interval=1e9); hp=1e9;
   let n=0; while(phase==='sim'&&simT<800&&n<300){ step(); n++; }
-  catList().forEach((c,i)=>{ const d=dist(c.position,p0[i]); if(!L.floatCat&&!L.slope&&L.arch!=='seesaw'&&L.arch!=='hang'&&d>25) iss.push((c===coco?'코코':'모모')+' 시작하자마자 '+Math.round(d)+'px 밀림'); });
-  if(phase==='end'&&endInfo&&!endInfo.win&&!L.floatCat&&!L.slope) iss.push('적 없이도 바로 실패: '+endInfo.reason);
+  catList().forEach((c,i)=>{ const d=dist(c.position,p0[i]); if(!L.floatCat&&!L.slope&&!L.winds.length&&L.arch!=='seesaw'&&L.arch!=='hang'&&d>25) iss.push((c===coco?'코코':'모모')+' 시작하자마자 '+Math.round(d)+'px 밀림'); });
+  if(phase==='end'&&endInfo&&!endInfo.win&&!L.floatCat&&!L.slope&&!L.winds.length) iss.push('적 없이도 바로 실패: '+endInfo.reason);
   if(iss.length) res.push({lv,arch:L.arch,fall:L.fall||null,iss:[...new Set(iss)]});
  }
  return res;},[A,B]);
