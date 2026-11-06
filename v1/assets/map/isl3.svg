@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 200" width="170" height="200"><ellipse cx="85.0" cy="167.2" rx="72" ry="18" fill="rgba(35,48,77,.16)"></ellipse>
+<polygon points="19.0,120.0 85.0,153.0 76.2,168.4 36.6,150.8" fill="#6e482b" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="151.0,120.0 85.0,153.0 76.2,168.4 133.4,144.2" fill="#7e5231" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="19.0,120.0 85.0,153.0 85.0,143.1 19.0,110.1" fill="#32723b" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="151.0,120.0 85.0,153.0 85.0,143.1 151.0,110.1" fill="#398344" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="85.0,77.1 151.0,110.1 85.0,143.1 19.0,110.1" fill="#4fae55" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="58.6,90.1 124.6,123.1 111.4,129.7 45.4,96.7" fill="#e9d3a0" stroke="#23304d" stroke-width="0" stroke-linejoin="round"></polygon>
+<ellipse cx="85.0" cy="109.0" rx="34" ry="17" fill="#b9c7d4" stroke="#23304d" stroke-width="2"></ellipse>
+<ellipse cx="85.0" cy="104.6" rx="28" ry="14" fill="#7fd3ff" stroke="#23304d" stroke-width="2"></ellipse>
+<rect x="81.0" y="78.6" width="8" height="26" rx="3" fill="#b9c7d4" stroke="#23304d" stroke-width="2"></rect>
+<path d="M85.0 76.6 q-14 -10 -20 8 M85.0 76.6 q14 -10 20 8" fill="none" stroke="#7fd3ff" stroke-width="3" stroke-linecap="round"></path>
+<polygon points="79.7,88.1 85.0,90.7 85.0,70.9 79.7,68.3" fill="#6b4828" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon>
+<polygon points="90.3,88.1 85.0,90.7 85.0,70.9 90.3,68.3" fill="#7c532e" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon>
+<polygon points="85.0,65.7 90.3,68.3 85.0,70.9 79.7,68.3" fill="#8a5d34" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon>
+<circle cx="85.0" cy="58.9" r="17" fill="#3f9a48" stroke="#23304d" stroke-width="2"></circle>
+<circle cx="79.0" cy="53.0" r="5.4" fill="#4ec05a"></circle>
+<polygon points="123.7,112.3 129.0,114.9 129.0,95.1 123.7,92.5" fill="#6b4828" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon>
+<polygon points="134.3,112.3 129.0,114.9 129.0,95.1 134.3,92.5" fill="#7c532e" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon>
+<polygon points="129.0,89.9 134.3,92.5 129.0,95.1 123.7,92.5" fill="#8a5d34" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon>
+<circle cx="129.0" cy="84.8" r="14" fill="#5bbd5f" stroke="#23304d" stroke-width="2"></circle>
+<circle cx="124.1" cy="79.9" r="4.5" fill="#71ec76"></circle>
+<polygon points="35.7,112.3 41.0,114.9 41.0,95.1 35.7,92.5" fill="#6b4828" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon>
+<polygon points="46.3,112.3 41.0,114.9 41.0,95.1 46.3,92.5" fill="#7c532e" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon>
+<polygon points="41.0,89.9 46.3,92.5 41.0,95.1 35.7,92.5" fill="#8a5d34" stroke="#23304d" stroke-width="1.5" stroke-linejoin="round"></polygon>
+<circle cx="41.0" cy="85.3" r="13" fill="#5bbd5f" stroke="#23304d" stroke-width="2"></circle>
+<circle cx="36.5" cy="80.8" r="4.2" fill="#71ec76"></circle>
+<polygon points="72.9,127.2 90.5,135.9 90.5,129.3 72.9,120.6" fill="#9c6b3a" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="96.0,133.2 90.5,135.9 90.5,129.3 96.0,126.6" fill="#b47c43" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="78.4,117.8 96.0,126.6 90.5,129.3 72.9,120.6" fill="#c98a4b" stroke="#23304d" stroke-width="2" stroke-linejoin="round"></polygon></svg>
