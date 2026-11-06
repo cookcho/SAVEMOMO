@@ -490,7 +490,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2.0.5</span>
+  <span id="ver">v2.0.6</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -1416,9 +1416,11 @@ function setup(){
   if (L.water){ const hk = L.hz || 'water', nw = L.featIntro && L.featIntro.k === hk; chips.push(`<span class="chip${nw ? ' new' : ''}">${hk === 'spike' ? '📌 압정 바닥' : hk === 'fire' ? '🔥 불 바닥' : '🛁 욕조 물'}</span>`); }
   if (L.fall === 'spikes') chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'spikeblock' ? ' new' : ''}">🦔 가시 발판</span>`);
   if (L.cacti && L.cacti.length) chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'cactus' ? ' new' : ''}">🌵 선인장</span>`);
-  L.mods.forEach(k => { const m = MODS.find(x => x.k === k); chips.push(`<span class="chip${L.modIntro && L.modIntro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
+  L.mods.forEach(k => { const m = MODS.find(x => x.k === k); chips.push(`<span data-keep="1" class="chip${L.modIntro && L.modIntro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   L.kinds.forEach(k => { const m = MECH.find(x => x.k === k); chips.push(`<span class="chip${L.intro && L.intro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
   if (L.pins.length){ const m = MECH[1]; chips.push(`<span class="chip${L.intro && L.intro.k === 'pin' ? ' new' : ''}">${m.icon} 핀 ${L.pins.length}</span>`); }
+  // 화면에 보이는 것(지형·적·바닥·배경 이름)은 칩으로 다시 적지 않음: 난이도, 눈에 안 보이는 규칙(잉크 종류·금지 구역), 처음 나오는 요소(NEW)만
+  chips.splice(0, chips.length, ...chips.filter((c, i) => i === 0 || c.includes('data-keep') || c.includes('chip new')));
   misFail = false;
   if (L.mis) chips.unshift(misChipHTML());
   document.getElementById('chips').innerHTML = chips.join('');
