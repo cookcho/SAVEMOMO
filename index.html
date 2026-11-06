@@ -1054,7 +1054,7 @@ function genLevel(lv, seed, themeIdx){
     for (let i = 1; i < n; i++){
       const q = { x: a.x + (b2.x - a.x) * i / n, y: a.y + (b2.y - a.y) * i / n };
       if (dist(q, sp) < 34) break;
-      if (S.some(o => inRect(q, o, 6)) || dynRects.some(o => inRect(q, o, 2))) return false;
+      if (S.some(o => inRect(q, o, 12)) || dynRects.some(o => inRect(q, o, 6))) return false;
     }
     return true;
   };
@@ -1177,7 +1177,8 @@ function genLevel(lv, seed, themeIdx){
       const ang = R(-Math.PI + 0.35, -0.35) + (r() < 0.3 ? Math.PI * 0.5 * (r() < 0.5 ? 1 : -1) : 0), d = R(58, 88);
       const c = { shape: 'circle', x: sp.x + Math.cos(ang) * d, y: sp.y + 20 + Math.sin(ang) * d, r: 13, kind: 'cactus' };
       if (c.y > GY - 20 || !free(c, 18) || dist(c, L.pot) < 50 || (L.sp2 && dist(c, L.sp2) < 50) || used.some(q => dist(q, c) < 40) || L.cacti.some(q => dist(q, c) < 60)) continue;
-      used.push(c); S.push(c); L.cacti.push(c); break;
+      S.push(c); if (L.hives.some(h => h.kind === 'wasp' && !los(h, sp))){ S.pop(); continue; } // 오리 사격선을 가리면 다른 자리
+      used.push(c); L.cacti.push(c); break;
     }
   }
 
@@ -1799,7 +1800,7 @@ function step(){
         label: h.kind, frictionAir: tank ? 0.05 : 0.03, density: tank ? 0.012 : 0.003, restitution: tank ? 0.1 : 0.4,
         collisionFilter: { category: CAT_BUG, mask: CAT_DEF | CAT_BUG }
       });
-      bug.plugin = { hitT: -9999, ph: simRng() * 6, mode: 'aim', until: simT + 500 + simRng() * 600, dir: null };
+      bug.plugin = { hitT: -9999, ph: simRng() * 6, mode: 'aim', until: simT + 500 + simRng() * 600, dir: null, src: h };
       addBody(bug, bugs);
     }
   }
@@ -1835,7 +1836,7 @@ function step(){
       const j = Bodies.circle(h.x + dk.dir.x * 30, h.y + dk.dir.y * 30, RAD.jet, {
         label: 'jet', frictionAir: 0, density: 0.0008, collisionFilter: { category: CAT_DROP, mask: CAT_DEF }
       });
-      j.plugin = { born: simT };
+      j.plugin = { born: simT, src: dk.h };
       Body.setVelocity(j, { x: dk.dir.x * 7, y: dk.dir.y * 7 });
       addBody(j, drops);
       dk.burst--; dk.shotT = simT + 55;

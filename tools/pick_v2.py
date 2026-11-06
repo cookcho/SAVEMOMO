@@ -27,6 +27,7 @@ for lv in range(1,121):
         cost=abs(Fv-T)
         if r['arch'] in [c['arch'] for c in chosen[-2:]] and r['arch']!='fall': cost+=0.2
         if r['arch']=='fall' and sum(1 for c in chosen[-2:] if c['arch']=='fall')==2: cost+=0.15  # 낙하 3연속은 피함
+        if r.get('dead'): cost+=0.6*len(r['dead'])  # 선 없이도 모모에게 못 오는 적이 있으면(장애물에 막힘 등) 피함
         if lv==2 and v!=1: cost+=1
         if best is None or cost<best[0]: best=(cost,v,r,round(I),Fv,T)
     if best is None: print('NO SOLUTION', lv); best=(9,0,C[(lv,0)],0,0,0)

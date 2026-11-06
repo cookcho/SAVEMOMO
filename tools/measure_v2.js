@@ -11,6 +11,17 @@ const out=await p.evaluate(([A,B])=>{
  const ell=(cx,cy,rx,ry,a0=-Math.PI/2,ext=0.35)=>{const o=[];for(let a=a0;a<=a0+2*Math.PI+ext;a+=0.07)o.push({x:cx+rx*Math.cos(a),y:cy+ry*Math.sin(a)});return o;};
  const res=[];
  for(let lv=A;lv<=B;lv++){
+  // 검증: 선 없이 3초 돌려서, 적(발사대·오리·드론 기지)마다 모모 근처까지 오는지 확인 → 한 번도 못 오면 '죽은 적'
+  level=lv; setup();
+  const dead=[]; { startSim(); for(const c of catList()) Body.setStatic(c,true); hp=1e9; const reach=new Map(); const srcs=[...L.hives.map(h=>['hive:'+h.kind,h]),...L.chutes.map(c=>['chute:'+c.type,c])];
+   let n=0, lastRock=new Map(); while(phase==='sim'&&simT<3500&&n<900){ step(); n++;
+     for(const c of catList()){ const hd=headOf(c).position;
+       for(const b2 of [...bugs,...drops]) if(b2.plugin&&b2.plugin.src&&dist(b2.position,hd)<38) reach.set(b2.plugin.src,1);
+       for(const k of rocks) if(k.plugin&&k.plugin.chute&&dist(k.position,hd)<45) reach.set(k.plugin.chute,1); }
+     // 물풍선은 모모 가까이(90px)에서 터지면 물보라가 닿으므로 '도달'로 셈
+     const now=new Set(rocks); for(const [k,pos] of lastRock) if(!now.has(k)&&catList().some(c=>dist(pos,headOf(c).position)<90)) reach.set(k.plugin.chute,1);
+     lastRock=new Map(rocks.filter(k=>k.plugin&&k.plugin.chute).map(k=>[k,{x:k.position.x,y:k.position.y}])); }
+   for(const [nm,o] of srcs) if(!reach.has(o) && nm!=='hive:crawl') dead.push(nm); }
   level=lv; setup(); const sp={...L.sp}, potTop=Math.max(L.pot.y,(L.pot2||L.pot).y)+18;
   const legB=(x,y0)=>{for(let y=y0;y<=potTop+80;y+=2){if(blocked({x,y}))return y-3;}return potTop+80;};
   const S=[];
@@ -31,7 +42,7 @@ const out=await p.evaluate(([A,B])=>{
     for(const m of [12,26]) for(const up of [45,65]) S.push(dense([{x:sp.x,y:sp.y-up},{x:x1+m,y:sp.y-10},{x:x1+m,y:bt+blk.h+14},{x:x0-m,y:bt+blk.h+14},{x:x0-m,y:sp.y-10},{x:sp.x+6,y:sp.y-up-4}]));}
   let t=0,w=0,F=0,minInk=1e9;
   const per=[];for(const pth of S){const e=run(pth);if(!e)continue;t++;per.push([e.win?1:0,Math.round(e.hp||0),Math.round(e.ink)]);if(e.win){w++;F+=0.5+0.5*e.hp/100;minInk=Math.min(minInk,e.ink);}}
-  res.push({lv,arch:L.arch,fall:L.fall||null,twin:!!L.twin,boss:L.boss,water:!!L.water,hives:L.hives.length,D:+L.diff.toFixed(3),t,w,F:t?+(F/t).toFixed(3):0,minInk:w?Math.round(minInk):null,ink:L.ink,par:L.par,mods:L.mods.join('+'),kinds:L.kinds.join('+'),hz:L.hz||null,intro:!!(L.intro||L.archIntro||L.modIntro||L.featIntro),per});
+  res.push({lv,arch:L.arch,fall:L.fall||null,twin:!!L.twin,boss:L.boss,water:!!L.water,hives:L.hives.length,D:+L.diff.toFixed(3),t,w,F:t?+(F/t).toFixed(3):0,minInk:w?Math.round(minInk):null,ink:L.ink,par:L.par,mods:L.mods.join('+'),kinds:L.kinds.join('+'),hz:L.hz||null,intro:!!(L.intro||L.archIntro||L.modIntro||L.featIntro),dead,per});
  }
  return res;},[A,B]);
 console.log(JSON.stringify(out));await b.close();})();
