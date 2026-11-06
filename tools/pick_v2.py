@@ -13,6 +13,10 @@ def F_at(r,I):
     per=r['per']; 
     if not per: return 0
     return sum((0.5+0.5*hp/100) for w,hp,ink in per if w and ink<=I)/len(per)
+SF={}
+for v in range(4):
+    for f in glob.glob(f's{v}_*.json'):
+        for x in json.load(open(f)): SF[(x['lv'],v)]=x['iss']
 chosen=[];out=[]
 for lv in range(1,151):
     best=None
@@ -27,7 +31,8 @@ for lv in range(1,151):
         cost=abs(Fv-T)
         if r['arch'] in [c['arch'] for c in chosen[-2:]] and r['arch']!='fall': cost+=0.2
         if r['arch']=='fall' and sum(1 for c in chosen[-2:] if c['arch']=='fall')==2: cost+=0.15  # 낙하 3연속은 피함
-        if r.get('dead'): cost+=0.6*len(r['dead'])  # 선 없이도 모모에게 못 오는 적이 있으면(장애물에 막힘 등) 피함
+        if r.get('dead'): cost+=0.6*len(r['dead'])
+        if SF.get((lv,v)): cost+=0.6*len(SF[(lv,v)])  # 맵 구조 문제(지형에 박힌 기지 등)  # 선 없이도 모모에게 못 오는 적이 있으면(장애물에 막힘 등) 피함
         if lv==2 and v!=1: cost+=1
         if best is None or cost<best[0]: best=(cost,v,r,round(I),Fv,T)
     if best is None: print('NO SOLUTION', lv); best=(9,0,C[(lv,0)],0,0,0)
