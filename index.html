@@ -465,7 +465,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v1.5.1</span>
+  <span id="ver">v1.5.2</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -742,7 +742,7 @@ function archBase(lv, seed, avoid = []){
   return unlocked[unlocked.length - 1];
 }
 // 레벨별 변형 번호(1~150). 같은 레벨 번호로 여러 판을 만들어 자동 풀이로 재 보고, 난이도 곡선에 가장 맞는 판을 고름(0 = 기본)
-const VAR = [0,1,2,3,2,1,3,2,1,1,2,3,0,0,1,1,1,1,0,3,0,3,1,1,0,0,3,3,1,1,1,1,1,1,0,1,0,1,0,0,1,1,0,3,3,2,0,0,1,2,2,1,3,1,3,2,0,0,2,2,1,3,2,2,0,0,2,2,2,0,3,1,1,2,0,2,2,1,3,2,1,0,0,0,1,3,1,1,3,3,3,0,0,1,3,3,1,0,0,1,0,2,1,1,0,3,0,3,3,3,1,1,1,1,3,2,3,2,1,2];
+const VAR = [0,1,2,3,1,1,3,1,0,1,0,3,0,0,1,1,2,1,2,3,0,3,3,2,1,0,3,1,1,3,2,1,0,2,1,0,2,3,0,0,2,1,0,3,2,3,0,3,1,2,2,1,3,1,3,2,0,0,2,1,1,3,2,1,0,0,3,0,2,3,3,1,1,2,0,3,3,0,1,3,3,0,0,0,1,3,1,1,3,3,0,1,1,1,3,3,1,2,3,1,1,1,0,1,1,3,0,3,3,3,1,1,1,1,3,2,3,2,1,1];
 const lvSeed = lv => lv * 7919 + 101 + (VAR[lv - 1] || 0) * 1000003;
 function genLevel(lv, seed, themeIdx){
   const r = rng(seed), R = (a, b) => a + r() * (b - a), pick = a => a[Math.floor(r() * a.length)];
@@ -1143,27 +1143,34 @@ function genLevel(lv, seed, themeIdx){
     }
   }
 
-  // 4) 장애물 판자 (걸치거나 받칠 수 있는 지형)
-  let no = L.carve ? 1 : Math.min(3, Math.floor(lv / 2)) - (arch === 'valley' || arch === 'pillar' ? 1 : 0);
+  // 4) 장애물: 모모 둘레(지붕이 지나갈 자리)에만 둠 — 멀리 떠 있는 장식은 만들지 않음
+  //   선반 = 벽에 붙은 판자(모모 옆, 지붕을 한쪽 걸칠 수 있음) / 상자·바위 = 모모 옆 바닥 위(지붕 다리가 막혀 돌아가야 함)
+  const surfAt = x => { let t = GY; for (const o of S) if (!o.a && !o.shape && Math.abs(o.x - x) <= o.w / 2 - 6 && o.y - o.h / 2 < t && o.y - o.h / 2 > sp.y - 10) t = o.y - o.h / 2; return t; };
+  let no = lv < 3 ? 0 : L.carve ? 0 : lv < 8 ? 1 : 2;
+  if (arch === 'valley' || arch === 'pillar' || L.floatCat || L.slope) no = Math.min(no, 1);
   for (let i = 0; i < no; i++){
-    for (let t = 0; t < 60; t++){
-      const kr = r(), x = R(40, W - 40), y = R(140, GY - 70);
-      const o = kr < 0.55 ? { x, y, w: R(50, 110), h: 14, a: R(-0.6, 0.6), kind: 'obs' }
-              : kr < 0.8 ? (() => { const sz = R(28, 44); return { x, y, w: sz, h: sz, a: R(-0.4, 0.4), kind: 'box' }; })()
-              : { shape: 'circle', x, y, r: R(14, 24), kind: 'boulder' };
+    for (let t = 0; t < 80; t++){
+      const sd = r() < 0.5 ? -1 : 1, shelf = r() < 0.55;
+      let o;
+      if (shelf){ const w = R(50, 80), x = sp.x + sd * (R(50, 80) + w / 2); o = { x, y: sp.y + R(-55, 15), w, h: 14, a: R(-0.12, 0.12), kind: 'obs' }; }
+      else {
+        const x = sp.x + sd * R(52, 88), top = surfAt(x);
+        if (Math.abs(top - (L.pot.y + 14)) > 40) continue; // 모모와 같은 높이의 바닥 위
+        if (r() < 0.6){ const sz = R(30, 42); o = { x, y: top - sz / 2 + 1, w: sz, h: sz, a: 0, kind: 'box' }; }
+        else { const rr = R(15, 22); o = { shape: 'circle', x, y: top - rr + 2, r: rr, kind: 'boulder' }; }
+      }
       if (o.shape === 'circle'){ o.w = o.r * 2; }
-      if (dist(o, sp) < 100 || dist(o, L.pot) < 90 || (L.sp2 && dist(o, L.sp2) < 90)) continue;
-      if (L.carve && o.y > L.carveInfo.ys - 40) continue; // 파낸 지형에서는 땅 위(지표 위쪽)에만
-      if (o.y < sp.y && Math.abs(o.x - sp.x) < o.w / 2 + 40) continue; // 모모 위를 덮는 공짜 지붕 금지
+      if (o.x - o.w / 2 < 4 || o.x + o.w / 2 > W - 4 || o.y < 120) continue;
+      if (dist(o, sp) < 48 || dist(o, L.pot) < 46 || (L.sp2 && (dist(o, L.sp2) < 60 || dist(o, L.pot2) < 50))) continue;
+      if (o.y < sp.y - 20 && Math.abs(o.x - sp.x) < o.w / 2 + 40) continue; // 모모 위를 덮는 공짜 지붕 금지
       if (L.floatCat && o.y > sp.y && Math.abs(o.x - sp.x) < o.w / 2 + 60) continue; // 떨어지는 모모를 공짜로 받치는 판자 금지
       if (L.slope && o.y > sp.y - 20 && (L.slope.left ? o.x > sp.x - 20 : o.x < sp.x + 20)) continue; // 미끄러지는 길·그 아래에는 놓지 않음
-      if (used.some(q => dist(q, o) < 70) || L.chutes.some(c => Math.abs(c.y - o.y) < 30 && c.type === 'side')) continue;
-      if (S.some(s => dist(s, o) < 70 && s.kind !== 'ground')) continue;
+      if (used.some(q => dist(q, o) < 44) || L.pins.some(pn => dist(pn, o) < 30) || L.chutes.some(c => Math.abs(c.y - o.y) < 30 && c.type === 'side')) continue;
+      if (S.some(s2 => s2.kind !== 'ground' && (s2.shape ? dist(s2, o) < s2.r + o.w / 2 + 6 : Math.abs(s2.x - o.x) < (s2.w + o.w) / 2 + 4 && Math.abs(s2.y - o.y) < (s2.h + (o.h || o.w)) / 2 - 2))) continue;
       if (dynRects.some(d => inRect(o, d, 40)) || chainRects.some(d => inRect(o, d, 30))) continue;
-      // 오리의 사격 시야를 가리지 않게
-      S.push(o); const blocks = L.hives.some(h => h.kind === 'wasp' && !los(h, sp)); S.pop();
+      S.push(o); const blocks = L.hives.some(h => h.kind === 'wasp' && !los(h, sp)); S.pop(); // 오리 사격 시야는 막지 않게
       if (blocks) continue;
-      S.push(o); break;
+      S.push(o); used.push(o); break;
     }
   }
   // 금지 구역: 모모 주변·핀은 피해서 배치
@@ -2324,7 +2331,13 @@ function drawStatic(b){
     ctx.strokeStyle = '#5a534b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(b.position.x, b.position.y, r, 0, 7); ctx.stroke();
     return;
   }
-  if (k === 'obs' || k === 'plank') return drawWood(b);
+  if (k === 'obs'){ // 벽 선반: 아래에 쇠 받침 두 개
+    const w = b.plugin.w; ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+    ctx.fillStyle = '#5b6378'; ctx.strokeStyle = '#2f3545'; ctx.lineWidth = 1.5;
+    for (const x of [-w * 0.3, w * 0.3]){ ctx.beginPath(); ctx.moveTo(x - 7, 6); ctx.lineTo(x + 7, 6); ctx.lineTo(x - 5, 20); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    ctx.restore(); return drawWood(b);
+  }
+  if (k === 'plank') return drawWood(b);
   if (k === 'soap'){ drawWood(b); const w = b.plugin.w; ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
     for (let i = 0; i < Math.floor(w / 18); i++){ const x = -w / 2 + 10 + i * 18 + (i % 2) * 5, r0 = 4 + (i % 3) * 1.5; ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.strokeStyle = 'rgba(120,170,220,.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, -8, r0, 0, 7); ctx.fill(); ctx.stroke(); }
     ctx.restore(); return; }
