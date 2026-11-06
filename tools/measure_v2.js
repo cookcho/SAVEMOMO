@@ -16,7 +16,7 @@ const out=await p.evaluate(([A,B])=>{
   const dead=[]; { startSim(); for(const c of catList()) Body.setStatic(c,true); hp=1e9; const reach=new Map(); const srcs=[...L.hives.map(h=>['hive:'+h.kind,h]),...L.chutes.map(c=>['chute:'+c.type,c])];
    let n=0, lastRock=new Map(); while(phase==='sim'&&simT<3500&&n<900){ step(); n++;
      for(const c of catList()){ const hd=headOf(c).position;
-       for(const b2 of [...bugs,...drops]) if(b2.plugin&&b2.plugin.src&&dist(b2.position,hd)<38) reach.set(b2.plugin.src,1);
+       for(const b2 of [...bugs,...drops]) if(b2.plugin&&b2.plugin.src&&dist(b2.position,hd)<(b2.plugin.src.kind==='tank'?62:38)) reach.set(b2.plugin.src,1);
        for(const k of rocks) if(k.plugin&&k.plugin.chute&&dist(k.position,hd)<45) reach.set(k.plugin.chute,1); }
      // 물풍선은 모모 가까이(90px)에서 터지면 물보라가 닿으므로 '도달'로 셈
      const now=new Set(rocks); for(const [k,pos] of lastRock) if(!now.has(k)&&catList().some(c=>dist(pos,headOf(c).position)<90)) reach.set(k.plugin.chute,1);
