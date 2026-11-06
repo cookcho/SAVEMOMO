@@ -21,7 +21,10 @@ const out=await p.evaluate(([A,B])=>{
      // 물풍선은 모모 가까이(90px)에서 터지면 물보라가 닿으므로 '도달'로 셈
      const now=new Set(rocks); for(const [k,pos] of lastRock) if(!now.has(k)&&catList().some(c=>dist(pos,headOf(c).position)<90)) reach.set(k.plugin.chute,1);
      lastRock=new Map(rocks.filter(k=>k.plugin&&k.plugin.chute).map(k=>[k,{x:k.position.x,y:k.position.y}])); }
-   for(const [nm,o] of srcs) if(!reach.has(o) && nm!=='hive:crawl') dead.push(nm); }
+   for(const [nm,o] of srcs) if(!reach.has(o) && nm!=='hive:crawl') dead.push(nm);
+   if(!srcs.length && !L.clouds.length && !L.kinds.some(k=>k==='crawl'||k==='bigdog')) dead.push('적 없음');
+   // 발사대 겹침
+   for(let i=0;i<L.chutes.length;i++) for(let j=0;j<i;j++){const a=L.chutes[i],c=L.chutes[j]; if(a.type===c.type&&(a.type==='top'?Math.abs(a.x-c.x)<80:Math.sign(a.x)===Math.sign(c.x)&&Math.abs(a.y-c.y)<70)) dead.push('발사대 겹침');} }
   level=lv; setup(); const sp={...L.sp}, potTop=Math.max(L.pot.y,(L.pot2||L.pot).y)+18;
   const legB=(x,y0)=>{for(let y=y0;y<=potTop+80;y+=2){if(blocked({x,y}))return y-3;}return potTop+80;};
   const S=[];
