@@ -27,6 +27,11 @@ const out=await p.evaluate(([A,B])=>{
   const S=[];
   // 1) 다리 있는 지붕
   for(const h of [26,40,60]) for(const wd of [36,46,60,80]){ const yl=sp.y-h; S.push(dense([{x:sp.x-wd,y:legB(sp.x-wd,yl)},{x:sp.x-wd,y:yl},{x:sp.x+wd,y:yl},{x:sp.x+wd,y:legB(sp.x+wd,yl)}])); }
+  // 1-2) 코코 판: 두 마리를 잇는 다리 지붕
+  if(L.twin){ const a=L.sp,c={x:L.sp2.x,y:L.sp2.y+8},lo=a.x<c.x?a:c,hi=a.x<c.x?c:a;
+   for(const up of [22,34,50]) for(const m of [36,50]) for(const legs of [true,false]){ const yL=lo.y-up,yR=hi.y-up,pts=[],x0=lo.x-m,x1=hi.x+m;
+    if(legs)pts.push({x:x0,y:legB(x0,yL)}); pts.push({x:x0,y:yL},{x:lo.x,y:yL-6},{x:(lo.x+hi.x)/2,y:Math.min(yL,yR)-10},{x:hi.x,y:yR-6},{x:x1,y:yR}); if(legs)pts.push({x:x1,y:legB(x1,yR)});
+    S.push(dense(pts)); } }
   // 2) 모모를 통째로 감싸는 고리
   const cx0=L.twin?(L.sp.x+L.sp2.x)/2:sp.x, extra=L.twin?Math.abs(L.sp.x-L.sp2.x)/2:0;
   for(const rx of [55,70,90,115]) for(const ry of [55,70,95]) for(const cy of [15,35,55]) S.push(dense(ell(cx0,sp.y+cy,rx+extra,ry)));

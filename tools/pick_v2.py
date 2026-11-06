@@ -14,7 +14,7 @@ def F_at(r,I):
     if not per: return 0
     return sum((0.5+0.5*hp/100) for w,hp,ink in per if w and ink<=I)/len(per)
 chosen=[];out=[]
-for lv in range(1,121):
+for lv in range(1,151):
     best=None
     for v in range(4):
         r=C.get((lv,v))
@@ -40,4 +40,4 @@ print(Counter((o['arch']+('/'+o['fall'] if o['fall'] else '')) for o in out))
 print(Counter(o['hz'] for o in out))
 import statistics
 print('need median',statistics.median([o['need'] for o in out]),'ink median',statistics.median([o['ink'] for o in out]))
-for i in range(0,120,10): seg=out[i:i+10]; print(i+1,'need',round(sum(o['need'] for o in seg)/10),'ink',round(sum(o['ink'] for o in seg)/10),'F',round(sum(o['F'] for o in seg)/10,2),'T',round(sum(o['T'] for o in seg)/10,2))
+for i in range(0,150,10): seg=out[i:i+10]; print(i+1,'need',round(sum(o['need'] for o in seg)/10),'ink',round(sum(o['ink'] for o in seg)/10),'F',round(sum(o['F'] for o in seg)/10,2),'T',round(sum(o['T'] for o in seg)/10,2))
