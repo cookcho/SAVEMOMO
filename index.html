@@ -378,6 +378,31 @@
   .pkCh .lockTag{background:var(--navy);color:#fff;border-color:var(--navy)}
   .pkGrid button.gate{background:#8d9cb1;border-color:#6b7a90;box-shadow:0 4px 0 #6b7a90;color:#dfe6ef;text-shadow:none}
   @media (max-height:640px){.tHero{height:26vh}.playBtn{width:104px;height:104px}.tMenu{margin-top:12px}.cbtn.tile{height:70px}}
+
+  /* ---------- v2.0.5: 상단 정보창 크게(가독성) ---------- */
+  header{padding:8px 10px 4px}
+  .lvpill{height:52px}
+  .lvpill .nav{width:38px;height:38px;font-size:15px}
+  #lvl{font-size:26px}
+  #best{font-size:13px}
+  #hud{height:60px;margin-top:8px}
+  .inkIcon{width:52px;height:52px}
+  .inkIcon svg{width:34px;height:34px}
+  .inkTrack{height:30px;margin:0 6px 11px -12px;border-radius:0 16px 16px 0}
+  .inkClip{border-radius:0 13px 13px 0}
+  #inkTxt{font-size:16px;padding-right:10px}
+  .stb{width:34px;height:30px;font-size:19px;bottom:27px;border-radius:10px}
+  .ib{width:46px;height:46px;font-size:22px}
+  #stb1{display:none} /* ★1은 이기면 늘 받으니 표시하지 않음 → 막대 공간 확보 */
+  .ib b{min-width:22px;height:22px;line-height:22px!important;font-size:13px!important;right:-6px;top:-8px}
+  #timer{inset:6px 0 0}
+  #tNum{width:66px;height:42px;font-size:30px;line-height:42px;border-radius:21px}
+  #tNum small{font-size:17px}
+  #tBar{height:18px;border-radius:9px}
+  #chips{flex-wrap:wrap;height:auto;max-height:66px;overflow:hidden;gap:6px;margin-top:8px}
+  .chip{font-size:15px;line-height:19px;padding:4px 11px 3px;border-radius:15px}
+  .dbar i{width:6px;height:12px}
+  #hint{font-size:16px}
 </style>
 </head>
 <body>
@@ -465,7 +490,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2.0.4</span>
+  <span id="ver">v2.0.5</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -1429,6 +1454,7 @@ function updateInk(){
   // 별 기준선: 기본 잉크의 22%·40% 사용 지점 (긴 펜을 켜면 기준선이 오른쪽으로 감)
   const p3 = Math.max(0.3, 1 - L.s3 / cap), p2 = Math.max(0.17, Math.min(p3 - 0.1, 1 - L.s2 / cap)); // 별 기준선(잉크를 이만큼 쓰면 별이 하나 줄어듦)
   [['stb3', 'mk3', p3], ['stb2', 'mk2', p2]].forEach(([a, b, v]) => { document.getElementById(a).style.left = document.getElementById(b).style.left = (v * 100) + '%'; });
+  document.getElementById('stb2').style.left = `max(18px, min(${p2 * 100}%, calc(${p3 * 100}% - 38px)))`; // 별 표시끼리 겹치면 ★2 표시만 왼쪽으로(기준선은 제자리)
   document.getElementById('inkTxt').textContent = `${Math.round(left * 100)}%`;
   document.getElementById('stb3').classList.toggle('off', left < p3 - 0.001);
   document.getElementById('stb2').classList.toggle('off', left < p2 - 0.001);
