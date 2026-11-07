@@ -490,7 +490,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2.2.0</span>
+  <span id="ver">v2.2.1</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -773,8 +773,8 @@ function archBase(lv, seed, avoid = []){
   return unlocked[unlocked.length - 1];
 }
 // 레벨별 변형 번호(1~150). 같은 레벨 번호로 여러 판을 만들어 자동 풀이로 재 보고, 난이도 곡선에 가장 맞는 판을 고름(0 = 기본)
-const VAR = [0,1,0,2,1,3,3,3,0,0,3,1,2,2,3,3,2,2,3,3,0,1,1,1,1,1,1,3,2,1,3,0,3,2,3,0,1,0,1,2,0,1,2,3,3,0,3,1,1,2,2,2,3,2,2,1,0,1,0,3,3,1,0,1,1,3,0,1,1,0,1,0,2,1,3,2,3,3,2,0,0,3,0,1,2,3,1,2,1,3,2,3,3,3,3,1,2,2,0,0,1,0,2,3,2,3,2,1,1,1,3,1,3,2,2,3,0,1,3,3,2,3,2,1,3,1,1,2,3,2,3,2,3,1,1,0,3,3,3,2,2,0,1,2,0,3,3,3,1,0];
-const INKT = [598,832,598,913,939,545,316,333,374,348,322,652,294,198,679,696,387,530,260,508,398,796,411,383,476,383,768,529,512,471,591,784,264,547,796,796,297,539,1412,531,506,635,587,464,538,615,256,1324,645,1342,433,342,1391,384,558,1376,1186,525,422,497,950,1058,537,866,477,506,1360,629,552,483,533,534,574,304,553,461,357,777,566,482,514,420,627,915,1170,407,1376,507,259,833,649,366,323,1271,514,1429,508,543,676,568,557,1290,545,418,523,546,270,483,809,1019,1010,488,869,256,875,441,1300,511,437,257,498,562,458,946,439,1326,1288,787,276,491,533,517,442,1046,500,543,429,376,294,914,556,926,174,589,453,490,657,430,280,583], NEEDT = [230,320,230,351,361,296,128,128,180,134,124,355,134,76,261,351,149,204,100,283,181,362,201,179,228,174,349,353,340,362,362,403,120,367,362,362,198,384,642,362,230,404,382,211,345,404,128,602,381,610,228,180,732,202,383,724,624,381,222,359,500,557,344,456,251,389,716,384,386,254,379,372,380,160,379,347,188,409,366,371,349,221,436,542,616,214,724,390,176,641,407,243,170,669,380,752,283,379,356,299,344,679,287,220,402,366,142,254,426,707,777,257,661,135,650,232,684,378,230,159,375,394,241,689,231,698,678,414,212,378,364,272,294,805,385,286,226,251,155,481,405,697,103,453,264,258,482,269,215,433]; // v2: 레벨별 잉크·최소 선 길이(측정값). 비어 있으면 공식으로
+const VAR = [0,1,0,2,3,3,3,3,0,3,3,1,2,2,3,3,2,2,3,3,0,1,1,1,1,1,1,3,2,1,1,0,3,2,3,2,1,0,1,2,0,1,2,3,3,0,3,1,1,2,2,2,3,2,2,1,0,1,0,3,3,1,0,1,1,3,0,1,1,0,0,0,1,2,0,1,3,3,2,0,0,3,0,1,2,3,1,2,1,3,2,3,1,3,3,1,2,2,0,0,1,2,3,1,2,2,2,0,1,1,3,1,3,2,2,3,0,3,3,3,0,3,2,1,3,1,1,2,3,2,3,0,3,1,1,0,0,3,2,1,1,2,0,2,2,1,3,3,1,0];
+const INKT = [598,706,598,913,541,545,316,333,374,231,322,722,294,198,679,726,387,530,260,508,398,796,411,383,476,383,768,529,512,471,729,784,264,547,554,418,327,539,1412,521,506,625,587,464,538,585,236,1324,635,1342,359,342,1391,384,558,1376,1186,519,407,497,950,1058,537,866,477,516,1360,629,541,483,536,535,357,563,533,656,357,777,566,482,464,420,627,915,1170,407,1376,507,259,843,659,366,479,1271,514,1429,508,543,483,562,557,460,1281,473,524,288,270,490,809,1434,1010,488,869,230,875,391,1300,835,437,257,570,562,458,946,439,1326,1288,787,276,491,533,475,442,1046,500,543,287,477,493,865,365,471,443,589,212,388,563,410,408,583], NEEDT = [230,320,230,351,216,296,128,128,180,89,124,355,134,76,261,351,149,204,100,283,181,362,201,179,228,174,349,353,340,362,353,403,120,367,252,190,198,384,642,362,230,404,382,211,345,358,128,602,381,610,189,180,732,202,383,724,624,376,214,359,500,557,344,456,251,389,716,384,362,254,351,342,188,410,402,345,188,409,366,371,349,221,436,542,616,214,724,390,176,641,407,243,252,669,380,752,283,379,356,296,344,242,674,249,349,214,142,377,426,755,777,257,661,121,650,206,684,642,230,159,377,394,241,689,231,698,678,414,212,378,364,250,294,805,385,286,221,251,379,642,250,362,287,453,132,260,387,269,215,433]; // v2: 레벨별 잉크·최소 선 길이(측정값). 비어 있으면 공식으로
 const lvSeed = lv => lv * 7919 + 101 + (VAR[lv - 1] || 0) * 1000003;
 function genLevel(lv, seed, themeIdx){
   const r = rng(seed), R = (a, b) => a + r() * (b - a), pick = a => a[Math.floor(r() * a.length)];
@@ -959,7 +959,7 @@ function genLevel(lv, seed, themeIdx){
   ground.forEach(g => S.unshift({ x: g.x + g.w / 2, y: H - 20, w: g.w, h: 40, a: 0, kind: 'ground' }));
 
   // 2) 위협 고르기: 새로 등장한 요소는 반드시 포함
-  const pool = ['bee', 'rain', 'rock', 'wasp', 'crawl', 'tank', 'bigdog'].filter(k => has(k) && ((k !== 'crawl' && k !== 'bigdog') || L.groundCat) && !(k === 'rain' && arch === 'cave') && !(k === 'wasp' && L.carve));
+  const pool = ['bee', 'rain', 'rock', 'wasp', 'crawl', 'tank', 'bigdog'].filter(k => has(k) && ((k !== 'crawl' && k !== 'bigdog') || L.groundCat) && !(k === 'rain' && (CARVED.includes(arch) || arch === 'cave')) && !(k === 'wasp' && L.carve));
   // 위협 종류 수: 소개 레벨은 1종, 이후 레벨대에 따라 2~3종
   const kinds = [];
   if (intro && pool.includes(intro.k)) kinds.push(intro.k);
@@ -1711,7 +1711,7 @@ function hurtBy(c, dmg, knock){
 // ---------- 벌레 길찾기: 격자 거리장(flow field) ----------
 // 모모에서부터 BFS로 각 칸까지의 거리를 계산. 벌레는 거리가 줄어드는 이웃 칸으로 이동해 막힌 곳을 돌아감.
 const CELL = 10, GW = Math.ceil(W / CELL), GH = Math.ceil(H / CELL);
-let baseGrid, flow = null, flowGrid = null, flowStep = 0;
+let baseGrid, flow = null, flow2 = null, flowGrid = null, flowStep = 0;
 function buildBaseGrid(){
   baseGrid = new Uint8Array(GW * GH);
   for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++){
@@ -1739,6 +1739,7 @@ function computeFlow(){
     const c = Math.cos(b.angle), sn = Math.sin(b.angle), w = b.plugin.w;
     for (let t = -w / 2; t <= w / 2; t += 6) markCircle(g, b.position.x + c * t, b.position.y + sn * t, b.plugin.h / 2 + 6);
   }
+  const g0 = g.slice(); // 선을 빼고 지형만 막은 지도
   // 선: 선 반두께 5.5 + 벌레 반지름 6 만큼 부풀려 표시
   const P = linePoints();
   for (let i = 1; i < P.length; i++){
@@ -1765,9 +1766,30 @@ function computeFlow(){
     }
   }
   flow = d; flowGrid = g;
+  flow2 = bfsFrom(g0, tg); // 선 때문에 길이 없으면 이 지도로: 지형만 피해 모모 쪽으로 와서 선을 밀어붙임
 }
-function bestNeighbor(i){
-  const gx = i % GW, gy = (i / GW) | 0;
+function bfsFrom(g, tg){
+  const d = new Int16Array(GW * GH).fill(-1), q = new Int32Array(GW * GH); let qh = 0, qt = 0;
+  for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++){
+    const cx = gx * CELL + CELL / 2, cy = gy * CELL + CELL / 2;
+    if (tg.some(([hd, tr]) => Math.hypot(cx - hd.x, cy - hd.y) < 30 || Math.hypot(cx - tr.x, cy - tr.y) < 28)){ const i = gy * GW + gx; g[i] = 0; d[i] = 0; q[qt++] = i; }
+  }
+  while (qh < qt){
+    const i = q[qh++], gx = i % GW, gy = (i / GW) | 0;
+    for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++){
+      if (!ox && !oy) continue;
+      const nx = gx + ox, ny = gy + oy;
+      if (nx < 0 || ny < 0 || nx >= GW || ny >= GH) continue;
+      const j = ny * GW + nx;
+      if (d[j] >= 0 || g[j]) continue;
+      if (ox && oy && (g[gy * GW + nx] || g[ny * GW + gx])) continue;
+      d[j] = d[i] + 1; q[qt++] = j;
+    }
+  }
+  return d;
+}
+function bestNeighbor(i, F = flow){
+  const flow = F, gx = i % GW, gy = (i / GW) | 0;
   let best = -1, bv = 1e9;
   for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++){
     if (!ox && !oy) continue;
@@ -1797,10 +1819,11 @@ function flowDir(b){
   const gx = Math.floor(b.position.x / CELL), gy = Math.floor(b.position.y / CELL);
   if (gx < 0 || gy < 0 || gx >= GW || gy >= GH) return null;
   const i = gy * GW + gx;
-  if (flow[i] === 0) return null;
-  let n1 = flow[i] > 0 ? bestNeighbor(i) : bestNeighbor(i);
-  if (n1 < 0 || (flow[i] > 0 && flow[n1] >= flow[i])) return null;
-  const n2 = flow[n1] > 0 ? bestNeighbor(n1) : n1, t = n2 >= 0 ? n2 : n1;
+  const F = flow[i] >= 0 || !flow2 || flow2[i] < 0 ? flow : flow2; // 선에 막혀 길이 없으면 지형만 본 지도로 → 선까지 와서 밀어붙임
+  if (F[i] === 0) return null;
+  const n1 = bestNeighbor(i, F);
+  if (n1 < 0 || (F[i] > 0 && F[n1] >= F[i])) return null;
+  const n2 = F[n1] > 0 ? bestNeighbor(n1, F) : n1, t = n2 >= 0 ? n2 : n1;
   const tx = (t % GW) * CELL + CELL / 2, ty = ((t / GW) | 0) * CELL + CELL / 2;
   const dx = tx - b.position.x, dy = ty - b.position.y, m = Math.hypot(dx, dy) || 1;
   return { x: dx / m, y: dy / m };

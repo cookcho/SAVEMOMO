@@ -30,6 +30,7 @@ const out=await p.evaluate(([A,B])=>{
   for(const h of L.hives){ if(h.kind==='crawl'||h.kind==='bigdog') continue; const pts=[[0,0],[22,0],[-22,0],[0,22],[0,-22]].map(([dx,dy])=>({x:h.x+dx,y:h.y+dy})); if(pts.filter(q=>Matter.Query.point(stat,q).length).length>=2) iss.push(h.kind+' 기지가 지형에 박힘'); }
   for(const c of L.cacti){ const q={x:c.x,y:c.y+c.r+4}; if(!Matter.Query.point(stat,q).length&&q.y<GY-2) iss.push('선인장 공중에 뜸'); }
   for(const c of L.chutes) if(c.type==='side'&&(c.y<80||c.y>GY-20)) iss.push('옆 대포 높이 이상');
+  if(L.clouds.length&&['pocket','well','alcove','cave'].includes(L.arch)) iss.push('땅속 모모에 비');
   // 4) 금지 구역이 고양이를 덮음
   for(const z of L.zones){ if(Math.abs(z.x-sp.x)<z.w/2+20&&Math.abs(z.y-sp.y)<z.h/2+20) iss.push('금지구역이 모모를 덮음'); }
   // 5) 고양이: 시작 자리가 지형 속이거나, 떨어지는 판이 아닌데 0.8초 만에 크게 움직임/위험 바닥에 닿음
