@@ -34,6 +34,7 @@ for lv in range(1,151):
         if r.get('dead'): cost+=0.6*len(r['dead'])
         if SF.get((lv,v)): cost+=0.6*len(SF[(lv,v)])  # 맵 구조 문제(지형에 박힌 기지 등)  # 선 없이도 모모에게 못 오는 적이 있으면(장애물에 막힘 등) 피함
         if lv==2 and v!=1: cost+=1
+        if lv==61 and 'claw' not in r['kinds']: cost+=1  # 집게 드론 소개 판엔 집게 드론이 꼭 있어야
         if best is None or cost<best[0]: best=(cost,v,r,round(I),Fv,T)
     if best is None: print('NO SOLUTION', lv); best=(9,0,C[(lv,0)],0,0,0)
     chosen.append(best[2]); out.append({'lv':lv,'v':best[1],'ink':best[3],'need':best[2]['minInk'] or 0,'F':round(best[4],3),'T':round(best[5],3),'arch':best[2]['arch'],'fall':best[2]['fall'],'hz':best[2]['hz'],'twin':best[2]['twin']})

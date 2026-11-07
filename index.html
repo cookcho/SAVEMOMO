@@ -490,7 +490,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2.2.1</span>
+  <span id="ver">v2.3.0</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -574,7 +574,10 @@ const MECH = [
   { k: 'crawl', lv: 7, name: '강아지', icon: '🐶', desc: '옆집 강아지들이 놀자고 달려와요. 깡충 뛰어 낮은 벽은 넘어요' },
   { k: 'bigdog', lv: 33, name: '큰 개', icon: '🐕', desc: '덩치 큰 옆집 개! 느리지만 선을 통째로 밀어내요' },
   { k: 'tank',  lv: 27, name: '헤비 드론', icon: '🛡️', desc: '집사의 대형 드론! 막히면 선을 힘으로 밀어붙여요' },
+  { k: 'claw',  lv: 61, name: '집게 드론', icon: '🪝', desc: '선을 집어서 위로 들어 올려요! 핀에 걸거나 지형 밑에 끼워 두면 잘 못 들어요' },
 ];
+// 집게 드론: 당기는 힘(선+고양이 한 마리 무게 대비), 비행 속도(px/프레임), 들어 올리는 속도·높이, 옆으로 끌고 가는 속도·거리, 한 번 쥐고 있는 시간(ms)
+const CLAW_F = 1.0, CLAW_V = 5, CLAW_UP = 1.1, CLAW_RISE = 110, CLAW_SIDE = 0.5, CLAW_DRAG = 60, CLAW_HOLD = 1800;
 const CARVED = ['pocket', 'well', 'alcove'];
 // 지형 특징(레벨에 따라 등장): 욕조 물 — 바닥이 물이라 모모가 떨어지면 실패 / 선인장 — 모모가 닿으면 다침, 선도 통과 못 함
 // ---------- 보너스 목표(🎯): 판마다 하나, 성공하면 ⭐ +1 ----------
@@ -773,8 +776,8 @@ function archBase(lv, seed, avoid = []){
   return unlocked[unlocked.length - 1];
 }
 // 레벨별 변형 번호(1~150). 같은 레벨 번호로 여러 판을 만들어 자동 풀이로 재 보고, 난이도 곡선에 가장 맞는 판을 고름(0 = 기본)
-const VAR = [0,1,0,2,3,3,3,3,0,3,3,1,2,2,3,3,2,2,3,3,0,1,1,1,1,1,1,3,2,1,1,0,3,2,3,2,1,0,1,2,0,1,2,3,3,0,3,1,1,2,2,2,3,2,2,1,0,1,0,3,3,1,0,1,1,3,0,1,1,0,0,0,1,2,0,1,3,3,2,0,0,3,0,1,2,3,1,2,1,3,2,3,1,3,3,1,2,2,0,0,1,2,3,1,2,2,2,0,1,1,3,1,3,2,2,3,0,3,3,3,0,3,2,1,3,1,1,2,3,2,3,0,3,1,1,0,0,3,2,1,1,2,0,2,2,1,3,3,1,0];
-const INKT = [598,706,598,913,541,545,316,333,374,231,322,722,294,198,679,726,387,530,260,508,398,796,411,383,476,383,768,529,512,471,729,784,264,547,554,418,327,539,1412,521,506,625,587,464,538,585,236,1324,635,1342,359,342,1391,384,558,1376,1186,519,407,497,950,1058,537,866,477,516,1360,629,541,483,536,535,357,563,533,656,357,777,566,482,464,420,627,915,1170,407,1376,507,259,843,659,366,479,1271,514,1429,508,543,483,562,557,460,1281,473,524,288,270,490,809,1434,1010,488,869,230,875,391,1300,835,437,257,570,562,458,946,439,1326,1288,787,276,491,533,475,442,1046,500,543,287,477,493,865,365,471,443,589,212,388,563,410,408,583], NEEDT = [230,320,230,351,216,296,128,128,180,89,124,355,134,76,261,351,149,204,100,283,181,362,201,179,228,174,349,353,340,362,353,403,120,367,252,190,198,384,642,362,230,404,382,211,345,358,128,602,381,610,189,180,732,202,383,724,624,376,214,359,500,557,344,456,251,389,716,384,362,254,351,342,188,410,402,345,188,409,366,371,349,221,436,542,616,214,724,390,176,641,407,243,252,669,380,752,283,379,356,296,344,242,674,249,349,214,142,377,426,755,777,257,661,121,650,206,684,642,230,159,377,394,241,689,231,698,678,414,212,378,364,250,294,805,385,286,221,251,379,642,250,362,287,453,132,260,387,269,215,433]; // v2: 레벨별 잉크·최소 선 길이(측정값). 비어 있으면 공식으로
+const VAR = [0,1,0,2,3,3,3,3,0,3,3,1,2,2,3,3,2,2,3,3,0,1,1,1,1,1,1,3,2,1,1,0,3,2,3,2,1,0,1,2,0,1,2,3,3,0,3,1,1,2,2,2,3,2,2,1,0,1,0,3,1,1,0,1,1,3,0,1,1,1,0,0,1,2,0,1,3,3,2,0,0,3,0,1,2,3,1,2,1,3,2,3,0,3,3,1,2,2,0,0,1,2,3,0,2,3,0,1,1,1,3,1,3,2,2,3,2,3,1,1,0,3,2,1,3,1,1,2,3,2,3,0,3,1,1,0,3,3,2,1,1,1,0,2,2,1,3,3,1,0];
+const INKT = [598,706,598,913,541,545,316,333,374,231,322,722,294,198,679,726,387,530,260,508,398,796,411,383,476,383,768,529,512,471,729,784,264,547,554,418,327,539,1412,521,613,553,519,561,506,550,199,1487,597,1342,435,385,1562,384,494,1376,1186,459,493,439,316,1188,537,1048,536,485,1360,591,551,596,504,503,401,529,533,737,357,873,566,453,436,472,627,915,1170,457,1547,456,210,783,649,462,1360,1271,463,1729,457,479,483,562,492,460,1281,437,463,546,1070,483,909,1343,1010,488,768,230,1235,391,437,785,480,517,570,528,458,946,493,1326,1288,884,276,462,501,475,408,1046,443,611,429,477,436,764,365,488,359,554,196,338,640,410,408,548], NEEDT = [230,320,230,351,216,296,128,128,180,89,124,355,134,76,261,351,149,204,100,283,181,362,201,179,228,174,349,353,340,362,353,403,120,367,252,190,198,384,642,362,230,404,382,211,345,358,128,602,381,610,189,180,732,202,383,724,624,376,214,359,223,557,344,456,251,389,716,384,362,279,351,342,188,410,402,345,188,409,366,371,349,221,436,542,616,214,724,390,176,641,407,243,716,669,380,752,283,379,356,296,428,242,674,230,349,366,769,254,426,707,777,257,661,121,650,206,230,642,393,298,377,394,241,689,231,698,678,414,212,378,364,250,355,805,385,286,226,251,379,642,250,353,287,453,132,260,415,269,215,433]; // v2: 레벨별 잉크·최소 선 길이(측정값). 비어 있으면 공식으로
 const lvSeed = lv => lv * 7919 + 101 + (VAR[lv - 1] || 0) * 1000003;
 function genLevel(lv, seed, themeIdx){
   const r = rng(seed), R = (a, b) => a + r() * (b - a), pick = a => a[Math.floor(r() * a.length)];
@@ -1301,6 +1304,22 @@ function genLevel(lv, seed, themeIdx){
   // L.par은 잉크를 정할 때 계산함
   if (tuned){ L.s3 = Math.round(L.par * 1.03); L.s2 = Math.round(Math.max(L.s3 + 1, Math.min(L.par * 1.3, 0.85 * L.ink))); } // ★3 = 자동 풀이로 찾은 가장 짧은 풀이와 거의 같아야(103%), ★2 = 130% 이하
   else L.s3 = Math.round(Math.max(L.par, 0.22 * L.ink)), L.s2 = Math.round(Math.max(L.s3 + 1, Math.min(Math.max(L.par * 1.5, 0.40 * L.ink), 0.85 * L.ink)));
+  // 집게 드론(61레벨~): 선을 집어 들어 올림. 배치는 따로 난수를 써서 다른 요소 배치는 그대로
+  L.claws = [];
+  if (has('claw') && !L.carve && arch !== 'cave'){
+    const rc = rng(Math.imul(seed ^ 0x5bd1e995, 0x9E3779B1) >>> 0), isIntro = intro && intro.k === 'claw';
+    const p = isIntro || L.boss ? 1 : clamp(0.3 + (lv - 61) * 0.006, 0.3, 0.65);
+    rc(); rc();
+    if (rc() < p){
+      const n = !isIntro && lv >= 100 && rc() < 0.4 ? 2 : 1;
+      for (let i = 0; i < n; i++) for (let t = 0; t < 50; t++){
+        const c = { x: 30 + rc() * (W - 60), y: 30 };
+        if (L.clouds.some(cl => Math.abs(cl.x - c.x) < cl.w / 2 + 26) || L.chutes.some(ch => ch.type === 'top' && Math.abs(ch.x - c.x) < 46) || L.hives.some(h => dist(h, c) < 75) || L.claws.some(o => Math.abs(o.x - c.x) < 90) || !free({ x: c.x, y: c.y + 14 }, 24)) continue;
+        L.claws.push(c); break;
+      }
+      if (L.claws.length) kinds.push('claw');
+    }
+  }
   L.mis = pickMission(L, lv, seed);
   return L;
 }
@@ -1317,7 +1336,7 @@ const isCat = b => b === potBody || (coco && b === coco);
 const headOf = c => c === coco ? cocoHead : sproutPart;
 const footOf = c => c.position.y + (c === coco ? cocoOff : potOff).foot;
 function nearestHead(p){ if (!coco) return sproutPart.position; return dist(p, sproutPart.position) <= dist(p, cocoHead.position) ? sproutPart.position : cocoHead.position; }
-let phase, pts, inkUsed, drawing, simT, hp, bugs, drops, rocks, crawlers, spawnQ, cloudAcc, chuteT, simRng, flashT, toRemove, endInfo;
+let phase, pts, inkUsed, drawing, simT, hp, bugs, drops, rocks, crawlers, spawnQ, cloudAcc, chuteT, simRng, flashT, toRemove, endInfo, claws = [];
 let finger = null, fingerBlocked = false, blockToastShown = false, toastTimer = 0;
 
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
@@ -1399,7 +1418,7 @@ function setup(){
   failNext = null; phase = 'draw'; pts = []; inkUsed = 0; drawing = false; simT = 0; hp = 100; act = {}; simDur = SIM_MS; bubbleOn = !!L.floatCat;
   if (document.getElementById('title').classList.contains('hidden')) AU.play(CHAPTERS[L.theme].bg, 'draw'); AU.setState('draw'); AU.drawingStop();
   if (activePointer !== null){ try { cv.releasePointerCapture(activePointer); } catch (_){} activePointer = null; }
-  bugs = []; drops = []; rocks = []; crawlers = []; flashT = 0; lineBody = null; toRemove = new Set();
+  bugs = []; drops = []; rocks = []; crawlers = []; flashT = 0; lineBody = null; toRemove = new Set(); claws = makeClaws();
   cloudAcc = L.clouds.map(() => 0);
   finger = null; fingerBlocked = false; flow = null; pops = []; jetPush = []; fx = [];
 
@@ -1645,6 +1664,7 @@ function startSim(){
   chuteT = L.chutes.map(c => c.first * TC);
   pops = [];
   buildBaseGrid(); flow = null; flowStep = 0; prevPotSpeed = 0; lastHitT = -9999; lastImpactT = -9999;
+  claws = makeClaws();
 }
 
 // ---------- 충돌 ----------
@@ -1852,6 +1872,69 @@ function clampSpeeds(){
   }
 }
 function addBody(b, arr){ arr.push(b); Composite.add(engine.world, b); }
+// ---------- 집게 드론 ----------
+function makeClaws(){ return (L && L.claws || []).map((d, i) => ({ dock: d, x: d.x, y: d.y + 14, st: 'wait', t: (400 + i * 700) * TC, k: -1, re: 0, y0: 0, x0: 0, sd: 1 })); }
+function linePt(k){ const c = Math.cos(lineBody.angle), s = Math.sin(lineBody.angle), o = lineBody.position, p = lineLocal[k]; return { x: o.x + p.x * c - p.y * s, y: o.y + p.x * s + p.y * c }; }
+function clawLOS(a, b){
+  if (!baseGrid) return true;
+  const n = Math.ceil(dist(a, b) / 5);
+  for (let i = 1; i < n; i++){
+    const x = a.x + (b.x - a.x) * i / n, y = a.y + (b.y - a.y) * i / n;
+    if (Math.hypot(x - b.x, y - b.y) < 16) break;
+    const gx = Math.floor(x / CELL), gy = Math.floor(y / CELL);
+    if (gx >= 0 && gy >= 0 && gx < GW && gy < GH && baseGrid[gy * GW + gx]) return false;
+  }
+  return true;
+}
+// 집을 곳: 핀에서 멀고(잘 들림), 가깝고, 모모 가까운 곳(덮개가 열림). 지형에 막혀 못 가는 곳은 빼고
+function pickClawTarget(c){
+  const on = L.pins.filter(p => p.on), n = lineLocal.length, hand = { x: c.x, y: c.y + 12 };
+  let best = -1, bs = -1e9;
+  for (let k = 0; k < n; k += 3){
+    const p = linePt(k);
+    if (p.y < 24 || p.y > H - 8 || p.x < 4 || p.x > W - 4) continue;
+    if (claws.some(o => o !== c && o.k >= 0 && o.st !== 'back' && Math.abs(o.k - k) < n * 0.25)) continue;
+    if (!clawLOS(hand, p)) continue;
+    const dp = on.length ? Math.min(...on.map(q => dist(q, p))) : 250, hd = nearestHead(p);
+    const sc = Math.min(dp, 250) - 0.3 * dist(hand, p) - 0.2 * dist(p, hd);
+    if (sc > bs){ bs = sc; best = k; }
+  }
+  return best;
+}
+function stepClaws(){
+  for (const c of claws){
+    if (c.st === 'wait'){ if (simT < c.t) continue; c.st = 'go'; c.k = -1; c.re = 0; }
+    if (!lineBody && c.st !== 'back') c.st = 'back';
+    if (c.st === 'go'){
+      if (c.k < 0 || c.re-- <= 0){ c.k = pickClawTarget(c); c.re = 15; }
+      if (c.k < 0){ c.x += (c.dock.x - c.x) * 0.05; c.y += (c.dock.y + 40 + Math.sin(simT / 300) * 6 - c.y) * 0.05; continue; }
+      const p = linePt(c.k), dx = p.x - c.x, dy = p.y - 12 - c.y, m = Math.hypot(dx, dy);
+      if (m < 4){ c.st = 'lift'; c.t = simT + CLAW_HOLD * TC; c.y0 = c.y; c.x0 = c.x; c.sd = Math.sign(p.x - nearestHead(p).x) || 1; AU.sfx('pin'); }
+      else { const v = Math.min(m, CLAW_V); c.x += dx / m * v; c.y += dy / m * v; }
+    } else if (c.st === 'lift'){
+      const p = linePt(c.k);
+      // 위로 들면서 모모 반대쪽으로 끌고 감(선이 따라오지 못하면 30px 넘게는 못 감)
+      c.x = clamp(clamp(c.x + c.sd * CLAW_SIDE, c.x0 - CLAW_DRAG, c.x0 + CLAW_DRAG), p.x - 30, p.x + 30);
+      c.y = Math.max(c.y - CLAW_UP, p.y - 12 - 30, c.y0 - CLAW_RISE);
+      if (simT > c.t || Math.hypot(c.x - p.x, c.y + 12 - p.y) > 60){ c.st = 'back'; c.k = -1; }
+    } else if (c.st === 'back'){
+      const dx = c.dock.x - c.x, dy = c.dock.y + 14 - c.y, m = Math.hypot(dx, dy);
+      if (m < 4){ c.st = 'wait'; c.t = simT + 600 * TC; }
+      else { const v = Math.min(m, CLAW_V * 1.2); c.x += dx / m * v; c.y += dy / m * v; }
+    }
+  }
+}
+function clawForces(g){
+  if (!lineBody) return;
+  const Wt = (lineBody.mass + 36) * g.y * g.scale, kk = act.tough ? 0.5 : 1, v = lineBody.velocity;
+  for (const c of claws){
+    if (c.st !== 'lift') continue;
+    const p = linePt(c.k), dx = c.x - p.x, dy = c.y + 12 - p.y, m = Math.hypot(dx, dy);
+    if (m < 0.5) continue;
+    const mag = Math.min(m / 20, 1) * CLAW_F * Wt * kk;
+    Body.applyForce(lineBody, p, { x: dx / m * mag - v.x * Wt * 0.02, y: dy / m * mag - v.y * Wt * 0.02 });
+  }
+}
 
 function step(){
   simT += STEP;
@@ -1912,6 +1995,7 @@ function step(){
       if (!dk.burst) dk.next = simT + dk.gap + simRng() * 300 * TC;
     }
   }
+  if (claws.length) stepClaws();
   for (const c of crawlers){
     if (!c.plugin.big && c.plugin.atk !== 'back' && simT > c.plugin.nextHop && Math.abs(c.velocity.y) < 0.4){
       Body.setVelocity(c, { x: Body.getVelocity(c).x, y: -4.6 }); c.plugin.nextHop = simT + 900 + simRng() * 700;
@@ -2014,6 +2098,7 @@ function step(){
         for (const p of parts) if (inB(p.position.y)) Body.applyForce(lineBody, p.position, { x: p.mass * 0.0005 * w.dir * w.str * gk * (act.tough ? 0.5 : 1), y: 0 });
       }
     }
+    if (claws.length) clawForces(g);
     if (jetPush.length && lineBody){
       for (const j of jetPush){ const m = Math.hypot(j.vx, j.vy) || 1; Body.applyForce(lineBody, { x: j.x, y: j.y }, { x: j.vx / m * lineBody.mass * j.k, y: j.vy / m * lineBody.mass * j.k }); }
       jetPush = [];
@@ -2277,6 +2362,36 @@ function drawCloud(c){
   ctx.fillText('비구름', c.x, 52);
 }
 function duckOf(h){ return ducks.find(d => d.h === h); }
+function drawClawDock(d){
+  ctx.save(); ctx.translate(d.x, d.y);
+  ctx.fillStyle = '#343a40'; ctx.fillRect(-2, -40, 4, 32);
+  ctx.fillStyle = '#5f3dc4'; rrect(-19, -9, 38, 15, 5); ctx.fill();
+  ctx.save(); rrect(-19, 2, 38, 4, 2); ctx.clip();
+  for (let x = -24; x < 24; x += 8){ ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.moveTo(x, 6); ctx.lineTo(x + 4, 6); ctx.lineTo(x + 8, 2); ctx.lineTo(x + 4, 2); ctx.fill(); }
+  ctx.restore(); ctx.restore();
+}
+function drawClaw(c){
+  const t = phase === 'sim' ? simT : performance.now(), hold = c.st === 'lift';
+  if (hold && lineBody){
+    const p = linePt(c.k), hx = c.x, hy = c.y + 14;
+    if (Math.hypot(hx - p.x, hy - p.y) > 5){ ctx.strokeStyle = 'rgba(132,94,247,.9)'; ctx.lineWidth = 2.5; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(p.x, p.y); ctx.stroke(); ctx.setLineDash([]); }
+  }
+  const y = c.y + (c.st === 'wait' ? 0 : Math.sin(t / 130) * 1.2), tilt = hold ? Math.sin(t / 50) * 0.06 : 0;
+  ctx.save(); ctx.translate(c.x, y); ctx.rotate(tilt); ctx.scale(1.5, 1.5);
+  const spin = Math.abs(Math.sin(t / 20));
+  ctx.fillStyle = 'rgba(173,181,189,.85)';
+  for (const px of [-13, 13]){ ctx.beginPath(); ctx.ellipse(px, -9, 9 * (0.4 + spin * 0.6), 2, 0, 0, 7); ctx.fill(); }
+  ctx.strokeStyle = '#212529'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-13, -7); ctx.lineTo(13, -7); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.6)'; rrect(-11.5, -9.5, 23, 17, 6); ctx.fill();
+  ctx.fillStyle = '#7048e8'; rrect(-10, -8, 20, 14, 5); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, -1.5, 3.4, 0, 7); ctx.fill();
+  ctx.fillStyle = hold ? '#e03131' : '#212529'; ctx.beginPath(); ctx.arc(0, -1.5, 1.8, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#495057'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, 6); ctx.lineTo(0, 9); ctx.stroke();
+  const op = hold ? 0.1 : 0.7;
+  ctx.strokeStyle = '#343a40'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+  for (const sd of [-1, 1]){ ctx.beginPath(); ctx.moveTo(0, 9); ctx.quadraticCurveTo(sd * (5 + op * 6), 10, sd * (1.5 + op * 5), 15); ctx.stroke(); }
+  ctx.restore();
+}
 function drawHive(h){
   const t = phase === 'draw' ? performance.now() : simT;
   if (h.kind === 'wasp'){
@@ -3300,6 +3415,7 @@ function render(){
   dynBodies.forEach(drawDyn);
   L.chutes.forEach(drawChute);
   L.hives.forEach(drawHive);
+  (L.claws || []).forEach(drawClawDock);
   if (phase === 'draw' && L.crawl.length){
     ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '700 11px sans-serif';
     [...new Set(L.crawl.map(c => c.side))].forEach(sd => { ctx.textAlign = sd < 0 ? 'left' : 'right'; const ic = L.crawl.some(c => c.side === sd && c.big) ? '🐕' : '🐶'; ctx.fillText(sd < 0 ? ic + ' →' : '← ' + ic, sd < 0 ? 6 : W - 6, GY - 10); });
@@ -3314,6 +3430,7 @@ function render(){
   if ((tut || pinTut()) && phase === 'draw' && !drawing && pts.length === 0) drawGuide();
   if (L.water){ if (L.hz === 'spike') drawSpikeFloor(); else if (L.hz === 'fire') drawFireFloor(); else drawWaterPool(); }
   bugs.forEach(drawBug);
+  claws.forEach(drawClaw);
   drawFx();
   if (phase === 'sim') setTimerUI(Math.max(0, (simDur - simT) / 1000));
   else if (phase === 'end') setTimerUI(-1);
