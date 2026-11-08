@@ -490,7 +490,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2.5.0</span>
+  <span id="ver">v2.6.0</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -581,6 +581,8 @@ const CLAW_F = 1.0, CLAW_V = 5, CLAW_UP = 1.1, CLAW_RISE = 110, CLAW_SIDE = 0.5,
 const CARVED = ['pocket', 'well', 'alcove'];
 // 물 공격이 선을 미는 힘(선 무게 대비). 물풍선은 적의 힘 배율(L.force)도 곱함
 const WPUSH = { jet: 0.010, drop: 0.005, splash: 0.003 }, BALLOON_K = 0.04;
+// v2.6: 맞으면 모모가 밀려남(속도 px/프레임). 옆의 압정·불·물로 밀려 떨어지게
+const KB = { jet: 0.9, drop: 0.25, splash: 0.35, balloon: 2.6, bee: 1.3, tank: 2.6, wasp: 1.6, crawl: 2.0, bigdog: 3.0 };
 // 지형 특징(레벨에 따라 등장): 욕조 물 — 바닥이 물이라 모모가 떨어지면 실패 / 선인장 — 모모가 닿으면 다침, 선도 통과 못 함
 // ---------- 보너스 목표(🎯): 판마다 하나, 성공하면 ⭐ +1 ----------
 const MIS_LV = 12;
@@ -606,6 +608,7 @@ function pickMission(L, lv, seed){
   return { k: el[Math.floor(r2() * el.length)] };
 }
 const FEATS = [
+  { k: 'tack', lv: 5, name: '압정 띠', icon: '📍', desc: '모모 바로 옆에 압정이 깔려 있어요! 맞고 밀려서 닿으면 바로 실패예요' },
   { k: 'water', lv: 12, name: '욕조 물', icon: '🛁', desc: '바닥이 욕조 물이에요! 선에 밀리거나 떨어져서 모모가 물에 빠지면 실패' },
   { k: 'spike', lv: 16, name: '압정 바닥', icon: '📌', desc: '바닥에 압정이 쫙! 모모가 떨어지거나 미끄러져 닿으면 바로 실패예요' },
   { k: 'fire', lv: 28, name: '불 바닥', icon: '🔥', desc: '바닥이 이글이글 뜨거워요! 모모가 닿으면 바로 실패예요' },
@@ -778,8 +781,8 @@ function archBase(lv, seed, avoid = []){
   return unlocked[unlocked.length - 1];
 }
 // 레벨별 변형 번호(1~150). 같은 레벨 번호로 여러 판을 만들어 자동 풀이로 재 보고, 난이도 곡선에 가장 맞는 판을 고름(0 = 기본)
-const VAR = [2,1,1,3,3,2,0,3,1,3,1,0,3,0,3,2,1,2,3,0,0,3,3,3,3,3,3,3,0,3,3,3,2,2,0,2,1,3,2,0,0,0,2,2,1,0,3,2,0,3,3,0,0,1,1,3,3,0,0,3,1,1,1,3,1,1,3,2,2,2,2,2,3,1,2,2,1,2,0,3,3,0,1,2,3,3,1,2,2,3,2,3,2,3,2,3,2,0,3,0,1,1,3,3,1,0,0,3,0,3,3,1,1,0,2,2,0,3,3,1,2,1,3,1,3,2,0,1,2,2,0,1,3,1,5,2,2,0,2,2,3,0,2,2,0,1,0,3,0,1];
-const INKT = [507,733,329,406,325,442,497,296,228,145,292,275,245,221,407,275,318,657,398,375,307,737,295,307,224,596,894,441,420,499,455,556,287,400,1007,309,258,347,455,390,310,664,537,220,408,609,318,609,451,1063,408,370,484,390,346,296,935,1310,312,863,243,1250,211,492,372,1339,359,1036,265,463,185,347,445,259,623,526,1300,423,163,253,494,457,356,629,378,226,376,861,224,355,197,326,248,1492,1029,593,440,325,1554,277,367,206,1452,261,361,308,1522,353,282,1635,1483,374,654,550,946,408,1381,1483,386,355,800,488,323,1566,321,365,321,1056,540,377,274,433,363,1611,486,359,399,215,572,264,446,1134,322,239,308,213,177,296,366,325], NEEDT = [195,282,153,201,172,277,170,129,147,69,147,120,160,96,201,154,109,209,153,230,158,277,157,158,164,224,336,253,297,238,184,225,165,280,378,153,138,167,207,278,215,302,282,161,206,277,152,277,205,430,215,195,255,215,182,196,407,570,164,404,128,585,137,259,196,582,199,485,192,217,122,194,234,211,328,277,609,279,124,199,260,359,253,294,199,158,198,403,125,196,128,243,172,699,482,312,283,219,728,234,193,165,680,220,190,230,713,186,155,766,695,257,344,400,498,283,647,695,230,187,421,257,249,733,201,250,193,495,284,236,193,228,293,755,251,261,276,165,317,230,250,597,240,208,230,112,153,257,284,280]; // v2: 레벨별 잉크·최소 선 길이(측정값). 비어 있으면 공식으로
+const VAR = [2,1,1,1,3,2,0,1,1,3,1,0,1,2,3,2,0,3,3,0,0,3,3,1,3,3,0,3,0,2,1,3,2,2,3,2,2,1,1,0,0,1,2,2,3,0,3,2,3,3,3,1,3,1,1,0,3,0,1,1,0,1,1,3,0,1,3,0,3,1,3,2,3,0,2,2,1,2,0,1,1,0,1,2,0,0,1,2,3,2,2,2,2,3,2,3,2,2,3,0,3,1,3,3,1,0,0,3,0,3,3,1,1,0,1,1,2,3,3,2,2,1,3,2,3,2,2,1,3,0,1,1,3,1,1,3,2,0,2,1,0,0,2,2,1,1,0,0,1,3];
+const INKT = [507,733,329,385,434,389,442,395,240,142,284,248,234,153,514,517,356,724,228,458,256,685,247,301,197,554,644,405,361,268,242,495,247,384,685,220,515,867,1603,372,274,685,413,194,766,550,258,530,352,946,360,361,1445,291,277,346,773,1217,283,312,586,1112,193,357,671,1242,282,281,393,363,830,275,342,264,446,511,1157,393,147,1297,437,458,373,559,354,163,347,766,1810,554,309,232,215,1760,916,629,384,405,1554,269,369,223,1452,253,307,264,1495,304,189,1455,1320,334,487,520,365,576,300,1320,299,248,567,484,314,244,261,345,282,940,267,379,260,433,337,1442,240,927,359,215,484,316,899,1134,301,239,250,200,176,573,207,370], NEEDT = [195,282,153,273,172,277,170,152,147,89,147,120,127,76,257,177,137,230,153,176,158,277,157,192,164,224,261,253,297,198,110,225,165,280,277,153,234,351,648,278,215,277,282,161,348,277,152,277,229,430,215,262,677,215,182,243,407,570,149,240,275,585,137,259,353,582,199,222,233,279,389,194,234,180,328,347,609,291,124,608,230,359,282,294,226,106,198,403,848,372,230,144,172,824,482,331,283,276,728,234,194,187,680,220,190,230,787,160,157,766,695,257,344,400,281,443,158,695,230,139,421,257,249,200,201,250,230,495,232,230,185,228,293,759,201,488,276,165,280,205,473,597,246,208,217,112,153,498,180,195]; // v2: 레벨별 잉크·최소 선 길이(측정값). 비어 있으면 공식으로
 const lvSeed = lv => lv * 7919 + 101 + (VAR[lv - 1] || 0) * 1000003;
 function genLevel(lv, seed, themeIdx){
   const r = rng(seed), R = (a, b) => a + r() * (b - a), pick = a => a[Math.floor(r() * a.length)];
@@ -1306,6 +1309,46 @@ function genLevel(lv, seed, themeIdx){
   // L.par은 잉크를 정할 때 계산함
   if (tuned){ L.s3 = Math.round(L.par * 1.03); L.s2 = Math.round(Math.max(L.s3 + 1, Math.min(L.par * 1.3, 0.85 * L.ink))); } // ★3 = 자동 풀이로 찾은 가장 짧은 풀이와 거의 같아야(103%), ★2 = 130% 이하
   else L.s3 = Math.round(Math.max(L.par, 0.22 * L.ink)), L.s2 = Math.round(Math.max(L.s3 + 1, Math.min(Math.max(L.par * 1.5, 0.40 * L.ink), 0.85 * L.ink)));
+  // v2.6 압정 띠(5레벨~): 모모가 앉은 면 바로 옆(적이 미는 반대쪽)에 깔아 둠. 받침이 좁으면 가장자리 아래 바닥에.
+  //  맞고 밀리거나 선이 밀어붙이면 닿아서 바로 실패 → 방어막이 모양이 맞아야 함
+  L.tacks = 0;
+  if (lv >= 5 && !L.floatCat && !L.slope && !L.carve && arch !== 'seesaw' && arch !== 'hang' && arch !== 'bowl'){
+    const rt = rng(Math.imul(seed ^ 0x2545f491, 0x85EBCA6B) >>> 0); rt(); rt();
+    const tIntro = featIntro && featIntro.k === 'tack';
+    if (tIntro || rt() < clamp(0.55 + D * 0.4, 0, 0.92)){
+      // 미는 쪽: 물총 오리·옆 발사대·강아지가 있는 쪽의 반대편
+      const xs = [...L.hives.filter(h => h.kind === 'wasp').map(h => h.x), ...L.chutes.filter(c => c.type === 'side').map(c => c.x < W / 2 ? 0 : W), ...L.crawl.map(c => c.side < 0 ? 0 : W)];
+      const cats = [{ x: px, top }, ...(L.twin ? [{ x: L.pot2.x, top: L.pot2.y + 18 - 4 }] : [])];
+      const g = clamp(40 - 24 * D, 14, 40), noHit = (rc2) => !S.some(o => o !== rc2.sup && (o.shape === 'circle' ? dist(o, rc2) < o.r + rc2.w / 2 + 2 : Math.abs(o.x - rc2.x) < (o.w * Math.abs(Math.cos(o.a || 0)) + o.h * Math.abs(Math.sin(o.a || 0))) / 2 + rc2.w / 2 + 2 && Math.abs(o.y - rc2.y) < (o.h * Math.abs(Math.cos(o.a || 0)) + o.w * Math.abs(Math.sin(o.a || 0))) / 2 + rc2.h / 2 + 1))
+        && !L.hives.some(h => dist(h, rc2) < 40) && !L.pins.some(p => Math.abs(p.x - rc2.x) < rc2.w / 2 + 8 && Math.abs(p.y - rc2.y) < 16) && !(L.sp2 && Math.abs(L.pot2.x - rc2.x) < rc2.w / 2 + 26 && Math.abs(L.pot2.y + 14 - rc2.y) < 30) && !(Math.abs(px - rc2.x) < rc2.w / 2 + 26 && Math.abs(top - 4 - rc2.y) < 30);
+      for (const [ci, c] of cats.entries()){
+        const sup = S.find(o => !o.shape && !o.a && Math.abs((o.y - o.h / 2) - c.top) < 6 && Math.abs(o.x - c.x) <= o.w / 2);
+        if (!sup) continue;
+        const x0 = sup.x - sup.w / 2, x1 = sup.x + sup.w / 2;
+        const avg = xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+        let s1 = avg == null ? (rt() < 0.5 ? -1 : 1) : (c.x >= avg ? 1 : -1);
+        const want = ci === 0 && (D >= 0.4 && rt() < 0.55 || tIntro) ? 2 : 1, w0 = 28 + rt() * 16, h = 10;
+        let got = 0;
+        for (const sd of [s1, -s1]){
+          if (got >= want) break;
+          let st = null;
+          // 받침 위: 간격·폭을 줄여 가며 들어가는 자리(벽·장애물 사이 좁은 곳도)
+          for (const [gg, w] of [[g, w0], [g * 0.7, w0], [g * 0.7, 24], [10, 22]]){
+            const cx = c.x + sd * (20 + gg + w / 2), t = { x: cx, y: c.top - h / 2, w, h, a: 0, kind: 'spikes', thin: true, sup };
+            if (cx - w / 2 > x0 + 1 && cx + w / 2 < x1 - 1 && noHit(t)){ st = t; break; }
+          }
+          if (!st && !L.water){ // 받침 끝이 가까우면: 가장자리 바로 아래 바닥(떨어지면 찔림)
+            const ex = sd > 0 ? x1 : x0, gx = ex + sd * (6 + w0 / 2);
+            const gs = S.find(o => o.kind === 'ground' && Math.abs(o.x - gx) <= o.w / 2 - w0 / 2);
+            const t = { x: gx, y: GY - h / 2, w: w0, h, a: 0, kind: 'spikes', thin: true, sup: gs };
+            if (gs && c.top < GY - 30 && Math.abs(ex - c.x) < 90 && gx > w0 / 2 && gx < W - w0 / 2 && noHit(t)) st = t;
+          }
+          if (st){ delete st.sup; S.push(st); L.tacks++; got++; }
+        }
+      }
+    }
+  }
+  if (featIntro && featIntro.k === 'tack') L.featIntro = L.tacks ? featIntro : null;
   // 집게 드론(61레벨~): 선을 집어 들어 올림. 배치는 따로 난수를 써서 다른 요소 배치는 그대로
   L.claws = [];
   if (has('claw') && !L.carve && arch !== 'cave'){
@@ -1435,6 +1478,7 @@ function setup(){
   const chips = [`<span class="chip${L.boss ? ' boss' : ''}">${L.boss ? '🔥 보스 · ' : ''}난이도 <span class="dbar">${[0, 1, 2, 3, 4].map(i => `<i class="${i < Math.ceil(L.diff10 / 2) ? 'on' : ''}"></i>`).join('')}</span> ${L.diff10}</span>`, `<span class="chip">${ch.icon} ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</span>`, `<span class="chip${L.archIntro ? ' new' : ''}">${ARCH_NAME[L.arch]}</span>`];
   if (L.twin) chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'twin' ? ' new' : ''}">🐾 동생 코코</span>`);
   if (L.water){ const hk = L.hz || 'water', nw = L.featIntro && L.featIntro.k === hk; chips.push(`<span class="chip${nw ? ' new' : ''}">${hk === 'spike' ? '📌 압정 바닥' : hk === 'fire' ? '🔥 불 바닥' : '🛁 욕조 물'}</span>`); }
+  if (L.tacks) chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'tack' ? ' new' : ''}">📍 압정 띠</span>`);
   if (L.fall === 'spikes') chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'spikeblock' ? ' new' : ''}">🦔 가시 발판</span>`);
   if (L.cacti && L.cacti.length) chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'cactus' ? ' new' : ''}">🌵 선인장</span>`);
   L.mods.forEach(k => { const m = MODS.find(x => x.k === k); chips.push(`<span data-keep="1" class="chip${L.modIntro && L.modIntro.k === k ? ' new' : ''}">${m.icon} ${m.name}</span>`); });
@@ -1705,6 +1749,12 @@ function handle(a, b, name){
     const cb = a.parent, dx = cb.position.x - b.position.x, dy = cb.position.y - b.position.y, m = Math.hypot(dx, dy) || 1;
     Body.setVelocity(cb, { x: dx / m * 3, y: Math.min(-1, dy / m * 3) });
   }
+  if (isCat(a.parent) && KB[b.label] && phase === 'sim'){
+    // 맞은 방향으로 모모가 밀려남(드론·개는 다치게 할 때만, 물은 맞을 때마다)
+    const bug = b.label === 'bee' || b.label === 'tank' || b.label === 'wasp' || b.label === 'crawl';
+    const fresh = bug ? simT - b.plugin.hitT >= 600 : WATER.includes(b.label) ? !toRemove.has(b) : !b.plugin.hit;
+    if (fresh) knockCat(a.parent, b, b.label === 'crawl' && b.plugin.big ? KB.bigdog : KB[b.label]);
+  }
   if (isCat(a.parent)){
     if (b.label === 'bee') hurtBy(b, 12, true);
     else if (b.label === 'tank') hurtBy(b, 22, true);
@@ -1737,6 +1787,13 @@ function handle(a, b, name){
   if (name === 'collisionStart' && WATER.includes(a.label) && !isCat(b.parent)) toRemove.add(a);
   // 물풍선은 무엇에든 부딪히면 터짐
   if (name === 'collisionStart' && a.label === 'balloon' && !WATER.includes(b.label) && b.label !== 'balloon') popQ.add(a);
+}
+function knockCat(cat, src, k){
+  let vx = src.velocity.x, vy = src.velocity.y;
+  if (Math.hypot(vx, vy) < 0.5){ vx = cat.position.x - src.position.x; vy = cat.position.y - src.position.y; }
+  const m = Math.hypot(vx, vy) || 1, v = cat.velocity, kk = k * (act.tough ? 0.5 : 1);
+  // 옆으로 크게, 위로 살짝 들려서 미끄러지게(아래로는 거의 안 밂)
+  Body.setVelocity(cat, { x: v.x + vx / m * kk, y: v.y + Math.min(vy / m * kk * 0.3, 0) - kk * 0.25 });
 }
 function hurtBy(c, dmg, knock){
   if (simT - c.plugin.hitT < 600) return;
@@ -2625,6 +2682,11 @@ function drawStatic(b){
   if (k === 'cactus'){ drawCactus(b.position.x, b.position.y, b.circleRadius); return; }
   if (k === 'spikes'){ // 가시 발판: 나무 받침 + 위에 압정
     const w = b.plugin.w, h = b.plugin.h, x0 = b.position.x - w / 2, y0 = b.position.y - h / 2;
+    if (h < 14){ // 압정 띠: 얇은 판 위에 압정
+      ctx.fillStyle = '#8a5a2b'; ctx.fillRect(x0, y0 + h - 4, w, 4); const cols = ['#ff5a5a', '#ffcf3a', '#3ea8f2'];
+      for (let x = x0 + 5, i = 0; x < x0 + w - 3; x += 8, i++) drawTack(x, y0 + 2, 0.7, cols[i % 3]);
+      return;
+    }
     drawWood(b); const cols = ['#ff5a5a', '#ffcf3a', '#3ea8f2'];
     for (let x = x0 + 7, i = 0; x < x0 + w - 4; x += 11, i++) drawTack(x, y0 + 1, 0.85, cols[i % 3]);
     return;

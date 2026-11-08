@@ -1,6 +1,6 @@
 import json, math, glob, sys
 def target(r):
-    lv=r['lv'];t=0.13+0.5*math.exp(-lv/40)
+    lv=r['lv'];t=(0.08+0.40*math.exp(-lv/26))/0.75  # v2.6: 더 가파르게(아래 0.75는 그대로 곱함)
     if r['boss']:t*=0.72
     elif lv%10==1 and lv>1:t*=1.15
     if r.get('intro'):t*=1.12
@@ -35,6 +35,8 @@ for lv in range(1,151):
         if SF.get((lv,v)): cost+=0.6*len(SF[(lv,v)])  # 맵 구조 문제(지형에 박힌 기지 등)  # 선 없이도 모모에게 못 오는 적이 있으면(장애물에 막힘 등) 피함
         if lv==2 and v!=1: cost+=1
         if lv==61 and 'claw' not in r['kinds']: cost+=1
+        if lv==5 and not r.get('tacks'): cost+=1  # 압정 띠 소개 판
+        if r.get('tacks'): cost-=0.05  # 압정 띠 있는 판을 조금 더 고름
         if r['arch']=='fall' and chosen and sum(1 for c in chosen if c['arch']=='fall')/len(chosen)>0.28: cost+=0.15  # 낙하 판은 30% 안쪽
         if r['arch']=='fall' and lv>4 and sum(1 for c in chosen if c['arch']=='fall')/max(1,len(chosen))<0.25: cost-=0.1  # 낙하 판 25% 안팎 유지  # 집게 드론 소개 판엔 집게 드론이 꼭 있어야
         if best is None or cost<best[0]: best=(cost,v,r,round(I),Fv,T)

@@ -56,7 +56,7 @@ const out=await p.evaluate(([A,B])=>{
     for(const m of [12,26]) for(const up of [45,65]) S.push(dense([{x:sp.x,y:sp.y-up},{x:x1+m,y:sp.y-10},{x:x1+m,y:bt+blk.h+14},{x:x0-m,y:bt+blk.h+14},{x:x0-m,y:sp.y-10},{x:sp.x+6,y:sp.y-up-4}]));}
   let t=0,w=0,F=0,minInk=1e9;
   const per=[];for(const pth of S){const e=run(pth);if(!e)continue;t++;per.push([e.win?1:0,Math.round(e.hp||0),Math.round(e.ink)]);if(e.win){w++;F+=0.5+0.5*e.hp/100;minInk=Math.min(minInk,e.ink);}}
-  res.push({lv,arch:L.arch,fall:L.fall||null,twin:!!L.twin,boss:L.boss,water:!!L.water,hives:L.hives.length,D:+L.diff.toFixed(3),t,w,F:t?+(F/t).toFixed(3):0,minInk:w?Math.round(minInk):null,ink:L.ink,par:L.par,mods:L.mods.join('+'),kinds:L.kinds.join('+'),hz:L.hz||null,intro:!!(L.intro||L.archIntro||L.modIntro||L.featIntro),dead,per});
+  res.push({lv,arch:L.arch,fall:L.fall||null,twin:!!L.twin,boss:L.boss,water:!!L.water,hives:L.hives.length,D:+L.diff.toFixed(3),t,w,F:t?+(F/t).toFixed(3):0,minInk:w?Math.round(minInk):null,ink:L.ink,par:L.par,mods:L.mods.join('+'),kinds:L.kinds.join('+'),hz:L.hz||null,tacks:L.tacks||0,intro:!!(L.intro||L.archIntro||L.modIntro||L.featIntro),dead,per});
  }
  return res;},[A,B]);
 console.log(JSON.stringify(out));await b.close();})();

@@ -36,7 +36,7 @@ const out=await p.evaluate(([A,B])=>{
   // 5) 고양이: 시작 자리가 지형 속이거나, 떨어지는 판이 아닌데 0.8초 만에 크게 움직임/위험 바닥에 닿음
   for(const c of catList()){ const bb=c.bounds, cr={x:(bb.min.x+bb.max.x)/2,y:(bb.min.y+bb.max.y)/2,w:bb.max.x-bb.min.x,h:bb.max.y-bb.min.y}; const hit=Matter.Query.collides(c, engine.world.bodies.filter(x=>x.isStatic&&!x.isSensor)).filter(q=>q.depth>3); if(hit.length&&!L.slope) iss.push((c===coco?'코코':'모모')+' 지형 속에 시작'); }
   const p0=catList().map(c=>({...c.position}));
-  startSim(); for(const h of bugs) Matter.Composite.remove(engine.world,h); bugs.length=0; L.hives.forEach(h=>h.n=0); L.chutes.forEach(c=>c.interval=1e9); hp=1e9;
+  startSim(); for(const h of bugs) Matter.Composite.remove(engine.world,h); bugs.length=0; L.hives.forEach(h=>h.n=0); L.chutes.forEach(c=>c.interval=1e9); hp=1e9; ducks=[]; spawnQ=[]; L.clouds=[]; claws=[];
   let n=0; while(phase==='sim'&&simT<800&&n<300){ step(); n++; }
   catList().forEach((c,i)=>{ const d=dist(c.position,p0[i]); if(!L.floatCat&&!L.slope&&!L.winds.length&&L.arch!=='seesaw'&&L.arch!=='hang'&&d>25) iss.push((c===coco?'코코':'모모')+' 시작하자마자 '+Math.round(d)+'px 밀림'); });
   if(phase==='end'&&endInfo&&!endInfo.win&&!L.floatCat&&!L.slope&&!L.winds.length) iss.push('적 없이도 바로 실패: '+endInfo.reason);
