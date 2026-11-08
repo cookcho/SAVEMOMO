@@ -2,6 +2,7 @@ const {chromium}=require('playwright');
 const [A,B,file,inkX]=[+process.argv[2],+process.argv[3],process.argv[4]||'test.html',+(process.argv[5]||1)];
 (async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:820}});
 await p.addInitScript(([x,fa])=>{window.__inkX=x;if(fa)window.__forceArch=fa;},[inkX,process.argv[6]||null]);
+if(process.env.NOWIND) await p.addInitScript(()=>{window.__noWind=1;});
 await p.goto('file:///home/claude/t2/'+file);await p.waitForTimeout(300);
 const out=await p.evaluate(([A,B])=>{
  store.set('momo_story_seen',true);store.set('momo_tut_done',true);store.set('momo_dev_all',true);store.set('momo_pin_done',true);for(let i=11;i<=400;i+=10)store.set('momo_ch_'+i,true);
@@ -37,11 +38,16 @@ const out=await p.evaluate(([A,B])=>{
     S.push(dense(pts)); } }
   // 2) 모모를 통째로 감싸는 고리
   const cx0=L.twin?(L.sp.x+L.sp2.x)/2:sp.x, extra=L.twin?Math.abs(L.sp.x-L.sp2.x)/2:0;
-  for(const rx of [55,70,90,115]) for(const ry of [55,70,95]) for(const cy of [15,35,55]) S.push(dense(ell(cx0,sp.y+cy,rx+extra,ry)));
+  // v2.5: 고리 금지 → 한쪽(위·아래·왼·오른)이 50px 열린 호
+  const arc=(cx,cy,rx,ry,ph)=>{const h=Math.asin(Math.min(1,27/Math.min(rx,ry)))+0.05,o=[];for(let a=ph+h;a<=ph+2*Math.PI-h;a+=0.07)o.push({x:cx+rx*Math.cos(a),y:cy+ry*Math.sin(a)});return o;};
+  for(const rx of [55,80,105]) for(const ry of [55,85]) for(const cy of [20,45]) for(const ph of [-Math.PI/2,Math.PI/2,Math.PI,0]) S.push(dense(arc(cx0,sp.y+cy,rx+extra,ry,ph)));
   // 3) 핀 그물(양옆 핀) / 핀 천막
   const pins=L.pins;
   if(pins.length>=2){ const [q1,q2]=[...pins].sort((a,b)=>a.x-b.x);
     for(const dep of [30,50,70]) for(const up of [55,75]) S.push(dense([q1,{x:(q1.x+q2.x)/2,y:Math.max(q1.y,q2.y)+dep},q2,{x:q2.x+6,y:sp.y-up+30},{x:sp.x,y:sp.y-up},{x:q1.x-6,y:sp.y-up+30},{x:q1.x-4,y:q1.y+6}])); }
+  if(pins.length>=2){ const [q1,q2]=[...pins].sort((a,b)=>a.x-b.x);
+    for(const up of [40,60]) for(const legs of [false,true]){ const pk={x:(q1.x+q2.x)/2,y:Math.min(sp.y-up,Math.min(q1.y,q2.y)-10)}, pts=[];
+      if(legs) pts.push({x:q1.x-30,y:legB(q1.x-30,q1.y+20)}); pts.push(q1,pk,q2); if(legs) pts.push({x:q2.x+30,y:legB(q2.x+30,q2.y+20)}); S.push(dense(pts)); } }
   for(const pn of pins) for(const w of [46,60]) for(const dy of [60,90]) S.push(dense([{x:sp.x-w,y:sp.y+dy},pn,{x:sp.x+w,y:sp.y+dy}]));
   // 가시 발판·작은 발판: 발판 위에 선을 깔고 그대로 위로 돌아 지붕까지
   const blk=L.S.find(o=>o.kind==='spikes'||(L.fall==='block'&&o.kind==='plat'));
