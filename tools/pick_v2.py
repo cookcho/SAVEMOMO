@@ -34,7 +34,7 @@ for lv in range(1,151):
         if r.get('dead'): cost+=0.6*len(r['dead'])
         if SF.get((lv,v)): cost+=0.6*len(SF[(lv,v)])  # 맵 구조 문제(지형에 박힌 기지 등)  # 선 없이도 모모에게 못 오는 적이 있으면(장애물에 막힘 등) 피함
         if lv==2 and v!=1: cost+=1
-        if lv==61 and 'claw' not in r['kinds']: cost+=1
+        if lv==24 and 'claw' not in r['kinds']: cost+=1
         if lv==5 and not r.get('tacks'): cost+=1  # 압정 띠 소개 판
         if r.get('tacks'): cost-=0.05  # 압정 띠 있는 판을 조금 더 고름
         if r['arch']=='fall' and chosen and sum(1 for c in chosen if c['arch']=='fall')/len(chosen)>0.28: cost+=0.15  # 낙하 판은 30% 안쪽
