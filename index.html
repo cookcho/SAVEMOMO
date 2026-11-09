@@ -490,7 +490,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2.8.0</span>
+  <span id="ver">v2.8.1</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -513,6 +513,9 @@
     <div class="setHd">📁 기록</div>
     <p style="font-size:13px;color:#7a8aa6;margin:0 0 8px">레벨 기록, 별, 아이템, 꾸미기를 모두 지우고<br>1레벨 이야기부터 다시 시작해요.</p>
     <div class="btns" style="margin-top:6px"><button class="cbtn red" id="rDo">처음부터 다시 하기</button><button class="cbtn white" id="rClose">닫기</button></div>
+    <div class="setSep"></div>
+    <div class="setHd">🌙 다크 모드에서 색이 이상할 때</div>
+    <p id="darkHelp" style="font-size:13px;color:#7a8aa6;margin:0 0 4px;line-height:1.5"></p>
     <a href="./v1/" style="display:block;margin-top:10px;font-size:13px;color:#6b7a90;text-align:center">이전 버전(v1) 하러 가기</a>
   </div>
 </div>
@@ -1689,11 +1692,34 @@ cv.addEventListener('pointermove', e => moveTo(toWorld(e)));
 ['pointerup', 'pointercancel'].forEach(t => cv.addEventListener(t, () => { release(); activePointer = null; }));
 
 function hideHint(){ const h = document.getElementById('hint'); h.classList.add('fade'); setTimeout(() => { if (h.classList.contains('fade')) h.classList.add('hidden'); }, 400); }
+// v2.8.1: 휴대폰 다크 모드 — 게임은 '밝은 화면만'(color-scheme: only light)이라고 알려 주지만,
+// 삼성 인터넷 등은 이를 무시하고 색을 억지로 바꿈 → 쓰는 브라우저를 알아내 끄는 방법을 안내
+const UA = navigator.userAgent, BROWSER = /SamsungBrowser/i.test(UA) ? 'samsung' : /EdgA/i.test(UA) ? 'edge' : /Chrome/i.test(UA) ? 'chrome' : /Safari/i.test(UA) ? 'safari' : 'other';
+const SYS_DARK = !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+function darkHelpText(){
+  const name = { samsung: '삼성 인터넷', chrome: '크롬', edge: '엣지', safari: '사파리', other: '지금 브라우저' }[BROWSER], ro = { samsung: '으로', chrome: '으로', edge: '로', safari: '로', other: '로' }[BROWSER], eun = BROWSER === 'edge' ? '는' : '은';
+  const how = BROWSER === 'samsung'
+    ? '삼성 인터넷 앱 → 메뉴(≡) → 설정에서 <b>다크 모드</b> 항목을 열고, 웹페이지(웹 콘텐츠)에 다크 모드를 적용하는 옵션을 끄세요. 설정 → Labs의 <b>웹사이트 다크 테마 사용</b>을 켜도 원래 색으로 보여요.'
+    : BROWSER === 'chrome' || BROWSER === 'edge'
+    ? name + ' 앱 → 설정 → <b>테마</b>에서 사이트에 어두운 테마를 적용하는 옵션이 있으면 끄세요. 없으면 ' + name + eun + ' 게임 색을 바꾸지 않아요.'
+    : '브라우저 설정에서 웹페이지에 다크 모드를 강제로 적용하는 옵션을 끄세요.';
+  return `지금 <b>${name}</b>${ro} 실행 중이에요${SYS_DARK ? ' (휴대폰 다크 모드 켜짐)' : ''}. 게임은 원래 밝은 색이라, 브라우저가 억지로 어둡게 바꾸면 색이 이상해져요. ` + how;
+}
 function showToast(msg){
   const h = document.getElementById('hint');
   h.textContent = msg; h.classList.remove('hidden', 'fade');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(hideHint, 2200);
+}
+
+document.getElementById('darkHelp').innerHTML = darkHelpText();
+if (BROWSER === 'samsung' && SYS_DARK && !store.get('momo_dark_tip', false)){
+  store.set('momo_dark_tip', true);
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:99;background:#fff;color:#33415c;border-radius:18px;padding:14px 16px;font-size:14px;line-height:1.5;box-shadow:0 6px 24px rgba(0,0,0,.25)';
+  d.innerHTML = '🌙 <b>다크 모드라 색이 다르게 보일 수 있어요</b><br>' + darkHelpText() + '<div style="text-align:right;margin-top:8px"><button style="border:0;background:#6cc4ff;color:#fff;font-size:15px;padding:8px 16px;border-radius:12px">알겠어요</button></div><div style="font-size:12px;color:#8a97ad;margin-top:2px">이 안내는 설정(⚙)에서 다시 볼 수 있어요</div>';
+  d.querySelector('button').onclick = () => d.remove();
+  document.body.appendChild(d);
 }
 
 const INK_MULT = 2.3; // v2 시험판: 그을 수 있는 선 길이 배수
