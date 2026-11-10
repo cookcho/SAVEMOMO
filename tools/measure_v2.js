@@ -31,6 +31,10 @@ const out=await p.evaluate(([A,B])=>{
   const S=[];
   // 1) 다리 있는 지붕
   for(const h of [26,40,60]) for(const wd of [36,46,60,80]){ const yl=sp.y-h; S.push(dense([{x:sp.x-wd,y:legB(sp.x-wd,yl)},{x:sp.x-wd,y:yl},{x:sp.x+wd,y:yl},{x:sp.x+wd,y:legB(sp.x+wd,yl)}])); }
+  // v3.1 스위치: 한쪽 끝을 스위치에 얹고 모모 위로 지붕(또는 반대로 지붕 끝을 스위치에)
+  if(L.btn){ const bt={x:L.btn.x,y:L.btn.y-7}, sd=Math.sign(sp.x-bt.x)||1;
+    for(const h of [40,60]) for(const wd of [46,64]){ const yl=sp.y-h, near={x:sp.x-sd*wd,y:yl}, far={x:sp.x+sd*wd,y:yl}, fl={x:far.x,y:legB(far.x,yl)};
+      S.push(dense([bt,near,far,fl])); S.push(dense([fl,far,near,bt])); } }
   // 1-2) 코코 판: 두 마리를 잇는 다리 지붕
   if(L.twin){ const a=L.sp,c={x:L.sp2.x,y:L.sp2.y+8},lo=a.x<c.x?a:c,hi=a.x<c.x?c:a;
    for(const up of [22,34,50]) for(const m of [36,50]) for(const legs of [true,false]){ const yL=lo.y-up,yR=hi.y-up,pts=[],x0=lo.x-m,x1=hi.x+m;
@@ -56,7 +60,7 @@ const out=await p.evaluate(([A,B])=>{
     for(const m of [12,26]) for(const up of [45,65]) S.push(dense([{x:sp.x,y:sp.y-up},{x:x1+m,y:sp.y-10},{x:x1+m,y:bt+blk.h+14},{x:x0-m,y:bt+blk.h+14},{x:x0-m,y:sp.y-10},{x:sp.x+6,y:sp.y-up-4}]));}
   let t=0,w=0,F=0,minInk=1e9;
   const per=[];for(const pth of S){const e=run(pth);if(!e)continue;t++;per.push([e.win?1:0,Math.round(e.hp||0),Math.round(e.ink)]);if(e.win){w++;F+=0.5+0.5*e.hp/100;minInk=Math.min(minInk,e.ink);}}
-  res.push({lv,arch:L.arch,fall:L.fall||null,twin:!!L.twin,boss:L.boss,water:!!L.water,hives:L.hives.length,D:+L.diff.toFixed(3),t,w,F:t?+(F/t).toFixed(3):0,minInk:w?Math.round(minInk):null,ink:L.ink,par:L.par,mods:L.mods.join('+'),kinds:L.kinds.join('+'),hz:L.hz||null,tacks:L.tacks||0,intro:!!(L.intro||L.archIntro||L.modIntro||L.featIntro),dead,per});
+  res.push({lv,arch:L.arch,fall:L.fall||null,twin:!!L.twin,boss:L.boss,water:!!L.water,hives:L.hives.length,D:+L.diff.toFixed(3),t,w,F:t?+(F/t).toFixed(3):0,minInk:w?Math.round(minInk):null,ink:L.ink,par:L.par,mods:L.mods.join('+'),kinds:L.kinds.join('+'),hz:L.hz||null,tacks:L.tacks||0,btn:!!L.btn,intro:!!(L.intro||L.archIntro||L.modIntro||L.featIntro),dead,per});
  }
  return res;},[A,B]);
 console.log(JSON.stringify(out));await b.close();})();

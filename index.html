@@ -490,7 +490,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v3.0.0</span>
+  <span id="ver">v3.1.0</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -612,6 +612,7 @@ function pickMission(L, lv, seed){
   return { k: el[Math.floor(r2() * el.length)] };
 }
 const FEATS = [
+  { k: 'button', lv: 31, name: '스위치', icon: '🔴', desc: '선으로 빨간 스위치를 누르고 있으면, 점선으로 이어진 기지가 멈춰요!' },
   { k: 'tack', lv: 5, name: '압정 띠', icon: '📍', desc: '모모 바로 옆에 압정이 깔려 있어요! 맞고 밀려서 닿으면 바로 실패예요' },
   { k: 'water', lv: 12, name: '욕조 물', icon: '🛁', desc: '바닥이 욕조 물이에요! 선에 밀리거나 떨어져서 모모가 물에 빠지면 실패' },
   { k: 'spike', lv: 16, name: '압정 바닥', icon: '📌', desc: '바닥에 압정이 쫙! 모모가 떨어지거나 미끄러져 닿으면 바로 실패예요' },
@@ -785,8 +786,8 @@ function archBase(lv, seed, avoid = []){
   return unlocked[unlocked.length - 1];
 }
 // 레벨별 변형 번호(1~150). 같은 레벨 번호로 여러 판을 만들어 자동 풀이로 재 보고, 난이도 곡선에 가장 맞는 판을 고름(0 = 기본)
-const VAR = [2,1,3,3,0,2,0,1,0,1,2,0,2,1,3,2,0,3,2,0,0,3,3,2,3,0,0,3,0,2,1,0,2,2,3,3,2,1,1,7,2,1,0,1,3,0,3,2,1,0,3,1,0,1,2,3,3,2,3,3,2,1,1,2,1,1,2,3,3,2,3,2,1,2,2,2,2,3,0,2,3,0,1,3,0,0,1,2,0,3,2,2,0,3,0,3,3,1,2,0,3,1,3,1,2,2,0,3,0,1,0,3,1,0,2,3,2,3,2,1,1,1,3,1,2,2,0,1,3,1,1,1,3,1,1,3,3,0,2,2,0,0,0,2,3,1,2,3,0,1];
-const INKT = [507,733,483,357,273,398,321,328,205,172,293,239,255,304,461,471,348,598,307,419,230,620,214,340,179,311,496,460,669,254,214,1606,230,320,826,214,515,685,1603,893,1446,550,465,170,541,614,182,403,402,759,254,252,317,334,1196,224,750,965,1089,745,378,923,205,437,398,1130,220,274,443,314,817,268,338,257,680,437,200,940,159,671,451,656,418,475,477,185,410,499,1294,614,244,391,167,1328,182,580,1319,202,260,308,414,190,1450,509,312,479,1461,328,235,226,246,483,410,456,946,278,190,1320,345,265,454,361,229,1746,572,399,354,940,306,404,260,186,388,1613,456,623,251,214,454,381,813,837,439,222,304,522,581,251,312,319], NEEDT = [195,282,218,201,145,277,170,152,110,119,128,120,183,165,201,181,137,230,121,176,158,282,157,171,147,170,274,253,304,218,92,603,165,278,334,173,234,277,648,402,585,277,296,147,278,279,158,274,225,345,215,194,230,176,560,195,395,508,510,392,199,486,156,230,252,595,191,238,233,195,430,141,279,218,358,336,156,495,122,353,262,505,220,250,251,130,216,376,681,323,190,224,122,699,158,305,694,153,192,252,218,165,763,268,256,252,769,206,192,158,194,279,300,373,498,214,158,695,250,204,239,234,199,818,301,230,257,495,235,280,185,152,337,849,240,328,178,165,349,247,428,536,246,143,195,275,306,215,256,277]; // v2: 레벨별 잉크·최소 선 길이(측정값). 비어 있으면 공식으로
+const VAR = [2,1,3,3,0,2,0,1,0,1,2,0,2,1,3,2,0,3,2,0,0,3,3,2,3,0,0,3,0,2,1,0,2,2,3,3,2,1,1,7,2,1,0,1,3,0,3,2,1,0,3,1,0,1,1,3,3,2,3,3,2,1,1,2,1,1,2,1,3,2,3,2,1,2,3,2,2,3,0,2,3,0,1,3,0,0,1,2,0,3,2,2,0,3,0,3,3,1,2,0,3,1,3,1,1,0,0,3,0,1,0,3,1,0,2,3,2,3,2,1,1,1,3,1,2,2,0,1,3,1,1,1,3,1,1,2,1,0,2,2,0,0,2,2,3,1,2,3,0,1];
+const INKT = [507,733,483,357,273,398,321,328,205,172,293,239,255,304,461,471,348,598,307,419,230,620,214,340,179,311,496,460,669,254,227,1606,230,320,826,214,515,685,1603,841,1446,550,465,170,541,614,182,403,402,759,254,252,317,334,328,224,750,965,1089,745,378,923,205,437,398,1130,220,346,443,314,817,268,338,257,324,437,200,940,159,671,451,656,418,475,342,185,410,499,1294,614,244,391,167,1328,182,580,1319,202,260,308,414,206,1450,509,177,264,1461,328,250,226,246,483,410,456,946,278,182,1320,345,265,454,361,229,1746,572,399,354,940,306,404,260,186,388,1613,456,264,424,190,454,381,813,837,324,209,304,522,581,247,312,319], NEEDT = [195,282,218,201,145,277,170,152,110,119,128,120,183,165,201,181,137,230,121,176,158,282,157,171,147,170,274,253,304,218,92,603,165,278,334,173,234,277,648,378,585,277,296,147,278,279,158,274,225,345,215,194,230,176,252,195,395,508,510,392,199,486,156,230,252,595,191,182,233,195,430,141,279,218,195,336,156,495,122,353,262,505,220,250,280,130,216,376,681,323,190,224,122,699,158,305,694,153,192,252,218,165,763,268,154,230,769,206,192,158,194,279,300,373,498,214,158,695,250,204,239,234,199,818,301,230,257,495,235,280,185,152,337,849,240,187,223,165,349,247,428,536,249,143,195,275,306,215,256,277]; // v2: 레벨별 잉크·최소 선 길이(측정값). 비어 있으면 공식으로
 const lvSeed = lv => lv * 7919 + 101 + (VAR[lv - 1] || 0) * 1000003;
 function genLevel(lv, seed, themeIdx){
   const r = rng(seed), R = (a, b) => a + r() * (b - a), pick = a => a[Math.floor(r() * a.length)];
@@ -1423,6 +1424,33 @@ function genLevel(lv, seed, themeIdx){
     }
   }
   if (featIntro && featIntro.k === 'tack') L.featIntro = L.tacks ? featIntro : null;
+  // v3.1 스위치(31레벨~): 선으로 누르고 있으면 이어진 기지(드론 기지·물총 오리·물풍선 발사대)가 멈춤.
+  //  모모에게서 70~170px 떨어진 평평한 면 위 → 한 획으로 스위치도 누르고 모모도 지켜야 함
+  L.btn = null;
+  if (lv >= 31 && !L.carve && !L.floatCat && !L.slope){
+    const rb = rng(Math.imul(seed ^ 0x68e31da4, 0xB5297A4D) >>> 0); rb(); rb();
+    const bIntro = featIntro && featIntro.k === 'button';
+    if (bIntro || rb() < 0.6){
+      const srcs = [...L.hives.map((h, i) => ({ t: 'hive', i, x: h.x, y: h.y, w: h.kind === 'wasp' ? 3 : h.kind === 'tank' ? 2 : 1 + h.n / 8 })),
+                    ...L.chutes.map((c, i) => ({ t: 'chute', i, x: c.x < 0 ? 18 : c.x > W ? W - 18 : c.x, y: Math.max(16, c.y), w: 1.5 }))];
+      if (srcs.length){
+        let tot = srcs.reduce((a, b) => a + b.w, 0), pk = rb() * tot, src = srcs[0];
+        for (const c of srcs){ pk -= c.w; if (pk <= 0){ src = c; break; } }
+        const surfs = S.filter(o => !o.shape && !o.a && o.kind !== 'spikes' && o.kind !== 'soap' && o.w >= 36 && o.y - o.h / 2 > 60);
+        for (let t = 0; t < 140 && !L.btn; t++){
+          const o = surfs[Math.floor(rb() * surfs.length)]; if (!o) break;
+          const bx = o.x + (rb() - 0.5) * (o.w - 40), by = o.y - o.h / 2 - 4, dx = Math.abs(bx - sp.x);
+          if (dx < 50 || dx > 220 || by < sp.y - 180 || by > sp.y + 170 || bx < 20 || bx > W - 20) continue;
+          const b = { x: bx, y: by, w: 30, h: 8 };
+          if (S.some(q => q !== o && !q.shape && Math.abs(q.x - b.x) < (q.w * Math.abs(Math.cos(q.a || 0)) + q.h * Math.abs(Math.sin(q.a || 0))) / 2 + 16 && Math.abs(q.y - (b.y - 12)) < (q.h * Math.abs(Math.cos(q.a || 0)) + q.w * Math.abs(Math.sin(q.a || 0))) / 2 + 10)) continue; // 스위치 위 공간이 비어야 함
+          if (S.some(q => q.shape === 'circle' && dist(q, b) < q.r + 20) || L.hives.some(h => dist(h, b) < 55) || L.pins.some(p => dist(p, b) < 30) || (L.cacti || []).some(c => dist(c, b) < 40)) continue;
+          if (dist(b, L.pot) < 60 || (L.pot2 && dist(b, L.pot2) < 60)) continue;
+          L.btn = { ...b, src: { t: src.t, i: src.i } };
+        }
+      }
+    }
+  }
+  if (featIntro && featIntro.k === 'button') L.featIntro = L.btn ? featIntro : null;
   // 집게 드론(61레벨~): 선을 집어 들어 올림. 배치는 따로 난수를 써서 다른 요소 배치는 그대로
   L.claws = [];
   // v2.7: 땅굴·우물·벽굴·동굴은 24레벨부터 자주(입구 뚜껑을 들어 올림), 나머지 판은 61레벨부터
@@ -1538,7 +1566,8 @@ function setup(){
   }
   const edgeWalls = [-55, W + 55].map(x => Bodies.rectangle(x, H / 2 - 200, 30, H + 400, { isStatic: true, label: 'edge', collisionFilter: { category: 16, mask: CAT_DEF } }));
   waterBody = L.water ? Bodies.rectangle(W / 2, WATER_Y + 80, W + 400, 160, { isStatic: true, isSensor: true, label: 'water', collisionFilter: { category: 64, mask: CAT_DEF } }) : null;
-  Composite.add(engine.world, [...statics, ...dynBodies, ...dynCons, potBody, ...(coco ? [coco] : []), ...edgeWalls, ...(waterBody ? [waterBody] : [])]);
+  btnBody = L.btn ? Bodies.rectangle(L.btn.x, L.btn.y - 3, L.btn.w + 4, 14, { isStatic: true, isSensor: true, label: 'btn' }) : null; btnOn = false;
+  Composite.add(engine.world, [...statics, ...dynBodies, ...dynCons, potBody, ...(coco ? [coco] : []), ...edgeWalls, ...(waterBody ? [waterBody] : []), ...(btnBody ? [btnBody] : [])]);
   Events.on(engine, 'collisionStart', onCollide);
   Events.on(engine, 'collisionActive', onCollide);
 
@@ -1560,6 +1589,7 @@ function setup(){
   const chips = [`<span class="chip${L.boss ? ' boss' : ''}">${L.boss ? '🔥 보스 · ' : ''}난이도 <span class="dbar">${[0, 1, 2, 3, 4].map(i => `<i class="${i < Math.ceil(L.diff10 / 2) ? 'on' : ''}"></i>`).join('')}</span> ${L.diff10}</span>`, `<span class="chip">${ch.icon} ${ch.name}${rd ? ' ★' + (rd + 1) : ''}</span>`, `<span class="chip${L.archIntro ? ' new' : ''}">${ARCH_NAME[L.arch]}</span>`];
   if (L.twin) chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'twin' ? ' new' : ''}">🐾 동생 코코</span>`);
   if (L.water){ const hk = L.hz || 'water', nw = L.featIntro && L.featIntro.k === hk; chips.push(`<span class="chip${nw ? ' new' : ''}">${hk === 'spike' ? '📌 압정 바닥' : hk === 'fire' ? '🔥 불 바닥' : '🛁 욕조 물'}</span>`); }
+  if (L.btn) chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'button' ? ' new' : ''}">🔴 스위치</span>`);
   if (L.tacks) chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'tack' ? ' new' : ''}">📍 압정 띠</span>`);
   if (L.fall === 'spikes') chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'spikeblock' ? ' new' : ''}">🦔 가시 발판</span>`);
   if (L.cacti && L.cacti.length) chips.push(`<span class="chip${L.featIntro && L.featIntro.k === 'cactus' ? ' new' : ''}">🌵 선인장</span>`);
@@ -1841,6 +1871,8 @@ function onCollide(ev){
 }
 let jetPush = [];
 let failNext = null, misFail = false, misT0 = 0, misT1 = 0, misPos = [];
+let btnBody = null, btnOn = false; // v3.1 스위치
+function btnSrc(t, i){ return L.btn && btnOn && L.btn.src.t === t && L.btn.src.i === i; }
 let prevPotSpeed = 0, lastHitT = -9999, lastImpactT = -9999, lastWet = false, ducks = [], popQ = new Set();
 const WATER = ['drop', 'jet', 'splash'];
 function ouch(dmg, wet = false){ hp -= dmg; flashT = 280; lastHitT = simT; lastWet = wet; if (wet) AU.sfx('splat'); AU.sfx('meow'); }
@@ -2136,6 +2168,7 @@ function clawForces(g){
 
 function step(){
   simT += STEP;
+  if (btnBody){ const was = btnOn; btnOn = !!lineBody && Matter.Query.collides(btnBody, lineBody.parts.slice(1)).length > 0; if (btnOn && !was){ AU.sfx('pin'); fxHit(L.btn.x, L.btn.y - 6, false); } }
   if (flowStep++ % 8 === 0) computeFlow();
   while (spawnQ.length && spawnQ[0].t <= simT){
     const q = spawnQ.shift();
@@ -2146,6 +2179,7 @@ function step(){
       addBody(c, crawlers); AU.sfx('woof', { big });
     } else {
       const h = q.h, tank = h.kind === 'tank';
+      if (btnSrc('hive', L.hives.indexOf(h))){ q.t = simT + 250; spawnQ.push(q); spawnQ.sort((a, b) => a.t - b.t); continue; } // 스위치가 눌린 동안은 못 나옴
       const bug = Bodies.circle(h.x + (simRng() - 0.5) * 10, h.y + (tank ? 48 : 40), tank ? RAD.tank : RAD.drone, {
         label: h.kind, frictionAir: tank ? 0.05 : 0.03, density: tank ? 0.012 : 0.003, restitution: tank ? 0.1 : 0.4,
         collisionFilter: { category: CAT_BUG, mask: CAT_DEF | CAT_BUG }
@@ -2169,6 +2203,7 @@ function step(){
   L.chutes.forEach((c, i) => {
     if (simT >= chuteT[i]){
       chuteT[i] += c.interval * TC;
+      if (btnSrc('chute', i)) return; // 스위치가 눌린 동안 발사 안 함
       const k = Bodies.circle(c.x, c.y, c.r, { label: 'balloon', density: 0.008, friction: 0.3, restitution: 0.25, collisionFilter: { category: 32, mask: 0xFFFFFFFF & ~16 } });
       k.plugin = { hit: false, col: Math.floor(simRng() * 4), side: c.type === 'side' ? (c.x < 0 ? -1 : 1) : 0, mx: c.mouth.x, my: c.mouth.y, chute: c };
       Body.setVelocity(k, { x: c.vx, y: c.vy });
@@ -2180,6 +2215,7 @@ function step(){
     if (!dk.burst){
       const dx = hd.x - h.x, dy = hd.y - h.y, m = Math.hypot(dx, dy) || 1;
       dk.dir = { x: dx / m, y: dy / m }; // 조준 중에는 모모를 계속 따라감
+      if (btnSrc('hive', L.hives.indexOf(h))) dk.next = Math.max(dk.next, simT + 200); // 스위치가 눌린 동안 못 쏨
       if (simT >= dk.next){ dk.burst = dk.size; dk.shotT = simT; AU.sfx('quack'); AU.sfx('squirt'); }
     }
     if (dk.burst && simT >= dk.shotT){
@@ -2576,6 +2612,22 @@ function duckOf(h){ return ducks.find(d => d.h === h); }
 // 집게 드론 그림: 거치대는 화면 맨 위에 매달림(기둥이 위로 이어짐). 기다릴 땐 드론이 붙은 거치대 그림 하나로
 const CLAW_W = 46, DOCK_W = 62;
 function clawDocked(d){ return claws.some(c => c.dock === d && c.st === 'wait' && Math.hypot(c.x - d.x, c.y - d.y - CLAW_DOCKY) < 2); }
+function btnSrcPos(){
+  const s2 = L.btn.src;
+  if (s2.t === 'hive'){ const h = L.hives[s2.i]; return h ? { x: h.x, y: h.y } : null; }
+  const c = L.chutes[s2.i]; return c ? (c.mouth ? { x: c.mouth.x, y: c.mouth.y } : { x: clamp(c.x, 16, W - 16), y: Math.max(16, c.y) }) : null;
+}
+function drawButton(){
+  const b = L.btn, on = phase === 'sim' && btnOn, sp2 = btnSrcPos();
+  if (sp2){ // 스위치 ↔ 기지 점선
+    ctx.save(); ctx.setLineDash([3, 7]); ctx.lineWidth = 2.5; ctx.strokeStyle = on ? 'rgba(64,192,87,.9)' : 'rgba(250,82,82,.8)';
+    ctx.beginPath(); ctx.moveTo(b.x, b.y - 4); ctx.lineTo(sp2.x, sp2.y); ctx.stroke(); ctx.setLineDash([]);
+    ctx.font = '16px system-ui'; ctx.textAlign = 'center'; ctx.fillText(on ? '⛔' : '🔴', sp2.x + 22, sp2.y - 22); ctx.restore();
+  }
+  ctx.fillStyle = '#495057'; rrect(b.x - b.w / 2 - 3, b.y - 2, b.w + 6, 6, 2); ctx.fill();
+  ctx.fillStyle = on ? '#40c057' : '#fa5252'; ctx.strokeStyle = '#212529'; ctx.lineWidth = 2;
+  rrect(b.x - b.w / 2 + 2, b.y - (on ? 5 : 10), b.w - 4, on ? 5 : 10, 4); ctx.fill(); ctx.stroke();
+}
 function drawClawDock(d){
   const full = (phase !== 'sim' || clawDocked(d)) && sprOk('claw_dock_full'), n = full ? 'claw_dock_full' : 'claw_dock';
   if (sprOk(n)){ const im = SPR[n], h = DOCK_W * im.naturalHeight / im.naturalWidth; drawSpr(n, d.x, h / 2 - 4, DOCK_W, h); return; }
@@ -3656,6 +3708,7 @@ function render(){
   L.chutes.forEach(drawChute);
   L.hives.forEach(drawHive);
   (L.claws || []).forEach(drawClawDock);
+  if (L.btn) drawButton();
   if (phase === 'draw' && L.crawl.length){
     ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '700 11px sans-serif';
     [...new Set(L.crawl.map(c => c.side))].forEach(sd => { ctx.textAlign = sd < 0 ? 'left' : 'right'; const ic = L.crawl.some(c => c.side === sd && c.big) ? '🐕' : '🐶'; ctx.fillText(sd < 0 ? ic + ' →' : '← ' + ic, sd < 0 ? 6 : W - 6, GY - 10); });
