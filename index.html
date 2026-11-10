@@ -490,7 +490,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v3.1.0</span>
+  <span id="ver">v3.2.0</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -577,6 +577,7 @@ const MECH = [
   { k: 'crawl', lv: 7, name: '강아지', icon: '🐶', desc: '옆집 강아지들이 놀자고 달려와요. 깡충 뛰어 낮은 벽은 넘어요' },
   { k: 'bigdog', lv: 33, name: '큰 개', icon: '🐕', desc: '덩치 큰 옆집 개! 느리지만 선을 통째로 밀어내요' },
   { k: 'tank',  lv: 27, name: '헤비 드론', icon: '🛡️', desc: '집사의 대형 드론! 막히면 선을 힘으로 밀어붙여요' },
+  { k: 'ball',  lv: 36, name: '볼링공', icon: '🎳', desc: '무거운 볼링공이 굴러와요! 맞으면 크게 다치고 밀려나요. 선으로 공 길을 바꿔요' },
   { k: 'claw',  lv: 24, name: '집게 드론', icon: '🪝', desc: '선을 집어서 위로 들어 올려요! 핀 하나로는 경첩처럼 열려요. 지형에 걸리게 모양을 짜요' },
 ];
 // 집게 드론: 당기는 힘(선+고양이 한 마리 무게 대비), 비행 속도(px/프레임), 들어 올리는 속도·높이, 옆으로 끌고 가는 속도·거리, 한 번 쥐고 있는 시간(ms)
@@ -585,6 +586,7 @@ const CARVED = ['pocket', 'well', 'alcove'];
 // 물 공격이 선을 미는 힘(선 무게 대비). 물풍선은 적의 힘 배율(L.force)도 곱함
 const WPUSH = { jet: 0.010, drop: 0.005, splash: 0.003 }, BALLOON_K = 0.04;
 // v2.6: 맞으면 모모가 밀려남(속도 px/프레임). 옆의 압정·불·물로 밀려 떨어지게
+const BALL_R = 15, BALL_DMG = 22, BALL_KB = 3.4; // v3.2 볼링공: 반지름, 맞았을 때 피해, 밀려나는 세기
 const JET_BOUNCE = 2, JET_STUN = 2200; // v3.0: 물줄기 반사 횟수, 튕긴 물에 맞은 오리·드론이 멈추는 시간(ms)
 const KB = { jet: 0.9, drop: 0.25, splash: 0.35, balloon: 2.6, bee: 1.3, tank: 2.6, wasp: 1.6, crawl: 2.0, bigdog: 3.0 };
 // 지형 특징(레벨에 따라 등장): 욕조 물 — 바닥이 물이라 모모가 떨어지면 실패 / 선인장 — 모모가 닿으면 다침, 선도 통과 못 함
@@ -758,6 +760,19 @@ const ARCH_TIER = { fall: 1.0, slope: 2, drop: 3, plat: 0, ground: 0, pocket: 0,
 
 // ---------- 절차적 맵 생성기 ----------
 // 물풍선이 실제로 모모 근처(target)까지 가는지 미리 날려 봄: 지형에 먼저 부딪히면 실패
+function ballReaches(S, c, target){
+  const eng = Engine.create(); eng.gravity.y = 1;
+  const st = S.map(o => o.shape === 'circle' ? Bodies.circle(o.x, o.y, o.r, { isStatic: true }) : Bodies.rectangle(o.x, o.y, o.w, o.h, { isStatic: true, angle: o.a || 0 }));
+  const b = Bodies.circle(c.x, c.y, BALL_R, { density: 0.02, friction: 0.02, restitution: 0.15, frictionAir: 0.001 });
+  Composite.add(eng.world, [...st, b]); Body.setVelocity(b, { x: c.vx, y: c.vy });
+  for (let i = 0; i < 300; i++){
+    for (let k = 0; k < SUB; k++) Engine.update(eng, STEP / SUB);
+    capV(b, 9);
+    if (dist(b.position, target) < BALL_R + 26) return true;
+    if (b.position.y > H + 30 || b.position.x < -40 || b.position.x > W + 40) break;
+  }
+  return false;
+}
 function balloonReaches(S, c, target){
   const eng = Engine.create(); eng.gravity.y = 1;
   const st = S.map(o => o.shape === 'circle' ? Bodies.circle(o.x, o.y, o.r, { isStatic: true }) : Bodies.rectangle(o.x, o.y, o.w, o.h, { isStatic: true, angle: o.a || 0 }));
@@ -786,8 +801,8 @@ function archBase(lv, seed, avoid = []){
   return unlocked[unlocked.length - 1];
 }
 // 레벨별 변형 번호(1~150). 같은 레벨 번호로 여러 판을 만들어 자동 풀이로 재 보고, 난이도 곡선에 가장 맞는 판을 고름(0 = 기본)
-const VAR = [2,1,3,3,0,2,0,1,0,1,2,0,2,1,3,2,0,3,2,0,0,3,3,2,3,0,0,3,0,2,1,0,2,2,3,3,2,1,1,7,2,1,0,1,3,0,3,2,1,0,3,1,0,1,1,3,3,2,3,3,2,1,1,2,1,1,2,1,3,2,3,2,1,2,3,2,2,3,0,2,3,0,1,3,0,0,1,2,0,3,2,2,0,3,0,3,3,1,2,0,3,1,3,1,1,0,0,3,0,1,0,3,1,0,2,3,2,3,2,1,1,1,3,1,2,2,0,1,3,1,1,1,3,1,1,2,1,0,2,2,0,0,2,2,3,1,2,3,0,1];
-const INKT = [507,733,483,357,273,398,321,328,205,172,293,239,255,304,461,471,348,598,307,419,230,620,214,340,179,311,496,460,669,254,227,1606,230,320,826,214,515,685,1603,841,1446,550,465,170,541,614,182,403,402,759,254,252,317,334,328,224,750,965,1089,745,378,923,205,437,398,1130,220,346,443,314,817,268,338,257,324,437,200,940,159,671,451,656,418,475,342,185,410,499,1294,614,244,391,167,1328,182,580,1319,202,260,308,414,206,1450,509,177,264,1461,328,250,226,246,483,410,456,946,278,182,1320,345,265,454,361,229,1746,572,399,354,940,306,404,260,186,388,1613,456,264,424,190,454,381,813,837,324,209,304,522,581,247,312,319], NEEDT = [195,282,218,201,145,277,170,152,110,119,128,120,183,165,201,181,137,230,121,176,158,282,157,171,147,170,274,253,304,218,92,603,165,278,334,173,234,277,648,378,585,277,296,147,278,279,158,274,225,345,215,194,230,176,252,195,395,508,510,392,199,486,156,230,252,595,191,182,233,195,430,141,279,218,195,336,156,495,122,353,262,505,220,250,280,130,216,376,681,323,190,224,122,699,158,305,694,153,192,252,218,165,763,268,154,230,769,206,192,158,194,279,300,373,498,214,158,695,250,204,239,234,199,818,301,230,257,495,235,280,185,152,337,849,240,187,223,165,349,247,428,536,249,143,195,275,306,215,256,277]; // v2: 레벨별 잉크·최소 선 길이(측정값). 비어 있으면 공식으로
+const VAR = [2,1,3,3,0,2,0,1,0,1,2,0,2,1,3,2,0,3,2,0,0,3,3,2,3,0,0,3,0,2,1,0,2,2,3,0,2,1,1,7,2,1,0,2,2,0,3,2,1,0,3,1,0,1,1,3,3,2,3,3,2,3,1,2,1,1,2,1,3,2,3,2,1,2,3,2,2,3,0,2,3,0,1,3,0,0,2,2,0,3,2,2,0,3,0,3,3,1,2,0,3,1,3,1,1,0,0,3,0,1,0,3,1,0,2,3,2,3,2,0,1,1,3,1,2,2,0,1,3,1,1,1,3,1,1,2,0,0,2,2,0,0,2,2,3,1,2,3,0,1];
+const INKT = [507,733,483,357,273,398,321,328,205,172,293,239,255,304,461,471,348,598,307,419,230,620,214,340,179,311,496,460,669,254,227,1606,230,320,826,500,515,685,1590,841,1446,550,465,185,404,614,182,403,402,759,265,252,317,334,292,233,750,747,1089,745,378,1127,205,437,397,1130,220,346,443,314,729,268,338,257,324,437,200,940,159,671,451,656,418,475,342,185,299,499,1294,614,293,391,167,1328,182,580,1319,202,260,308,414,190,1450,509,177,264,1461,328,250,216,246,517,410,456,946,278,182,1320,329,1588,454,361,229,1746,572,399,354,940,306,404,263,240,388,1613,456,264,235,201,454,381,813,837,324,209,304,522,644,247,312,319], NEEDT = [195,282,218,201,145,277,170,152,110,119,128,120,183,165,201,181,137,230,121,176,158,282,157,171,147,170,274,253,304,218,92,603,165,278,334,277,234,277,643,378,585,277,296,161,234,279,158,274,225,345,215,194,230,176,193,195,395,393,510,392,199,528,156,230,244,595,191,182,233,195,430,141,279,218,195,336,156,495,122,353,262,505,220,250,280,130,230,376,681,323,210,224,122,699,158,305,694,153,192,252,218,165,763,268,154,230,769,206,192,158,194,398,300,373,498,214,158,695,230,836,239,234,199,818,301,230,257,495,235,280,187,177,337,849,240,187,197,165,349,247,428,536,249,143,195,275,339,215,256,277]; // v2: 레벨별 잉크·최소 선 길이(측정값). 비어 있으면 공식으로
 const lvSeed = lv => lv * 7919 + 101 + (VAR[lv - 1] || 0) * 1000003;
 function genLevel(lv, seed, themeIdx){
   const r = rng(seed), R = (a, b) => a + r() * (b - a), pick = a => a[Math.floor(r() * a.length)];
@@ -1451,6 +1466,25 @@ function genLevel(lv, seed, themeIdx){
     }
   }
   if (featIntro && featIntro.k === 'button') L.featIntro = L.btn ? featIntro : null;
+  // v3.2 볼링공(36레벨~): 옆 높은 곳 받침대에서 정해진 간격으로 굴러 나옴. 실제로 굴려 보고 모모까지 오는 자리만 씀
+  L.balls = [];
+  if (has('ball') && !L.carve && arch !== 'cave'){
+    const rd = rng(Math.imul(seed ^ 0x3c6ef372, 0xC2B2AE35) >>> 0); rd(); rd();
+    const bIntro = intro && intro.k === 'ball', RR = (a, b) => a + rd() * (b - a);
+    if (bIntro || rd() < 0.3){
+      const n = !bIntro && lv >= 90 && rd() < 0.35 ? 2 : 1;
+      for (let i = 0; i < n; i++) for (let t = 0; t < 60; t++){
+        const sd = rd() < 0.5 ? -1 : 1, x = clamp(sp.x + sd * RR(110, 200), 22, W - 22);
+        let sy = null; for (const o of S) if (!o.a && !o.shape && Math.abs(o.x - x) <= o.w / 2 - 6){ const ty = o.y - o.h / 2; if (ty < sp.y + 20 && ty > 90 && (sy == null || ty > sy)) sy = ty; }
+        const y = sy != null ? sy - BALL_R - 2 : RR(Math.max(100, sp.y - 200), sp.y - 50), c = { x, y, vx: -sd * RR(2.2, 3.6), vy: 0 };
+        if (!free(c, BALL_R + 4) || L.hives.some(h => dist(h, c) < 60) || L.chutes.some(ch => ch.type === 'side' ? Math.abs(ch.y - c.y) < 40 && Math.sign(ch.x - W / 2) === sd : Math.abs(ch.x - c.x) < 40) || L.balls.some(o => Math.abs(o.y - c.y) < 50 && Math.sign(o.x - sp.x) === sd)) continue;
+        if (L.btn && dist(L.btn, c) < 50) continue;
+        if (!ballReaches(S, c, L.pot)) continue;
+        L.balls.push({ ...c, sd, onShelf: sy != null, first: RR(700, 1300), interval: RR(2600, 3400) }); break;
+      }
+      if (L.balls.length) kinds.push('ball');
+    }
+  }
   // 집게 드론(61레벨~): 선을 집어 들어 올림. 배치는 따로 난수를 써서 다른 요소 배치는 그대로
   L.claws = [];
   // v2.7: 땅굴·우물·벽굴·동굴은 24레벨부터 자주(입구 뚜껑을 들어 올림), 나머지 판은 61레벨부터
@@ -1574,7 +1608,7 @@ function setup(){
   failNext = null; phase = 'draw'; pts = []; inkUsed = 0; drawing = false; simT = 0; hp = 100; act = {}; simDur = SIM_MS; bubbleOn = !!L.floatCat;
   if (document.getElementById('title').classList.contains('hidden')) AU.play(CHAPTERS[L.theme].bg, 'draw'); AU.setState('draw'); AU.drawingStop();
   if (activePointer !== null){ try { cv.releasePointerCapture(activePointer); } catch (_){} activePointer = null; }
-  bugs = []; drops = []; rocks = []; crawlers = []; flashT = 0; lineBody = null; toRemove = new Set(); claws = makeClaws();
+  bugs = []; drops = []; rocks = []; crawlers = []; balls = []; flashT = 0; lineBody = null; toRemove = new Set(); claws = makeClaws();
   cloudAcc = L.clouds.map(() => 0);
   finger = null; fingerBlocked = false; flow = null; pops = []; jetPush = []; fx = [];
 
@@ -1859,6 +1893,7 @@ function startSim(){
   L.crawl.forEach(c => spawnQ.push({ t: c.t * TC, crawl: c }));
   spawnQ.sort((a, b) => a.t - b.t);
   chuteT = L.chutes.map(c => c.first * TC);
+  balls = []; ballT = (L.balls || []).map(b => b.first * TC);
   pops = [];
   buildBaseGrid(); flow = null; flowStep = 0; prevPotSpeed = 0; lastHitT = -9999; lastImpactT = -9999;
   claws = makeClaws();
@@ -1872,6 +1907,7 @@ function onCollide(ev){
 let jetPush = [];
 let failNext = null, misFail = false, misT0 = 0, misT1 = 0, misPos = [];
 let btnBody = null, btnOn = false; // v3.1 스위치
+let balls = [], ballT = []; // v3.2 볼링공
 function btnSrc(t, i){ return L.btn && btnOn && L.btn.src.t === t && L.btn.src.i === i; }
 let prevPotSpeed = 0, lastHitT = -9999, lastImpactT = -9999, lastWet = false, ducks = [], popQ = new Set();
 const WATER = ['drop', 'jet', 'splash'];
@@ -1891,6 +1927,10 @@ function handle(a, b, name, pr){
     const bug = b.label === 'bee' || b.label === 'tank' || b.label === 'wasp' || b.label === 'crawl';
     const fresh = bug ? simT - b.plugin.hitT >= 600 : WATER.includes(b.label) ? !toRemove.has(b) : !b.plugin.hit;
     if (fresh) knockCat(a.parent, b, b.label === 'crawl' && b.plugin.big ? KB.bigdog : KB[b.label]);
+  }
+  if (isCat(a.parent) && b.label === 'ball' && phase === 'sim'){
+    const P = b.plugin, sp2 = Math.hypot(b.velocity.x - a.parent.velocity.x, b.velocity.y - a.parent.velocity.y);
+    if (sp2 > 1.4 && simT - P.hitT > 600){ P.hitT = simT; ouch(BALL_DMG, false); knockCat(a.parent, b, BALL_KB); fxHit(b.position.x, b.position.y, true); AU.sfx('hit', { big: true }); }
   }
   if (isCat(a.parent)){
     if (b.plugin && b.plugin.stunT > simT && (b.label === 'bee' || b.label === 'tank')){}
@@ -2087,6 +2127,7 @@ function capV(body, max){
 function clampSpeeds(){
   for (const bug of bugs) capV(bug, (bug.label === 'tank' ? 1.6 + L.speed * 0.3 : L.speed * 1.8) * (bug.plugin.atk === 'charge' ? 1.6 : 1));
   for (const d of drops) capV(d, d.label === 'jet' ? 7.5 : 7);
+  for (const k of balls) capV(k, 9);
   for (const k of rocks) capV(k, 9);
   for (const c of crawlers){ const v = Body.getVelocity(c), cap = (c.plugin.big ? 1.15 : 2.4) * (c.plugin.atk === 'charge' ? 1.9 : 1); if (Math.abs(v.x) > cap) Body.setVelocity(c, { x: Math.sign(v.x) * cap, y: v.y }); }
   if (lineBody){
@@ -2200,6 +2241,13 @@ function step(){
       addBody(d, drops);
     }
   });
+  (L.balls || []).forEach((bd, i) => {
+    if (simT < ballT[i]) return;
+    ballT[i] += bd.interval * TC;
+    const k = Bodies.circle(bd.x, bd.y, BALL_R, { label: 'ball', density: 0.02, friction: 0.02, restitution: 0.15, frictionAir: 0.001 });
+    k.plugin = { born: simT, hitT: -1e9 }; Body.setVelocity(k, { x: bd.vx, y: bd.vy }); addBody(k, balls); AU.sfx('hit', { big: true });
+  });
+  for (const k of balls) if (k.position.y > H + 40 || k.position.x < -60 || k.position.x > W + 60 || simT - k.plugin.born > 6500) toRemove.add(k);
   L.chutes.forEach((c, i) => {
     if (simT >= chuteT[i]){
       chuteT[i] += c.interval * TC;
@@ -2373,6 +2421,7 @@ function step(){
     toRemove.forEach(b => Composite.remove(engine.world, b));
     drops = drops.filter(d => !toRemove.has(d));
     rocks = rocks.filter(k => !toRemove.has(k));
+    balls = balls.filter(k => !toRemove.has(k));
     toRemove.clear();
   }
   if (flashT > 0) flashT -= STEP;
@@ -2612,6 +2661,23 @@ function duckOf(h){ return ducks.find(d => d.h === h); }
 // 집게 드론 그림: 거치대는 화면 맨 위에 매달림(기둥이 위로 이어짐). 기다릴 땐 드론이 붙은 거치대 그림 하나로
 const CLAW_W = 46, DOCK_W = 62;
 function clawDocked(d){ return claws.some(c => c.dock === d && c.st === 'wait' && Math.hypot(c.x - d.x, c.y - d.y - CLAW_DOCKY) < 2); }
+function drawBowl(x, y, ang){
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang || 0);
+  const g = ctx.createRadialGradient(-5, -6, 2, 0, 0, BALL_R); g.addColorStop(0, '#7b6cf6'); g.addColorStop(1, '#2b2370');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, BALL_R, 0, 7); ctx.fill(); ctx.strokeStyle = '#1b1745'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#14112e'; for (const [hx, hy] of [[-3, -7], [3, -7], [0, -1.5]]){ ctx.beginPath(); ctx.arc(hx, hy, 2.2, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+function drawBallRack(bd){
+  // 받침대(나무 턱) + 굴러갈 방향 화살표. 선 그리는 동안은 공이 놓여 있음
+  const x = bd.x, y = bd.y + BALL_R + 2, sd = Math.sign(bd.vx) || 1;
+  ctx.fillStyle = '#a5672f'; ctx.strokeStyle = '#5c3414'; ctx.lineWidth = 2;
+  rrect(x - 20, y, 40, 7, 3); ctx.fill(); ctx.stroke(); rrect(x - sd * 20 - 3, y - 12, 6, 14, 2); ctx.fill(); ctx.stroke();
+  if (phase !== 'sim' || simT < ballT[(L.balls || []).indexOf(bd)] - 500 * TC) drawBowl(x, bd.y, 0);
+  if (phase !== 'sim'){ ctx.save(); ctx.strokeStyle = 'rgba(123,108,246,.85)'; ctx.lineWidth = 3; ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.moveTo(x + sd * 20, bd.y); ctx.lineTo(x + sd * 52, bd.y); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(123,108,246,.95)'; ctx.beginPath(); ctx.moveTo(x + sd * 60, bd.y); ctx.lineTo(x + sd * 50, bd.y - 6); ctx.lineTo(x + sd * 50, bd.y + 6); ctx.fill(); ctx.restore(); }
+}
 function btnSrcPos(){
   const s2 = L.btn.src;
   if (s2.t === 'hive'){ const h = L.hives[s2.i]; return h ? { x: h.x, y: h.y } : null; }
@@ -3709,6 +3775,7 @@ function render(){
   L.hives.forEach(drawHive);
   (L.claws || []).forEach(drawClawDock);
   if (L.btn) drawButton();
+  (L.balls || []).forEach(drawBallRack);
   if (phase === 'draw' && L.crawl.length){
     ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '700 11px sans-serif';
     [...new Set(L.crawl.map(c => c.side))].forEach(sd => { ctx.textAlign = sd < 0 ? 'left' : 'right'; const ic = L.crawl.some(c => c.side === sd && c.big) ? '🐕' : '🐶'; ctx.fillText(sd < 0 ? ic + ' →' : '← ' + ic, sd < 0 ? 6 : W - 6, GY - 10); });
@@ -3723,6 +3790,7 @@ function render(){
   if ((tut || pinTut()) && phase === 'draw' && !drawing && pts.length === 0) drawGuide();
   if (L.water){ if (L.hz === 'spike') drawSpikeFloor(); else if (L.hz === 'fire') drawFireFloor(); else drawWaterPool(); }
   bugs.forEach(drawBug);
+  balls.forEach(b => drawBowl(b.position.x, b.position.y, b.angle));
   claws.forEach(drawClaw);
   drawFx();
   if (phase === 'sim') setTimerUI(Math.max(0, (simDur - simT) / 1000));

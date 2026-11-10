@@ -38,6 +38,7 @@ for lv in range(1,151):
         if lv==24 and 'claw' not in r['kinds']: cost+=1
         if lv==5 and not r.get('tacks'): cost+=1  # 압정 띠 소개 판
         if lv==31 and not r.get('btn'): cost+=1  # 스위치 소개 판
+        if lv==36 and 'ball' not in r['kinds']: cost+=1  # 볼링공 소개 판
         if r.get('btn'): cost-=0.05  # 스위치 판을 조금 더 고름
         if r.get('tacks'): cost-=0.05  # 압정 띠 있는 판을 조금 더 고름
         if r['arch']=='fall' and chosen and sum(1 for c in chosen if c['arch']=='fall')/len(chosen)>0.28: cost+=0.15  # 낙하 판은 30% 안쪽
