@@ -490,7 +490,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v2.9.2</span>
+  <span id="ver">v3.0.0</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -585,6 +585,7 @@ const CARVED = ['pocket', 'well', 'alcove'];
 // 물 공격이 선을 미는 힘(선 무게 대비). 물풍선은 적의 힘 배율(L.force)도 곱함
 const WPUSH = { jet: 0.010, drop: 0.005, splash: 0.003 }, BALLOON_K = 0.04;
 // v2.6: 맞으면 모모가 밀려남(속도 px/프레임). 옆의 압정·불·물로 밀려 떨어지게
+const JET_BOUNCE = 2, JET_STUN = 2200; // v3.0: 물줄기 반사 횟수, 튕긴 물에 맞은 오리·드론이 멈추는 시간(ms)
 const KB = { jet: 0.9, drop: 0.25, splash: 0.35, balloon: 2.6, bee: 1.3, tank: 2.6, wasp: 1.6, crawl: 2.0, bigdog: 3.0 };
 // 지형 특징(레벨에 따라 등장): 욕조 물 — 바닥이 물이라 모모가 떨어지면 실패 / 선인장 — 모모가 닿으면 다침, 선도 통과 못 함
 // ---------- 보너스 목표(🎯): 판마다 하나, 성공하면 ⭐ +1 ----------
@@ -784,8 +785,8 @@ function archBase(lv, seed, avoid = []){
   return unlocked[unlocked.length - 1];
 }
 // 레벨별 변형 번호(1~150). 같은 레벨 번호로 여러 판을 만들어 자동 풀이로 재 보고, 난이도 곡선에 가장 맞는 판을 고름(0 = 기본)
-const VAR = [2,1,3,3,0,2,0,1,0,1,3,0,2,1,3,2,0,3,1,0,0,3,3,2,3,0,0,3,0,2,1,0,2,2,3,3,2,1,1,7,2,1,0,1,3,0,3,2,1,3,3,1,0,1,2,3,3,2,3,3,0,1,1,2,1,1,2,1,3,2,3,2,1,2,2,0,2,3,0,2,3,0,1,3,3,0,3,2,0,0,2,2,0,3,0,3,2,1,2,3,3,1,3,0,2,2,0,3,0,1,0,3,1,0,2,3,2,3,2,1,1,1,3,1,2,2,0,1,0,1,1,0,3,1,1,3,1,0,2,2,0,1,2,2,3,1,2,0,2,3];
-const INKT = [507,733,483,357,273,442,321,328,205,172,229,239,255,304,461,460,348,598,285,419,230,685,214,340,171,311,496,347,669,248,214,1606,230,336,826,214,515,867,1603,841,1446,609,455,170,763,520,204,456,656,546,247,252,317,334,1064,224,750,965,1059,745,421,923,205,416,297,1068,220,307,403,314,679,264,338,257,530,1191,200,853,159,671,528,656,572,717,300,185,488,768,1294,402,248,391,138,1328,182,351,299,202,260,1302,414,222,1450,182,312,479,1461,313,235,191,223,480,410,485,946,278,190,1320,329,265,454,338,229,1746,572,399,354,940,570,364,213,339,388,1442,456,885,293,190,401,331,901,671,258,181,304,582,581,600,863,344], NEEDT = [195,282,218,201,145,277,170,152,110,119,109,120,183,165,201,177,137,230,150,176,158,277,157,171,147,170,274,254,304,198,92,603,165,280,334,173,234,351,648,378,585,277,296,147,347,277,177,274,298,351,215,194,230,176,560,195,395,508,496,392,359,486,156,195,220,562,191,182,233,195,430,170,279,218,279,627,156,449,122,353,278,505,301,336,230,130,307,404,681,309,148,224,118,699,158,305,230,153,192,685,218,165,763,158,256,252,769,210,192,158,194,277,300,373,498,214,165,695,230,204,239,279,199,818,301,230,257,495,431,280,185,230,337,759,240,466,218,165,349,247,474,353,196,157,195,361,306,522,454,195]; // v2: 레벨별 잉크·최소 선 길이(측정값). 비어 있으면 공식으로
+const VAR = [2,1,3,3,0,2,0,1,0,1,2,0,2,1,3,2,0,3,2,0,0,3,3,2,3,0,0,3,0,2,1,0,2,2,3,3,2,1,1,7,2,1,0,1,3,0,3,2,1,0,3,1,0,1,2,3,3,2,3,3,2,1,1,2,1,1,2,3,3,2,3,2,1,2,2,2,2,3,0,2,3,0,1,3,0,0,1,2,0,3,2,2,0,3,0,3,3,1,2,0,3,1,3,1,2,2,0,3,0,1,0,3,1,0,2,3,2,3,2,1,1,1,3,1,2,2,0,1,3,1,1,1,3,1,1,3,3,0,2,2,0,0,0,2,3,1,2,3,0,1];
+const INKT = [507,733,483,357,273,398,321,328,205,172,293,239,255,304,461,471,348,598,307,419,230,620,214,340,179,311,496,460,669,254,214,1606,230,320,826,214,515,685,1603,893,1446,550,465,170,541,614,182,403,402,759,254,252,317,334,1196,224,750,965,1089,745,378,923,205,437,398,1130,220,274,443,314,817,268,338,257,680,437,200,940,159,671,451,656,418,475,477,185,410,499,1294,614,244,391,167,1328,182,580,1319,202,260,308,414,190,1450,509,312,479,1461,328,235,226,246,483,410,456,946,278,190,1320,345,265,454,361,229,1746,572,399,354,940,306,404,260,186,388,1613,456,623,251,214,454,381,813,837,439,222,304,522,581,251,312,319], NEEDT = [195,282,218,201,145,277,170,152,110,119,128,120,183,165,201,181,137,230,121,176,158,282,157,171,147,170,274,253,304,218,92,603,165,278,334,173,234,277,648,402,585,277,296,147,278,279,158,274,225,345,215,194,230,176,560,195,395,508,510,392,199,486,156,230,252,595,191,238,233,195,430,141,279,218,358,336,156,495,122,353,262,505,220,250,251,130,216,376,681,323,190,224,122,699,158,305,694,153,192,252,218,165,763,268,256,252,769,206,192,158,194,279,300,373,498,214,158,695,250,204,239,234,199,818,301,230,257,495,235,280,185,152,337,849,240,328,178,165,349,247,428,536,246,143,195,275,306,215,256,277]; // v2: 레벨별 잉크·최소 선 길이(측정값). 비어 있으면 공식으로
 const lvSeed = lv => lv * 7919 + 101 + (VAR[lv - 1] || 0) * 1000003;
 function genLevel(lv, seed, themeIdx){
   const r = rng(seed), R = (a, b) => a + r() * (b - a), pick = a => a[Math.floor(r() * a.length)];
@@ -1836,14 +1837,14 @@ function startSim(){
 // ---------- 충돌 ----------
 function onCollide(ev){
   if (phase !== 'sim') return;
-  for (const pr of ev.pairs){ handle(pr.bodyA, pr.bodyB, ev.name); handle(pr.bodyB, pr.bodyA, ev.name); }
+  for (const pr of ev.pairs){ handle(pr.bodyA, pr.bodyB, ev.name, pr); handle(pr.bodyB, pr.bodyA, ev.name, pr); }
 }
 let jetPush = [];
 let failNext = null, misFail = false, misT0 = 0, misT1 = 0, misPos = [];
 let prevPotSpeed = 0, lastHitT = -9999, lastImpactT = -9999, lastWet = false, ducks = [], popQ = new Set();
 const WATER = ['drop', 'jet', 'splash'];
 function ouch(dmg, wet = false){ hp -= dmg; flashT = 280; lastHitT = simT; lastWet = wet; if (wet) AU.sfx('splat'); AU.sfx('meow'); }
-function handle(a, b, name){
+function handle(a, b, name, pr){
   if (L.mis && L.mis.k === 'notouch' && !misFail && isCat(a.parent) && b.parent.label === 'line') misFailNow();
   // 높은 곳에서 떨어지거나 세게 부딪히면 다침
   if (name === 'collisionStart' && isCat(a.parent) && (b.isStatic || b.parent.label === 'line') && (a.parent.plugin.pv || 0) > (L.floatCat ? 11 : 6) && simT - lastImpactT > 500){ lastImpactT = simT; ouch(30); }
@@ -1860,7 +1861,8 @@ function handle(a, b, name){
     if (fresh) knockCat(a.parent, b, b.label === 'crawl' && b.plugin.big ? KB.bigdog : KB[b.label]);
   }
   if (isCat(a.parent)){
-    if (b.label === 'bee') hurtBy(b, 12, true);
+    if (b.plugin && b.plugin.stunT > simT && (b.label === 'bee' || b.label === 'tank')){}
+    else if (b.label === 'bee') hurtBy(b, 12, true);
     else if (b.label === 'tank') hurtBy(b, 22, true);
     else if (b.label === 'wasp') hurtBy(b, 18, true);
     else if (b.label === 'crawl') hurtBy(b, b.plugin.big ? 25 : 10, false);
@@ -1886,6 +1888,21 @@ function handle(a, b, name){
       let vx = a.velocity.x, vy = a.velocity.y;
       if (Math.hypot(vx, vy) < 0.3){ vx = a.position.x - b.position.x; vy = a.position.y - b.position.y; vx = -vx; vy = -vy; }
       jetPush.push({ x: a.position.x, y: a.position.y, vx, vy, k: k * kk * (act.tough ? 0.5 : 1) });
+    }
+  }
+  // v3.0 물줄기 튕겨내기: 선에 맞은 물줄기는 거울처럼 반사(두 번까지). 튕긴 물이 오리·드론에 맞으면 잠깐 멈춤
+  if (a.label === 'jet' && b.parent.label === 'line' && pr){
+    const P = a.plugin;
+    if (simT - (P.refT ?? -1e9) < 70) return; // 선 조각 여러 개에 동시에 닿음 → 한 번만
+    if ((P.bounce || 0) < JET_BOUNCE){
+      let n = pr.collision.normal, v = a.velocity; const dn = v.x * n.x + v.y * n.y;
+      if (dn > 0) n = { x: -n.x, y: -n.y };
+      const d2 = v.x * n.x + v.y * n.y, sp = Math.hypot(v.x, v.y) * 0.92;
+      let rx = v.x - 2 * d2 * n.x, ry = v.y - 2 * d2 * n.y; const m = Math.hypot(rx, ry) || 1;
+      Body.setVelocity(a, { x: rx / m * sp, y: ry / m * sp }); Body.setPosition(a, { x: a.position.x + n.x * 3, y: a.position.y + n.y * 3 });
+      P.bounce = (P.bounce || 0) + 1; P.refT = simT; P.born = simT;
+      if (name === 'collisionStart') for (let i = 0; i < 2; i++){ const an = Math.atan2(n.y, n.x) + (Math.random() - 0.5) * 1.4, vv = 60 + Math.random() * 60; addFx({ kind: 'bit', x: a.position.x, y: a.position.y, vx: Math.cos(an) * vv, vy: Math.sin(an) * vv, g: 300, c: '#8fd0ff', w: 4, h: 4, rot: 0, spin: 0, life: 260 }); }
+      return;
     }
   }
   if (name === 'collisionStart' && WATER.includes(a.label) && !isCat(b.parent)) toRemove.add(a);
@@ -2167,13 +2184,25 @@ function step(){
     }
     if (dk.burst && simT >= dk.shotT){
       const j = Bodies.circle(h.x + dk.dir.x * 30, h.y + dk.dir.y * 30, RAD.jet, {
-        label: 'jet', frictionAir: 0, density: 0.0008, collisionFilter: { category: CAT_DROP, mask: CAT_DEF }
+        label: 'jet', frictionAir: 0, density: 0.0008, isSensor: true, collisionFilter: { category: CAT_DROP, mask: CAT_DEF }
       });
       j.plugin = { born: simT, src: dk.h };
       Body.setVelocity(j, { x: dk.dir.x * 7, y: dk.dir.y * 7 });
       addBody(j, drops);
       dk.burst--; dk.shotT = simT + 55;
       if (!dk.burst) dk.next = simT + dk.gap + simRng() * 300 * TC;
+    }
+  }
+  // 튕겨 나간 물줄기가 오리·드론에 맞으면 잠깐 멈춤(오리는 못 쏘고, 드론은 떨어짐)
+  for (const d of drops){
+    if (d.label !== 'jet' || !d.plugin.bounce || toRemove.has(d)) continue;
+    for (const dk of ducks) if (dist(d.position, dk.h) < 30){
+      dk.stunT = simT + JET_STUN * TC; dk.burst = 0; dk.next = Math.max(dk.next, dk.stunT); toRemove.add(d);
+      addFx({ kind: 'ring', x: dk.h.x, y: dk.h.y, c: '#ffd43b', life: 300 }); AU.sfx('quack'); break;
+    }
+    if (toRemove.has(d)) continue;
+    for (const bug of bugs) if (dist(d.position, bug.position) < (bug.circleRadius || 10) + 6){
+      bug.plugin.stunT = simT + JET_STUN * TC * (bug.label === 'tank' ? 0.6 : 1); toRemove.add(d); fxHit(bug.position.x, bug.position.y, false); break;
     }
   }
   if (claws.length) stepClaws();
@@ -2188,6 +2217,7 @@ function step(){
   const g = engine.gravity, sp = sproutPart.position;
   for (let s = 0; s < SUB; s++){
     for (const bug of bugs){
+      if (bug.plugin.stunT > simT) continue; // 튕긴 물에 맞아 고장: 그냥 떨어짐
       const sp = nearestHead(bug.position); // 가까운 고양이를 노림
       Body.applyForce(bug, bug.position, { x: 0, y: -bug.mass * g.y * g.scale });
       let dx = sp.x - bug.position.x, dy = sp.y - bug.position.y, m = Math.hypot(dx, dy) || 1;
@@ -2597,6 +2627,9 @@ function drawHive(h){
     if (dk && phase === 'sim' && !dk.burst && dk.next - simT < 650){
       ctx.setLineDash([4, 5]); ctx.strokeStyle = 'rgba(77,171,247,.8)'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(h.x + dir.x * 30, h.y + dir.y * 30); ctx.lineTo(h.x + dir.x * 110, h.y + dir.y * 110); ctx.stroke(); ctx.setLineDash([]);
+    }
+    if (dk && dk.stunT > simT){ // 튕긴 물에 맞아 어질어질
+      ctx.save(); ctx.font = '18px system-ui'; ctx.textAlign = 'center'; ctx.fillText('💫', h.x + Math.sin(t / 120) * 8, h.y - 34); ctx.restore();
     }
     if (sprOk('duck')){
       const ang = Math.atan2(dir.y, dir.x);
