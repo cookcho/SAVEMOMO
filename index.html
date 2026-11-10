@@ -490,7 +490,7 @@
     <button class="cbtn tile purple" id="btnStory"><svg viewBox="0 0 24 24"><path d="M12 6.5C9.8 4.8 6.6 4.3 3 5v14c3.6-.7 6.8-.2 9 1.5 2.2-1.7 5.4-2.2 9-1.5V5c-3.6-.7-6.8-.2-9 1.5z" fill="#fff"/><path d="M12 6.5v14" stroke="#c9b2f7" stroke-width="1.8"/></svg><span>이야기</span></button>
   </div>
   <button class="cbtn green hidden" id="btnInstall">📲 앱으로 설치</button>
-  <span id="ver">v3.4.0</span>
+  <span id="ver">v3.4.1</span>
 </div>
 
 <div id="shop" class="hidden">
@@ -1718,7 +1718,7 @@ function setup(){
   hint.classList.remove('hidden', 'fade');
   // 안내는 잠깐 보여 주고 사라짐(위에서 내려오는 물풍선·구름을 가리지 않게). 처음 나오는 요소 안내는 읽을 시간을 조금 더. 튜토리얼은 그대로
   clearTimeout(toastTimer);
-  if (!tut) toastTimer = setTimeout(hideHint, hint.textContent.startsWith('NEW') ? 3500 : 2000);
+  if (!tut) toastTimer = setTimeout(hideHint, hint.textContent.startsWith('NEW') ? 2500 : 1000);
   const b = store.get(curKey(), null);
   document.getElementById('best').innerHTML = mode === 'daily' ? (b ? `최고 ${b.score}점` : String(todayKey()).slice(4, 6) + '월 ' + +String(todayKey()).slice(6) + '일 도전') : b ? `<span class="gs">${'★'.repeat(recStars(b))}</span> 최고 ${b.score}점` : '첫 도전';
   updateInk(); renderItemBar();
@@ -1851,6 +1851,8 @@ function release(){
 }
 let activePointer = null;
 cv.addEventListener('pointerdown', e => {
+  // v3.4.1: 맵을 한 번 터치하면 안내 문구가 바로 사라짐(튜토리얼 제외)
+  if (!tut){ const h = document.getElementById('hint'); if (!h.classList.contains('hidden')){ clearTimeout(toastTimer); hideHint(); } }
   // 이전 손가락 상태가 남아 있으면(놓친 pointerup) 정리하고 새로 시작
   if (drawing && phase === 'draw' && activePointer !== e.pointerId){ drawing = false; if (pts.length < 2){ pts = []; inkUsed = 0; } }
   if (beginAt(toWorld(e))){ activePointer = e.pointerId; try { cv.setPointerCapture(e.pointerId); } catch (_){} }
@@ -1877,7 +1879,7 @@ function showToast(msg){
   const h = document.getElementById('hint');
   h.textContent = msg; h.classList.remove('hidden', 'fade');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(hideHint, 2200);
+  toastTimer = setTimeout(hideHint, 1200);
 }
 
 document.getElementById('darkHelp').innerHTML = darkHelpText();
@@ -1898,7 +1900,7 @@ function endStroke(){
   drawing = false; fingerBlocked = false; AU.drawingStop();
   if (inkUsed < 12){
     pts = []; inkUsed = 0; L.pins.forEach(p => p.on = false); updateInk();
-    { const h = document.getElementById('hint'); h.classList.remove('hidden', 'fade'); clearTimeout(toastTimer); if (!tut) toastTimer = setTimeout(hideHint, 2000); } return;
+    if (tut){ const h = document.getElementById('hint'); h.classList.remove('hidden', 'fade'); } return; // 짧게 터치해도 안내를 다시 띄우지 않음(튜토리얼만 다시 보여 줌)
   }
   misT1 = performance.now();
   const rs = [pts[0]]; let acc = 0;
