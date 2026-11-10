@@ -1,6 +1,7 @@
 import json, math, glob, sys
 def target(r):
     lv=r['lv'];t=(0.08+0.40*math.exp(-lv/26))/0.75  # v2.6: 더 가파르게(아래 0.75는 그대로 곱함)
+    if lv>=4: t*=0.85  # v2.9: 전체 15% 더 어렵게
     if r['boss']:t*=0.72
     elif lv%10==1 and lv>1:t*=1.15
     if r.get('intro'):t*=1.12
