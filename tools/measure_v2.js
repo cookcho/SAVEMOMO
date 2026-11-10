@@ -31,6 +31,11 @@ const out=await p.evaluate(([A,B])=>{
   const S=[];
   // 1) 다리 있는 지붕
   for(const h of [26,40,60]) for(const wd of [36,46,60,80]){ const yl=sp.y-h; S.push(dense([{x:sp.x-wd,y:legB(sp.x-wd,yl)},{x:sp.x-wd,y:yl},{x:sp.x+wd,y:yl},{x:sp.x+wd,y:legB(sp.x+wd,yl)}])); }
+  // v3.3 무너지는 발판: 양옆 면에 걸친 그물로 받기(+ 한쪽으로 올라가 지붕 일부)
+  if(L.crumble){ const c=L.crumble, by=L.pot.y+18;
+    for(const dd of [26,40,60]){ const bot={x:sp.x,y:by+dd}, lA={x:c.lx,y:c.ly-5}, rA={x:c.rx,y:c.ry-5};
+      S.push(dense([lA,bot,rA])); S.push(dense([rA,bot,lA]));
+      S.push(dense([lA,bot,rA,{x:c.rx,y:sp.y-40},{x:sp.x-10,y:sp.y-48}])); S.push(dense([rA,bot,lA,{x:c.lx,y:sp.y-40},{x:sp.x+10,y:sp.y-48}])); } }
   // v3.1 스위치: 한쪽 끝을 스위치에 얹고 모모 위로 지붕(또는 반대로 지붕 끝을 스위치에)
   if(L.btn){ const bt={x:L.btn.x,y:L.btn.y-7}, sd=Math.sign(sp.x-bt.x)||1;
     for(const h of [40,60]) for(const wd of [46,64]){ const yl=sp.y-h, near={x:sp.x-sd*wd,y:yl}, far={x:sp.x+sd*wd,y:yl}, fl={x:far.x,y:legB(far.x,yl)};
@@ -60,7 +65,7 @@ const out=await p.evaluate(([A,B])=>{
     for(const m of [12,26]) for(const up of [45,65]) S.push(dense([{x:sp.x,y:sp.y-up},{x:x1+m,y:sp.y-10},{x:x1+m,y:bt+blk.h+14},{x:x0-m,y:bt+blk.h+14},{x:x0-m,y:sp.y-10},{x:sp.x+6,y:sp.y-up-4}]));}
   let t=0,w=0,F=0,minInk=1e9;
   const per=[];for(const pth of S){const e=run(pth);if(!e)continue;t++;per.push([e.win?1:0,Math.round(e.hp||0),Math.round(e.ink)]);if(e.win){w++;F+=0.5+0.5*e.hp/100;minInk=Math.min(minInk,e.ink);}}
-  res.push({lv,arch:L.arch,fall:L.fall||null,twin:!!L.twin,boss:L.boss,water:!!L.water,hives:L.hives.length,D:+L.diff.toFixed(3),t,w,F:t?+(F/t).toFixed(3):0,minInk:w?Math.round(minInk):null,ink:L.ink,par:L.par,mods:L.mods.join('+'),kinds:L.kinds.join('+'),hz:L.hz||null,tacks:L.tacks||0,btn:!!L.btn,intro:!!(L.intro||L.archIntro||L.modIntro||L.featIntro),dead,per});
+  res.push({lv,arch:L.arch,fall:L.fall||null,twin:!!L.twin,boss:L.boss,water:!!L.water,hives:L.hives.length,D:+L.diff.toFixed(3),t,w,F:t?+(F/t).toFixed(3):0,minInk:w?Math.round(minInk):null,ink:L.ink,par:L.par,mods:L.mods.join('+'),kinds:L.kinds.join('+'),hz:L.hz||null,tacks:L.tacks||0,btn:!!L.btn,crumble:!!L.crumble,intro:!!(L.intro||L.archIntro||L.modIntro||L.featIntro),dead,per});
  }
  return res;},[A,B]);
 console.log(JSON.stringify(out));await b.close();})();
