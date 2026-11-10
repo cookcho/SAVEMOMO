@@ -41,6 +41,7 @@ for lv in range(1,151):
         if lv==36 and 'ball' not in r['kinds']: cost+=1  # 볼링공 소개 판
         if lv==59 and not r.get('crumble'): cost+=1  # 무너지는 발판 소개 판
         if r.get('crumble'): cost-=0.08  # 무너지는 발판 판을 조금 더 고름
+        if r.get('maze'): cost-=0.06  # 미로 벽 판을 조금 더 고름
         if r.get('btn'): cost-=0.05  # 스위치 판을 조금 더 고름
         if r.get('tacks'): cost-=0.05  # 압정 띠 있는 판을 조금 더 고름
         if r['arch']=='fall' and chosen and sum(1 for c in chosen if c['arch']=='fall')/len(chosen)>0.28: cost+=0.15  # 낙하 판은 30% 안쪽
