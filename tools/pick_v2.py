@@ -32,6 +32,8 @@ for lv in range(1,151):
         cost=abs(Fv-T)
         if r['arch'] in [c['arch'] for c in chosen[-2:]] and r['arch']!='fall': cost+=0.2
         if r['arch']=='fall' and sum(1 for c in chosen[-2:] if c['arch']=='fall')==2: cost+=0.15  # 낙하 3연속은 피함
+        UND=('pocket','well','alcove','cave')
+        if r['arch'] in UND and any(c['arch'] in UND for c in chosen[-4:]): cost+=0.25  # 땅속 판은 4판 안에 또 나오지 않게
         if r.get('dead'): cost+=0.6*len(r['dead'])
         if SF.get((lv,v)): cost+=0.6*len(SF[(lv,v)])  # 맵 구조 문제(지형에 박힌 기지 등)  # 선 없이도 모모에게 못 오는 적이 있으면(장애물에 막힘 등) 피함
         if lv==2 and v!=1: cost+=1
